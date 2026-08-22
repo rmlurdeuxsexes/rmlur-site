@@ -424,6 +424,20 @@ main#shop{max-width:1280px;margin:0 auto;padding:60px 32px 160px}
   .shop-head h1{font-size:24px}
   .tabs{gap:14px}
 }
+/* ================= SITE WATERMARK — persistent, every page ================= */
+.site-watermark{
+  position:fixed;
+  left:14px;top:50%;
+  transform:translateY(-50%);
+  width:64px;
+  opacity:.3;
+  pointer-events:none;
+  z-index:40;
+}
+@media(max-width:640px){
+  .site-watermark{width:40px;left:8px}
+}
+
 :focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){
   #pb-marquee{animation:none}
