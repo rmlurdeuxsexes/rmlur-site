@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — RMLUR :: deux SEXES</title>
+<meta name="description" content="RMLUR Deux Sexes — buy beats and drum kits direct. No middleman.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="corner-nav">
+  <a href="about.html">About</a>
+  <a href="blog.html">Blog</a>
+  <a href="design.html">Design</a>
+  <span class="corner-sep">|</span>
+  <a href="mailto:jayrewindbeatz@gmail.com">Contact</a>
+</div>
+
+<!-- ================= PRODUCT DETAIL OVERLAY (Yeezy-style) ================= -->
+<div id="pdp-overlay" class="pdp-overlay" hidden>
+  <div class="pdp-topbar">
+    <button id="pdp-back" class="pdp-back" aria-label="Close">‹</button>
+    <div class="pdp-cart"><span id="pdp-cart-count">0</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+    </div>
+  </div>
+
+  <div class="pdp-body">
+    <div class="pdp-image">
+      <img id="pdp-cover" src="" alt="">
+      <button class="pdp-play" id="pdp-play" aria-label="Preview">►</button>
+    </div>
+
+    <div id="pdp-panel" class="pdp-panel">
+      <!-- collapsed state -->
+      <div id="pdp-collapsed" class="pdp-collapsed">
+        <div id="pdp-title-c" class="pdp-title"></div>
+        <div id="pdp-price-c" class="pdp-price"></div>
+        <button id="pdp-expand" class="pdp-plus" aria-label="Select format">+</button>
+      </div>
+
+      <!-- expanded state -->
+      <div id="pdp-expanded" class="pdp-expanded" hidden>
+        <div class="pdp-row">
+          <button id="pdp-info-q" class="pdp-q" aria-label="Track info">?</button>
+          <div id="pdp-status" class="pdp-status">SELECT FORMAT</div>
+          <button id="pdp-close-x" class="pdp-x" aria-label="Close">×</button>
+        </div>
+        <div id="pdp-price" class="pdp-price"></div>
+        <div id="pdp-tiers" class="pdp-tiers"></div>
+        <button id="pdp-exclusive" class="pdp-exclusive-btn" hidden></button>
+        <button id="pdp-info-toggle" class="pdp-info-toggle">INFORMATION</button>
+        <div id="pdp-info-panel" class="pdp-info-panel" hidden></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SHOP — full catalog, tape-label styled ================= -->
+<main id="shop">
+  <a class="back-link" href="index.html">← Back</a>
+  <div class="shop-head">
+    <h1>Shop</h1>
+    <nav class="tabs" aria-label="Filter products">
+      <button class="tab active" data-filter="all">All</button>
+      <button class="tab" data-filter="beat">Beats</button>
+      <button class="tab" data-filter="kit">Kits</button>
+      <a class="tab tab-link" href="mailto:jayrewindbeatz@gmail.com?subject=Custom%20work">Custom</a>
+    </nav>
+  </div>
+
+  <div id="tape-grid" class="tape-grid"></div>
+  <p id="empty-state" class="empty-state" hidden>nothing here yet.</p>
+</main>
+
+<!-- ================= PLAYER BAR ================= -->
+<div id="player-bar" class="player-bar" hidden>
+  <button id="pb-play" class="transport-btn" aria-label="Play or pause preview">►</button>
+  <button id="pb-stop" class="transport-btn" aria-label="Stop preview">■</button>
+  <div class="pb-lcd">
+    <canvas id="pb-wave" width="120" height="28"></canvas>
+    <div class="pb-lcd-text">
+      <span id="pb-marquee">RMLUR :: DEUX SEXES ▪ </span>
+    </div>
+  </div>
+  <div class="pb-info">
+    <span id="pb-title">—</span>
+    <div class="pb-meter"><div id="pb-progress"></div></div>
+  </div>
+  <a id="pb-buy" class="buy-btn buy-btn-sm" href="#" target="_blank" rel="noopener">BUY</a>
+</div>
+
+<footer class="site-footer">
+  <span>𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃</span>
+  <span>all sales final ▪ files delivered instantly after checkout</span>
+  <span>jayrewindbeatz@gmail.com</span>
+</footer>
+
+<audio id="preview-audio"></audio>
+<script src="products.js"></script>
+<script src="waveform.js"></script>
+<script src="shop.js"></script>
+</body>
+</html>

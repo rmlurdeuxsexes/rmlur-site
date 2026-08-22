@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RMLUR :: deux SEXES — beats & kits</title>
+<meta name="description" content="RMLUR Deux Sexes — buy beats and drum kits direct. No middleman.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- tiny corner nav, unobtrusive so the hero reads exactly like before -->
+<div class="corner-nav">
+  <a href="about.html">About</a>
+  <a href="blog.html">Blog</a>
+  <a href="design.html">Design</a>
+  <span class="corner-sep">|</span>
+  <a href="mailto:jayrewindbeatz@gmail.com">Contact</a>
+</div>
+
+<!-- ================= HERO — the MPC is the site. every click below is a real nav action. ================= -->
+<section class="hero">
+  <div class="hero-frame" id="hero-frame">
+    <img src="assets/mpc-hero.jpg" alt="RMLUR MPC2000XL — click a pad or drive to navigate" id="hero-img">
+    <!-- pads / drives / LCD are positioned and wired up by app.js using hotspots.js data -->
+    <div id="hero-hotspots"></div>
+  </div>
+</section>
+
+<audio id="pad-audio"></audio>
+
+<footer class="site-footer">
+  <span>𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃</span>
+  <span>jayrewindbeatz@gmail.com</span>
+</footer>
+
+<script src="hotspots.js"></script>
+<script src="waveform.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
