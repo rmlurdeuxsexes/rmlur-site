@@ -53,16 +53,14 @@ window.HERO_HOTSPOTS = {
 /* ---------- WHAT each pad does ----------
    type: "beat"   → clicking plays a local audio file and drives the LCD
                      waveform (see app.js renderLcd / waveform.js). Top two
-                     rows are beats.
-                     TODO: these should play a RANDOM selection from your
-                     own drumkit each visit, not a fixed file per pad — the
-                     random-pick machinery is in app.js (assignRandomBeats),
-                     it just needs a real, owned-by-you sample pool. Drop
-                     confirmed-yours one-shots into assets/beats/ and list
-                     their paths in BEAT_POOL below; do NOT point this at
-                     someone else's leaked kit — there are several
-                     "@LEAKEDSOUND"-tagged folders on this Mac that are NOT
-                     safe to publish here without clear rights.
+                     rows are beats — each page load, app.js randomly
+                     assigns 8 one-shots from BEAT_POOL below to these 8
+                     pads (see assignRandomBeats). Drop more confirmed-yours
+                     one-shots into assets/beats/ and add their paths to
+                     BEAT_POOL to grow the pool — do NOT point this at
+                     someone else's leaked kit; several "@LEAKEDSOUND"- and
+                     "stolen"-named folders on this Mac are NOT safe to
+                     publish without clear rights.
    type: "social" → clicking navigates to `url`. Bottom two rows. An
                      absolute http(s) URL opens in a new tab (external);
                      anything else (a relative page like "about.html", or
@@ -94,11 +92,20 @@ window.PADS = [
 ];
 
 /* ---------- Random beat pool (top two rows) ----------
-   Empty until you confirm a folder of beats you actually own the rights
-   to publish. app.js will randomly assign 8 of these to the 8 "beat" pads
-   on every page load once this list is populated — no other code changes
-   needed. */
-window.BEAT_POOL = [];
+   8 one-shots from the user's own "mini-stolen-drums-kit" (confirmed
+   their own kit, name notwithstanding). app.js randomly assigns 8 of
+   these to the 8 "beat" pads on every page load — add more entries the
+   same way to grow the pool. */
+window.BEAT_POOL = [
+  "assets/beats/kick-1.mp3",
+  "assets/beats/kick-2.mp3",
+  "assets/beats/kick-3.mp3",
+  "assets/beats/snare-1.mp3",
+  "assets/beats/snare-clap-1.mp3",
+  "assets/beats/snare-clap-2.mp3",
+  "assets/beats/bass-1.mp3",
+  "assets/beats/eight-oh-eight-1.mp3"
+];
 
 /* ---------- WHAT each hard-drive does ----------
    Each drive is its own portfolio pathway. */
