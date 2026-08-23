@@ -1,16 +1,20 @@
 /* ============================================================
    JASON'S PORTFOLIO — PHOTO LIST
    ============================================================
-   To add a real photo: drop the file into assets/, add one line
-   below with its path. Click behavior (grid → full-bleed lightbox,
-   same pattern as the shop's product overlay) already works —
-   swap these placeholder entries out for the real ones.
+   To add a real photo: drop the file into assets/jason/, add one
+   line below with its path.
    ============================================================ */
 window.JASON_PHOTOS = [
-  // TODO — these 3 are placeholders (borrowed from the shop's cover art)
-  // just to prove the grid + lightbox works. Replace with Jason's actual
-  // photos once you send them over.
-  { src: "assets/midnight-pager.jpg", alt: "Jason — placeholder 1" },
-  { src: "assets/getty-tape.jpg", alt: "Jason — placeholder 2" },
-  { src: "assets/deux-sexes-drums-v1.jpg", alt: "Jason — placeholder 3" }
+  { src: "assets/jason/IMG_1828.jpg", alt: "MidKnight — white sweatpants" },
+  { src: "assets/jason/IMG_1666.jpg", alt: "MidKnight — brown pants, front" },
+  { src: "assets/jason/IMG_1668.jpg", alt: "MidKnight — brown pants, back detail" },
+  { src: "assets/jason/IMG_1821.jpg", alt: "MidKnight — brown pants, back" },
+  { src: "assets/jason/IMG_1936.jpg", alt: "MidKnight — jacket" },
+  { src: "assets/jason/IMG_1937.jpg", alt: "MidKnight — jacket detail" },
+  { src: "assets/jason/IMG_1943.jpg", alt: "MidKnight — jacket detail" },
+  { src: "assets/jason/IMG_7339.jpg", alt: "MidKnight" }
+  // TODO: older pieces the user saw on the Readymag site are missing here —
+  // couldn't locate them on readymag.website/u2276740074/JOINRMLUR/ (checked
+  // the home page, the wiki-style bio page, and /glamblog). Need a pointer
+  // to exactly which Readymag page/section they lived on.
 ];
