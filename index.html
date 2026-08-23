@@ -10,17 +10,12 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="no-scroll">
 <img src="assets/worldstar-watermark.png" alt="RMLUR STAR" class="site-watermark">
 
-<!-- tiny corner nav, unobtrusive so the hero reads exactly like before -->
-<div class="corner-nav">
-  <a href="about.html">About</a>
-  <a href="blog.html">Blog</a>
-  <a href="design.html">Design</a>
-  <span class="corner-sep">|</span>
-  <a href="mailto:jayrewindbeatz@gmail.com">Contact</a>
-</div>
+<!-- No corner-nav here on purpose: the MPC is the only navigation on this
+     screen. About/Blog/Design/Contact are reachable via pads instead (see
+     hotspots.js PADS) — click-through-the-machine, not a text nav bar. -->
 
 <!-- ================= HERO — the MPC is the site. every click below is a real nav action. ================= -->
 <section class="hero">

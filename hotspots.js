@@ -18,20 +18,37 @@
    ============================================================ */
 
 /* ---------- WHERE things sit on assets/mpc-hero.jpg (percentages) ----------
-   NOTE: only the top pad row, "tape", and "lcd" have ever been measured —
-   this was true before this redesign too. Rows pad-1.. / pad-2.. / pad-3..
-   and the second drive ("deux-series") have no coordinates yet and are
-   deliberately left out here so the renderer just skips them, same as it
-   always has for unmapped pads. Re-measure all of this against the new,
-   higher-res hero photo once it lands — these numbers won't carry over
-   cleanly to a different source image. */
+   Full 4x4 pad grid measured directly against the current photo
+   (760x690px). Columns were already accurate from the top row;
+   rows 1-3 use that same column spacing with a consistent ~10.14%
+   row-to-row gap. Re-measure all of this if the hero photo is ever
+   replaced — these numbers are tied to this exact image. */
 window.HERO_HOTSPOTS = {
-  "pad-0-0": { left: 59.5, top: 25.3, width: 9.2, height: 9.0 },
-  "pad-0-1": { left: 68.7, top: 25.3, width: 9.2, height: 9.0 },
-  "pad-0-2": { left: 77.9, top: 25.3, width: 9.2, height: 9.0 },
-  "pad-0-3": { left: 87.1, top: 25.3, width: 9.2, height: 9.0 },
+  "pad-0-0": { left: 59.5, top: 25.30, width: 9.2, height: 9.0 },
+  "pad-0-1": { left: 68.7, top: 25.30, width: 9.2, height: 9.0 },
+  "pad-0-2": { left: 77.9, top: 25.30, width: 9.2, height: 9.0 },
+  "pad-0-3": { left: 87.1, top: 25.30, width: 9.2, height: 9.0 },
+
+  "pad-1-0": { left: 59.5, top: 35.44, width: 9.2, height: 9.0 },
+  "pad-1-1": { left: 68.7, top: 35.44, width: 9.2, height: 9.0 },
+  "pad-1-2": { left: 77.9, top: 35.44, width: 9.2, height: 9.0 },
+  "pad-1-3": { left: 87.1, top: 35.44, width: 9.2, height: 9.0 },
+
+  "pad-2-0": { left: 59.5, top: 45.58, width: 9.2, height: 9.0 },
+  "pad-2-1": { left: 68.7, top: 45.58, width: 9.2, height: 9.0 },
+  "pad-2-2": { left: 77.9, top: 45.58, width: 9.2, height: 9.0 },
+  "pad-2-3": { left: 87.1, top: 45.58, width: 9.2, height: 9.0 },
+
+  "pad-3-0": { left: 59.5, top: 55.72, width: 9.2, height: 9.0 },
+  "pad-3-1": { left: 68.7, top: 55.72, width: 9.2, height: 9.0 },
+  "pad-3-2": { left: 77.9, top: 55.72, width: 9.2, height: 9.0 },
+  "pad-3-3": { left: 87.1, top: 55.72, width: 9.2, height: 9.0 },
+
   "tape":    { left: 20.8, top: 68.2, width: 17.6, height: 27.3 },
-  "lcd":     { left: 7.0,  top: 1.2,  width: 38.4, height: 9.6 }
+  // LCD box now matches the full dark-bezel screen module (not just the
+  // inner black text display), flush edge-to-edge, so the idle video
+  // covers the whole screen with no bezel-color gap showing around it.
+  "lcd":     { left: 7.9,  top: 0.7,  width: 38.2, height: 13.0 }
   // "deux-series": not measured yet — add its box here once the new photo lands
 };
 
@@ -41,10 +58,14 @@ window.HERO_HOTSPOTS = {
                      rows are beats. Drop the file into assets/beats/ and
                      fill in `audio` below — same "add one entry" workflow
                      as the shop's products.js.
-   type: "social" → clicking opens `url` in a new tab. Bottom two rows.
-                     Only 3 platforms were named (YouTube/Instagram/TikTok);
-                     remaining pads are left with url:null — fill in more
-                     the same way if/when there's a real destination. */
+   type: "social" → clicking navigates to `url`. Bottom two rows. An
+                     absolute http(s) URL opens in a new tab (external);
+                     anything else (a relative page like "about.html", or
+                     a mailto: link) navigates in the same tab — this is
+                     also how the old corner-nav's About/Blog/Design/Contact
+                     links now work, straight from the pads instead of a
+                     persistent nav bar. Fill in more the same way if/when
+                     there's a new destination. */
 window.PADS = [
   { id: "pad-0-0", type: "beat", title: "Recent beat 1", audio: null },
   { id: "pad-0-1", type: "beat", title: "Recent beat 2", audio: null },
@@ -59,12 +80,12 @@ window.PADS = [
   { id: "pad-2-0", type: "social", label: "YouTube",   url: "https://www.youtube.com/" },
   { id: "pad-2-1", type: "social", label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
   { id: "pad-2-2", type: "social", label: "TikTok",     url: null },
-  { id: "pad-2-3", type: "social", label: null,         url: null },
+  { id: "pad-2-3", type: "social", label: "About",      url: "about.html" },
 
-  { id: "pad-3-0", type: "social", label: null, url: null },
-  { id: "pad-3-1", type: "social", label: null, url: null },
-  { id: "pad-3-2", type: "social", label: null, url: null },
-  { id: "pad-3-3", type: "social", label: null, url: null }
+  { id: "pad-3-0", type: "social", label: "Blog",    url: "blog.html" },
+  { id: "pad-3-1", type: "social", label: "Design",  url: "design.html" },
+  { id: "pad-3-2", type: "social", label: "Contact", url: "mailto:jayrewindbeatz@gmail.com" },
+  { id: "pad-3-3", type: "social", label: null,      url: null }
 ];
 
 /* ---------- WHAT each hard-drive does ----------
@@ -77,10 +98,7 @@ window.DRIVES = [
   { id: "deux-series", label: "RMLUR :: Deux Series", targetPage: "shop.html" }
 ];
 
-/* ---------- LCD idle state ----------
-   assets/lcd-loop.mp4 does not exist yet — this is a placeholder path.
-   Drop the real video (or the Blender-rendered LCD export) in at that
-   path and it'll just work; nothing else needs to change. */
+/* ---------- LCD idle state ---------- */
 window.LCD = {
   idleVideo: "assets/lcd-loop.mp4"
 };

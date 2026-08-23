@@ -122,8 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
         el.setAttribute('aria-label', pad.title || 'Play beat');
         bindActivate(el, () => playBeat(pad));
       } else if (pad.type === 'social') {
-        el.setAttribute('aria-label', pad.label || 'Social link');
-        bindActivate(el, () => { if (pad.url) window.open(pad.url, '_blank', 'noopener'); });
+        el.setAttribute('aria-label', pad.label || 'Link');
+        bindActivate(el, () => {
+          if (!pad.url) return;
+          if (/^https?:\/\//i.test(pad.url)) window.open(pad.url, '_blank', 'noopener');
+          else window.location.href = pad.url; // internal page or mailto: — same tab
+        });
       }
       heroHotspots.appendChild(el);
     });
