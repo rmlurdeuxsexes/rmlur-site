@@ -18,46 +18,51 @@
    ============================================================ */
 
 /* ---------- WHERE things sit on assets/mpc-hero.jpg (percentages) ----------
-   Full 4x4 pad grid measured directly against the current photo
-   (760x690px). Columns were already accurate from the top row;
-   rows 1-3 use that same column spacing with a consistent ~10.14%
-   row-to-row gap. Re-measure all of this if the hero photo is ever
-   replaced — these numbers are tied to this exact image. */
+   Measured against the current photo (1412x1420px — the real,
+   undamaged Readymag source photo + the tape/drive props composited
+   on below it). Re-measure all of this if the hero photo is ever
+   replaced. */
 window.HERO_HOTSPOTS = {
-  "pad-0-0": { left: 59.5, top: 25.30, width: 9.2, height: 9.0 },
-  "pad-0-1": { left: 68.7, top: 25.30, width: 9.2, height: 9.0 },
-  "pad-0-2": { left: 77.9, top: 25.30, width: 9.2, height: 9.0 },
-  "pad-0-3": { left: 87.1, top: 25.30, width: 9.2, height: 9.0 },
+  "pad-0-0": { left: 56.51, top: 28.03, width: 5.67, height: 4.23 },
+  "pad-0-1": { left: 65.01, top: 28.03, width: 5.67, height: 4.23 },
+  "pad-0-2": { left: 73.51, top: 28.03, width: 5.67, height: 4.23 },
+  "pad-0-3": { left: 82.01, top: 28.03, width: 5.67, height: 4.23 },
 
-  "pad-1-0": { left: 59.5, top: 35.44, width: 9.2, height: 9.0 },
-  "pad-1-1": { left: 68.7, top: 35.44, width: 9.2, height: 9.0 },
-  "pad-1-2": { left: 77.9, top: 35.44, width: 9.2, height: 9.0 },
-  "pad-1-3": { left: 87.1, top: 35.44, width: 9.2, height: 9.0 },
+  "pad-1-0": { left: 56.51, top: 36.48, width: 5.67, height: 4.23 },
+  "pad-1-1": { left: 65.01, top: 36.48, width: 5.67, height: 4.23 },
+  "pad-1-2": { left: 73.51, top: 36.48, width: 5.67, height: 4.23 },
+  "pad-1-3": { left: 82.01, top: 36.48, width: 5.67, height: 4.23 },
 
-  "pad-2-0": { left: 59.5, top: 45.58, width: 9.2, height: 9.0 },
-  "pad-2-1": { left: 68.7, top: 45.58, width: 9.2, height: 9.0 },
-  "pad-2-2": { left: 77.9, top: 45.58, width: 9.2, height: 9.0 },
-  "pad-2-3": { left: 87.1, top: 45.58, width: 9.2, height: 9.0 },
+  "pad-2-0": { left: 56.51, top: 44.93, width: 5.67, height: 4.23 },
+  "pad-2-1": { left: 65.01, top: 44.93, width: 5.67, height: 4.23 },
+  "pad-2-2": { left: 73.51, top: 44.93, width: 5.67, height: 4.23 },
+  "pad-2-3": { left: 82.01, top: 44.93, width: 5.67, height: 4.23 },
 
-  "pad-3-0": { left: 59.5, top: 55.72, width: 9.2, height: 9.0 },
-  "pad-3-1": { left: 68.7, top: 55.72, width: 9.2, height: 9.0 },
-  "pad-3-2": { left: 77.9, top: 55.72, width: 9.2, height: 9.0 },
-  "pad-3-3": { left: 87.1, top: 55.72, width: 9.2, height: 9.0 },
+  "pad-3-0": { left: 56.51, top: 53.38, width: 5.67, height: 4.23 },
+  "pad-3-1": { left: 65.01, top: 53.38, width: 5.67, height: 4.23 },
+  "pad-3-2": { left: 73.51, top: 53.38, width: 5.67, height: 4.23 },
+  "pad-3-3": { left: 82.01, top: 53.38, width: 5.67, height: 4.23 },
 
-  "tape":    { left: 20.8, top: 68.2, width: 17.6, height: 27.3 },
-  // LCD box now matches the full dark-bezel screen module (not just the
-  // inner black text display), flush edge-to-edge, so the idle video
-  // covers the whole screen with no bezel-color gap showing around it.
-  "lcd":     { left: 7.9,  top: 0.7,  width: 38.2, height: 13.0 }
-  // "deux-series": not measured yet — add its box here once the new photo lands
+  "tape":    { left: 13.46, top: 68.31, width: 24.08, height: 12.32 },
+  "deux-series": { left: 67.99, top: 66.90, width: 19.83, height: 19.72 },
+  // LCD box matches the full dark-bezel screen module, flush edge-to-edge,
+  // so the idle video covers the whole screen with no bezel-color gap.
+  "lcd":     { left: 6.02, top: 3.66, width: 42.85, height: 11.69 }
 };
 
 /* ---------- WHAT each pad does ----------
    type: "beat"   → clicking plays a local audio file and drives the LCD
                      waveform (see app.js renderLcd / waveform.js). Top two
-                     rows are beats. Drop the file into assets/beats/ and
-                     fill in `audio` below — same "add one entry" workflow
-                     as the shop's products.js.
+                     rows are beats.
+                     TODO: these should play a RANDOM selection from your
+                     own drumkit each visit, not a fixed file per pad — the
+                     random-pick machinery is in app.js (assignRandomBeats),
+                     it just needs a real, owned-by-you sample pool. Drop
+                     confirmed-yours one-shots into assets/beats/ and list
+                     their paths in BEAT_POOL below; do NOT point this at
+                     someone else's leaked kit — there are several
+                     "@LEAKEDSOUND"-tagged folders on this Mac that are NOT
+                     safe to publish here without clear rights.
    type: "social" → clicking navigates to `url`. Bottom two rows. An
                      absolute http(s) URL opens in a new tab (external);
                      anything else (a relative page like "about.html", or
@@ -87,6 +92,13 @@ window.PADS = [
   { id: "pad-3-2", type: "social", label: "Contact", url: "mailto:jayrewindbeatz@gmail.com" },
   { id: "pad-3-3", type: "social", label: null,      url: null }
 ];
+
+/* ---------- Random beat pool (top two rows) ----------
+   Empty until you confirm a folder of beats you actually own the rights
+   to publish. app.js will randomly assign 8 of these to the 8 "beat" pads
+   on every page load once this list is populated — no other code changes
+   needed. */
+window.BEAT_POOL = [];
 
 /* ---------- WHAT each hard-drive does ----------
    Each drive is its own portfolio pathway. */

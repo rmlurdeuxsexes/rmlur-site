@@ -20,11 +20,24 @@
   <a href="mailto:jayrewindbeatz@gmail.com">Contact</a>
 </div>
 
+<!-- ================= PHOTO LIGHTBOX (same full-bleed pattern as the shop's product overlay) ================= -->
+<div id="lightbox-overlay" class="pdp-overlay" hidden>
+  <div class="pdp-topbar">
+    <button id="lightbox-back" class="pdp-back" aria-label="Close">‹</button>
+  </div>
+  <div class="pdp-body">
+    <div class="pdp-image portfolio-lightbox-image">
+      <img id="lightbox-img" src="" alt="">
+    </div>
+  </div>
+</div>
+
 <main class="page-wrap">
   <a class="back-link" href="index.html">← Back</a>
   <div class="page-title">MidKnight Jason</div>
 
-  <p class="coming-soon">Jason's portfolio goes here — drop his work into this page.</p>
+  <div id="portfolio-grid" class="design-grid"></div>
+  <p id="portfolio-empty" class="coming-soon" hidden>Jason's work goes here — drop photos into jasons-work.js.</p>
 </main>
 
 <footer class="site-footer">
@@ -32,5 +45,7 @@
   <span>jayrewindbeatz@gmail.com</span>
 </footer>
 
+<script src="jasons-work.js"></script>
+<script src="portfolio.js"></script>
 </body>
 </html>

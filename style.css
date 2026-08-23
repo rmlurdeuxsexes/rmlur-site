@@ -85,14 +85,23 @@ a{color:inherit;text-decoration:none}
 body.no-scroll{
   height:100vh;overflow:hidden;
   display:flex;flex-direction:column;
+  /* Matches the original Readymag canvas — black stage, not a white page —
+     this is most of the "feel" difference between the two builds. */
+  background:#000;color:#dcdcdc;
+}
+body.no-scroll .site-watermark{
+  filter:invert(1);opacity:.4;
+}
+body.no-scroll .mini-footer{
+  color:#8a8a8a;
 }
 body.no-scroll .hero{
   flex:1;min-height:0;
-  padding:10px 20px;
+  padding:4px 12px;
   display:flex;align-items:center;justify-content:center;
 }
 body.no-scroll .hero-frame{
-  max-width:92vw;max-height:100%;width:auto;
+  max-width:97vw;max-height:100%;width:auto;
   display:flex;
 }
 body.no-scroll .hero-frame img{
@@ -100,7 +109,10 @@ body.no-scroll .hero-frame img{
   display:block;margin:0 auto;
 }
 body.no-scroll .site-footer{
-  flex-shrink:0;padding:6px 24px;
+  flex-shrink:0;padding:2px 24px;
+}
+.mini-footer{
+  font-size:8px;opacity:.45;gap:0;
 }
 
 /* ================= PRODUCT DETAIL OVERLAY (Yeezy-style) ================= */
@@ -128,6 +140,9 @@ body.no-scroll .site-footer{
   margin-top:20px;
 }
 .pdp-image img{width:100%;height:100%;object-fit:cover;display:block}
+.portfolio-lightbox-image{aspect-ratio:auto;max-height:80vh}
+.portfolio-lightbox-image img{width:100%;height:100%;max-height:80vh;object-fit:contain}
+.design-item{cursor:pointer}
 .pdp-play{
   position:absolute;right:14px;bottom:14px;
   width:38px;height:38px;border-radius:50%;

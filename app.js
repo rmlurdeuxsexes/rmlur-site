@@ -110,6 +110,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ================= pads + drives ================= */
+  // Randomly assign a fresh set of beats to the "beat" pads on every visit,
+  // once window.BEAT_POOL (hotspots.js) actually has entries in it.
+  function assignRandomBeats() {
+    const pool = window.BEAT_POOL || [];
+    if (!pool.length) return;
+    const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+    const beatPads = pads.filter(p => p.type === 'beat');
+    beatPads.forEach((pad, i) => { pad.audio = shuffled[i % shuffled.length] || null; });
+  }
+
   function renderPads() {
     pads.forEach(pad => {
       const pos = hotspotMap[pad.id];
@@ -147,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   renderLcd();
+  assignRandomBeats();
   renderPads();
   renderDrives();
 });
