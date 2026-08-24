@@ -14,11 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     el.style.width = pos.width + '%';
     el.style.height = pos.height + '%';
   }
-  function makeHotspotShell(extraClass) {
+  function makeHotspotShell(extraClass, hotspotId) {
     const el = document.createElement('div');
     el.className = 'hotspot' + (extraClass ? ' ' + extraClass : '');
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '0');
+    if (hotspotId) el.dataset.hotspotId = hotspotId;
     return el;
   }
   function bindActivate(el, fn) {
@@ -34,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pos = hotspotMap['lcd'];
     if (!pos) return;
 
-    const container = makeHotspotShell('lcd-hotspot');
+    const container = makeHotspotShell('lcd-hotspot', 'lcd');
     placeEl(container, pos);
     container.setAttribute('aria-label', 'Shop the catalog');
 
@@ -125,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pos = hotspotMap[pad.id];
       if (!pos) return; // not measured on the current photo yet — skip gracefully
 
-      const el = makeHotspotShell();
+      const el = makeHotspotShell(null, pad.id);
       placeEl(el, pos);
 
       if (pad.type === 'beat') {
@@ -148,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pos = hotspotMap[drive.id];
       if (!pos) return; // not measured on the current photo yet — skip gracefully
 
-      const el = makeHotspotShell('drive-hotspot');
+      const el = makeHotspotShell('drive-hotspot', drive.id);
       placeEl(el, pos);
       el.setAttribute('aria-label', drive.label);
       bindActivate(el, () => { window.location.href = drive.targetPage; });
