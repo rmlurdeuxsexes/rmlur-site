@@ -21,34 +21,34 @@
    Measured against the current photo (1412x1400px — the real,
    undamaged Readymag source photo + Jason's tape composited on below
    it, correctly rotated to match how it actually reads on the real
-   Readymag page). Re-measure all of this if the hero photo is ever
-   replaced. */
+   Readymag page). Every value below was dragged into place by hand
+   with the ?edit=1 hotspot editor (edit-hotspots.js), not measured
+   from a screenshot. Re-measure all of this if the hero photo is
+   ever replaced. */
 window.HERO_HOTSPOTS = {
-  "pad-0-0": { left: 56.51, top: 28.43, width: 5.67, height: 4.29 },
-  "pad-0-1": { left: 65.01, top: 28.43, width: 5.67, height: 4.29 },
-  "pad-0-2": { left: 73.51, top: 28.43, width: 5.67, height: 4.29 },
-  "pad-0-3": { left: 82.01, top: 28.43, width: 5.67, height: 4.29 },
+  "lcd":     { left: 17.36, top: 7.85,  width: 23.22, height: 5.93 },
 
-  "pad-1-0": { left: 56.51, top: 37.00, width: 5.67, height: 4.29 },
-  "pad-1-1": { left: 65.01, top: 37.00, width: 5.67, height: 4.29 },
-  "pad-1-2": { left: 73.51, top: 37.00, width: 5.67, height: 4.29 },
-  "pad-1-3": { left: 82.01, top: 37.00, width: 5.67, height: 4.29 },
+  "pad-0-0": { left: 58.71, top: 29.14, width: 7.09, height: 6.93 },
+  "pad-0-1": { left: 67.49, top: 28.79, width: 7.16, height: 7.08 },
+  "pad-0-2": { left: 76.41, top: 28.79, width: 7.30, height: 7.22 },
+  "pad-0-3": { left: 85.34, top: 28.64, width: 7.37, height: 7.15 },
 
-  "pad-2-0": { left: 56.51, top: 45.57, width: 5.67, height: 4.29 },
-  "pad-2-1": { left: 65.01, top: 45.57, width: 5.67, height: 4.29 },
-  "pad-2-2": { left: 73.51, top: 45.57, width: 5.67, height: 4.29 },
-  "pad-2-3": { left: 82.01, top: 45.57, width: 5.67, height: 4.29 },
+  "pad-1-0": { left: 58.63, top: 37.71, width: 7.37, height: 7.08 },
+  "pad-1-1": { left: 67.56, top: 37.57, width: 7.44, height: 7.22 },
+  "pad-1-2": { left: 76.48, top: 37.21, width: 7.44, height: 7.43 },
+  "pad-1-3": { left: 85.62, top: 37.36, width: 7.23, height: 7.08 },
 
-  "pad-3-0": { left: 56.51, top: 54.14, width: 5.67, height: 4.29 },
-  "pad-3-1": { left: 65.01, top: 54.14, width: 5.67, height: 4.29 },
-  "pad-3-2": { left: 73.51, top: 54.14, width: 5.67, height: 4.29 },
-  "pad-3-3": { left: 82.01, top: 54.14, width: 5.67, height: 4.29 },
+  "pad-2-0": { left: 58.71, top: 46.00, width: 7.23, height: 7.29 },
+  "pad-2-1": { left: 67.77, top: 46.07, width: 7.16, height: 7.29 },
+  "pad-2-2": { left: 76.77, top: 46.14, width: 7.16, height: 7.00 },
+  "pad-2-3": { left: 85.76, top: 45.78, width: 7.09, height: 7.15 },
 
-  "tape":    { left: 17.07, top: 73.29, width: 9.63, height: 14.65 },
-  // LCD box now matches just the inner black display glass (not the
-  // whole bezel + button row) — smaller and flush, matching how it
-  // actually sits on the real Readymag page.
-  "lcd":     { left: 21.96, top: 10.71, width: 20.18, height: 10.71 }
+  "pad-3-0": { left: 58.63, top: 54.71, width: 7.58, height: 7.36 },
+  "pad-3-1": { left: 67.77, top: 54.85, width: 7.44, height: 7.08 },
+  "pad-3-2": { left: 76.91, top: 54.78, width: 7.16, height: 7.00 },
+  "pad-3-3": { left: 85.76, top: 54.85, width: 7.30, height: 7.00 },
+
+  "tape":    { left: 17.07, top: 73.29, width: 9.63, height: 14.65 }
 };
 
 /* ---------- WHAT each pad does ----------
