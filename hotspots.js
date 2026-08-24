@@ -44,7 +44,7 @@ window.HERO_HOTSPOTS = {
   "pad-3-2": { left: 73.51, top: 54.14, width: 5.67, height: 4.29 },
   "pad-3-3": { left: 82.01, top: 54.14, width: 5.67, height: 4.29 },
 
-  "tape":    { left: 13.46, top: 66.43, width: 16.01, height: 31.29 },
+  "tape":    { left: 17.07, top: 73.29, width: 9.63, height: 14.65 },
   // LCD box now matches just the inner black display glass (not the
   // whole bezel + button row) — smaller and flush, matching how it
   // actually sits on the real Readymag page.
