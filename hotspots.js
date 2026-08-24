@@ -18,36 +18,37 @@
    ============================================================ */
 
 /* ---------- WHERE things sit on assets/mpc-hero.jpg (percentages) ----------
-   Measured against the current photo (1412x1420px — the real,
-   undamaged Readymag source photo + the tape/drive props composited
-   on below it). Re-measure all of this if the hero photo is ever
+   Measured against the current photo (1412x1400px — the real,
+   undamaged Readymag source photo + Jason's tape composited on below
+   it, correctly rotated to match how it actually reads on the real
+   Readymag page). Re-measure all of this if the hero photo is ever
    replaced. */
 window.HERO_HOTSPOTS = {
-  "pad-0-0": { left: 56.51, top: 28.03, width: 5.67, height: 4.23 },
-  "pad-0-1": { left: 65.01, top: 28.03, width: 5.67, height: 4.23 },
-  "pad-0-2": { left: 73.51, top: 28.03, width: 5.67, height: 4.23 },
-  "pad-0-3": { left: 82.01, top: 28.03, width: 5.67, height: 4.23 },
+  "pad-0-0": { left: 56.51, top: 28.43, width: 5.67, height: 4.29 },
+  "pad-0-1": { left: 65.01, top: 28.43, width: 5.67, height: 4.29 },
+  "pad-0-2": { left: 73.51, top: 28.43, width: 5.67, height: 4.29 },
+  "pad-0-3": { left: 82.01, top: 28.43, width: 5.67, height: 4.29 },
 
-  "pad-1-0": { left: 56.51, top: 36.48, width: 5.67, height: 4.23 },
-  "pad-1-1": { left: 65.01, top: 36.48, width: 5.67, height: 4.23 },
-  "pad-1-2": { left: 73.51, top: 36.48, width: 5.67, height: 4.23 },
-  "pad-1-3": { left: 82.01, top: 36.48, width: 5.67, height: 4.23 },
+  "pad-1-0": { left: 56.51, top: 37.00, width: 5.67, height: 4.29 },
+  "pad-1-1": { left: 65.01, top: 37.00, width: 5.67, height: 4.29 },
+  "pad-1-2": { left: 73.51, top: 37.00, width: 5.67, height: 4.29 },
+  "pad-1-3": { left: 82.01, top: 37.00, width: 5.67, height: 4.29 },
 
-  "pad-2-0": { left: 56.51, top: 44.93, width: 5.67, height: 4.23 },
-  "pad-2-1": { left: 65.01, top: 44.93, width: 5.67, height: 4.23 },
-  "pad-2-2": { left: 73.51, top: 44.93, width: 5.67, height: 4.23 },
-  "pad-2-3": { left: 82.01, top: 44.93, width: 5.67, height: 4.23 },
+  "pad-2-0": { left: 56.51, top: 45.57, width: 5.67, height: 4.29 },
+  "pad-2-1": { left: 65.01, top: 45.57, width: 5.67, height: 4.29 },
+  "pad-2-2": { left: 73.51, top: 45.57, width: 5.67, height: 4.29 },
+  "pad-2-3": { left: 82.01, top: 45.57, width: 5.67, height: 4.29 },
 
-  "pad-3-0": { left: 56.51, top: 53.38, width: 5.67, height: 4.23 },
-  "pad-3-1": { left: 65.01, top: 53.38, width: 5.67, height: 4.23 },
-  "pad-3-2": { left: 73.51, top: 53.38, width: 5.67, height: 4.23 },
-  "pad-3-3": { left: 82.01, top: 53.38, width: 5.67, height: 4.23 },
+  "pad-3-0": { left: 56.51, top: 54.14, width: 5.67, height: 4.29 },
+  "pad-3-1": { left: 65.01, top: 54.14, width: 5.67, height: 4.29 },
+  "pad-3-2": { left: 73.51, top: 54.14, width: 5.67, height: 4.29 },
+  "pad-3-3": { left: 82.01, top: 54.14, width: 5.67, height: 4.29 },
 
-  "tape":    { left: 13.46, top: 68.31, width: 24.08, height: 12.32 },
-  "deux-series": { left: 67.99, top: 66.90, width: 19.83, height: 19.72 },
-  // LCD box matches the full dark-bezel screen module, flush edge-to-edge,
-  // so the idle video covers the whole screen with no bezel-color gap.
-  "lcd":     { left: 6.02, top: 3.66, width: 42.85, height: 11.69 }
+  "tape":    { left: 13.46, top: 66.43, width: 16.01, height: 31.29 },
+  // LCD box now matches just the inner black display glass (not the
+  // whole bezel + button row) — smaller and flush, matching how it
+  // actually sits on the real Readymag page.
+  "lcd":     { left: 21.96, top: 10.71, width: 20.18, height: 10.71 }
 };
 
 /* ---------- WHAT each pad does ----------
@@ -108,13 +109,13 @@ window.BEAT_POOL = [
 ];
 
 /* ---------- WHAT each hard-drive does ----------
-   Each drive is its own portfolio pathway. */
+   Each drive is its own portfolio pathway. Only Jason's for now — the
+   second drive ("RMLUR :: Deux Series") has been removed from the photo
+   and from here; add a new drive back the same way (measure its box,
+   add a HERO_HOTSPOTS entry + one DRIVES entry) whenever there's a next
+   collaborator. */
 window.DRIVES = [
-  { id: "tape", label: "MidKnight Jason", targetPage: "jasons-portfolio.html" },
-  // "RMLUR :: Deux Series" used to link out to a Gumroad drum-kit page —
-  // that kit now sells through the shop, so point it there instead of a
-  // dead-end stub. Repoint to a real collaborator page later if needed.
-  { id: "deux-series", label: "RMLUR :: Deux Series", targetPage: "shop.html" }
+  { id: "tape", label: "MidKnight Jason", targetPage: "jasons-portfolio.html" }
 ];
 
 /* ---------- LCD idle state ---------- */
