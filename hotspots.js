@@ -51,6 +51,17 @@ window.HERO_HOTSPOTS = {
   "tape":    { left: 17.07, top: 73.29, width: 9.63, height: 14.65 }
 };
 
+/* ---------- Decorative stickers layered on top of the photo ----------
+   Same % system as HERO_HOTSPOTS, but purely visual — no click behavior,
+   not part of PADS/DRIVES. Renders as an <img> so it's a real PNG layer
+   (see assets/sticker-*.png) instead of baked into mpc-hero.jpg, which
+   means repositioning is just editing these numbers (or dragging it with
+   ?edit=1 — it shows up in that editor too) instead of re-touching the
+   photo. */
+window.STICKERS = {
+  "sticker-demo-badge": { src: "assets/sticker-rmlur-demo.png", left: 56.16, top: 4.25, width: 10.48, height: 6.50 }
+};
+
 /* ---------- WHAT each pad does ----------
    type: "beat"   → clicking plays a local audio file and drives the LCD
                      waveform (see app.js renderLcd / waveform.js). Top two

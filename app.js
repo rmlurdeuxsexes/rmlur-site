@@ -147,6 +147,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function renderStickers() {
+    const stickers = window.STICKERS || {};
+    Object.keys(stickers).forEach(id => {
+      const s = stickers[id];
+      const el = document.createElement('img');
+      el.src = s.src;
+      el.alt = '';
+      el.className = 'sticker-decal';
+      el.dataset.hotspotId = id;
+      placeEl(el, s);
+      heroHotspots.appendChild(el);
+    });
+  }
+
   function renderDrives() {
     drives.forEach(drive => {
       const pos = hotspotMap[drive.id];
@@ -164,4 +178,5 @@ document.addEventListener('DOMContentLoaded', () => {
   assignRandomBeats();
   renderPads();
   renderDrives();
+  renderStickers();
 });
