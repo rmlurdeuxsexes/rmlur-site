@@ -4,9 +4,11 @@
    shop page (player bar). Extracted so both places share one
    implementation instead of duplicating it.
    ============================================================ */
-window.createWaveform = function createWaveform(audioEl, canvasEl) {
+window.createWaveform = function createWaveform(audioEl, canvasEl, opts) {
   const waveCtx = canvasEl ? canvasEl.getContext('2d') : null;
   let audioCtx = null, analyser = null, waveData = null, waveRAF = null;
+  const bg = (opts && opts.bg) || null;
+  const barColor = (opts && opts.barColor) || '#8fe0d2';
 
   function ensureVisualizer() {
     if (audioCtx || !waveCtx) return;
@@ -24,7 +26,8 @@ window.createWaveform = function createWaveform(audioEl, canvasEl) {
   function drawWave() {
     if (!waveCtx) return;
     const w = canvasEl.width, h = canvasEl.height;
-    waveCtx.clearRect(0, 0, w, h);
+    if (bg) { waveCtx.fillStyle = bg; waveCtx.fillRect(0, 0, w, h); }
+    else waveCtx.clearRect(0, 0, w, h);
     let hasSignal = false;
     if (analyser) {
       analyser.getByteFrequencyData(waveData);
@@ -44,7 +47,7 @@ window.createWaveform = function createWaveform(audioEl, canvasEl) {
       }
       const x = i * (barW + gap);
       const y = h - v;
-      waveCtx.fillStyle = '#8fe0d2';
+      waveCtx.fillStyle = barColor;
       waveCtx.fillRect(x, y, barW, v);
     }
     waveRAF = requestAnimationFrame(drawWave);

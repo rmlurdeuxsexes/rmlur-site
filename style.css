@@ -85,15 +85,7 @@ a{color:inherit;text-decoration:none}
 body.no-scroll{
   height:100vh;overflow:hidden;
   display:flex;flex-direction:column;
-  /* Matches the original Readymag canvas — black stage, not a white page —
-     this is most of the "feel" difference between the two builds. */
-  background:#000;color:#dcdcdc;
-}
-body.no-scroll .site-watermark{
-  filter:invert(1);opacity:.4;
-}
-body.no-scroll .mini-footer{
-  color:#8a8a8a;
+  background:var(--paper);color:var(--ink);
 }
 body.no-scroll .hero{
   flex:1;min-height:0;
@@ -263,14 +255,25 @@ main#shop{max-width:1280px;margin:0 auto;padding:60px 32px 160px}
 
 .tc-cover{
   cursor:pointer;
-  aspect-ratio:1/1;border-radius:0;overflow:hidden;
-  background:#f4f4f4;margin-bottom:18px;
+  aspect-ratio:1/1;
+  margin-bottom:18px;padding:14%;
   position:relative;
 }
-.tc-cover img{width:100%;height:100%;object-fit:cover;display:block}
-.tc-cover .cover-fallback{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:var(--ink-soft);text-align:center;
+.tc-cover svg{
+  width:100%;height:100%;display:block;
+  filter:drop-shadow(0 10px 14px rgba(0,0,0,.18));
+  animation:tc-float 3.6s ease-in-out infinite;
+}
+.tape-card:nth-child(3n+1) .tc-cover svg{animation-delay:0s}
+.tape-card:nth-child(3n+2) .tc-cover svg{animation-delay:-1.2s}
+.tape-card:nth-child(3n+3) .tc-cover svg{animation-delay:-2.4s}
+@keyframes tc-float{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  50%{transform:translateY(-8px) rotate(-1.5deg)}
+}
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
 }
 .tc-play{
   position:absolute;right:10px;bottom:10px;

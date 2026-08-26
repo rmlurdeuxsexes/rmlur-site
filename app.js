@@ -57,7 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
     container.appendChild(lcdCanvas);
     heroHotspots.appendChild(container);
 
-    wave = window.createWaveform(padAudio, lcdCanvas);
+    // Colors matched to the Blender lcd-loop.mp4 idle screen: near-black
+    // LED-matrix background with the same pink/magenta as its "RMLUR" text,
+    // so the swap from idle video to live bars reads as one continuous screen.
+    wave = window.createWaveform(padAudio, lcdCanvas, { bg: '#0e0b0d', barColor: '#ff6fc6' });
 
     bindActivate(container, () => {
       if (lcdIdle) window.location.href = 'shop.html';

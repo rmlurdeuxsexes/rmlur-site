@@ -23,6 +23,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const prices = (p.tiers || []).map(t => t.price);
     return prices.length ? Math.min(...prices) : 0;
   }
+  /* ---------- floppy disk cover art (generated, no image assets) ---------- */
+  const FLOPPY_COLORS = ['#1a1a1a', '#2d5fb3', '#c0392b', '#e0b93c', '#7e3fa3', '#3f9e94', '#9aa0a6'];
+  function wrapTitle(title, maxChars) {
+    const words = title.split(' ');
+    const lines = [];
+    let line = '';
+    words.forEach(w => {
+      const next = line ? line + ' ' + w : w;
+      if (next.length > maxChars && line) { lines.push(line); line = w; }
+      else line = next;
+    });
+    if (line) lines.push(line);
+    return lines.slice(0, 2);
+  }
+  function hashOf(id) {
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    return h;
+  }
+  function floppySVG(p) {
+    const h = hashOf(p.id);
+    const color = FLOPPY_COLORS[h % FLOPPY_COLORS.length];
+    const tapeRotate = ((h >> 8) % 7) - 3; // -3..3deg, per-beat but consistent
+    const lines = wrapTitle(p.title, 14);
+    const lineY = lines.length === 2 ? [53, 63] : [58];
+    const text = lines.map((l, i) =>
+      `<text x="50" y="${lineY[i]}" text-anchor="middle" font-family="'Kalam',cursive" font-size="9" fill="#22232b">${l}</text>`
+    ).join('');
+    return `
+      <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
+        <defs>
+          <linearGradient id="shutter-${p.id}" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f4f5f7"/>
+            <stop offset="45%" stop-color="#c7cad0"/>
+            <stop offset="55%" stop-color="#aeb2b9"/>
+            <stop offset="100%" stop-color="#e2e4e8"/>
+          </linearGradient>
+        </defs>
+        <path d="M9,4 L91,4 L91,96 L4,96 L4,11 Z" fill="${color}"/>
+        <path d="M13,7 L17,11 L9,11 Z" fill="rgba(0,0,0,.35)"/>
+        <text x="85" y="10" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="4" fill="rgba(255,255,255,.35)">HD</text>
+
+        <rect x="9" y="13" width="82" height="19" fill="url(#shutter-${p.id})" stroke="rgba(0,0,0,.25)" stroke-width=".5"/>
+        <rect x="31" y="15.5" width="27" height="14" fill="#242424"/>
+        <rect x="61" y="17" width="10" height="10" fill="#1a1a1a"/>
+
+        <g transform="rotate(${tapeRotate} 50 58)">
+          <rect x="15" y="46" width="70" height="24" fill="#e9e0c8" stroke="rgba(0,0,0,.08)"/>
+          ${text}
+        </g>
+
+        <rect x="9" y="89" width="6" height="6" fill="rgba(0,0,0,.4)"/>
+        <rect x="85" y="89" width="6" height="6" fill="#eee" stroke="rgba(0,0,0,.2)" stroke-width=".5"/>
+      </svg>`;
+  }
+
   function dataBits(p) {
     const bits = [];
     if (p.bpm) bits.push(p.bpm + ' BPM');
@@ -187,12 +243,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       card.innerHTML = `
         <div class="tc-cover">
-          <img src="${p.cover}" alt="${p.title} cover art" loading="lazy"
-               onerror="this.remove(); this.parentElement.insertAdjacentHTML('afterbegin','<div class=&quot;cover-fallback&quot;>RMLUR<br>deux SEXES</div>')">
+          ${floppySVG(p)}
           <button class="tc-play" aria-label="Preview ${p.title}">►</button>
         </div>
         <div class="tc-type">${p.type === 'kit' ? 'DRUM KIT' : 'BEAT'}</div>
-        <div class="tc-title">${p.title}</div>
+        <div class="tc-title sr-only">${p.title}</div>
         <div class="tc-sub">${p.subtitle || ''}</div>
         ${bits ? `<span class="tc-data">${bits}</span>` : ''}
         <div class="tc-foot">
