@@ -42,9 +42,19 @@ document.addEventListener('DOMContentLoaded', () => {
     for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
     return h;
   }
+  function shade(hex, percent) {
+    const num = parseInt(hex.slice(1), 16);
+    const amt = Math.round(2.55 * percent);
+    const r = Math.min(255, Math.max(0, (num >> 16) + amt));
+    const g = Math.min(255, Math.max(0, (num >> 8 & 0xff) + amt));
+    const b = Math.min(255, Math.max(0, (num & 0xff) + amt));
+    return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+  }
   function floppySVG(p) {
     const h = hashOf(p.id);
     const color = FLOPPY_COLORS[h % FLOPPY_COLORS.length];
+    const colorLight = shade(color, 22);
+    const colorDark = shade(color, -20);
     const tapeRotate = ((h >> 8) % 7) - 3; // -3..3deg, per-beat but consistent
     const lines = wrapTitle(p.title, 14);
     const lineY = lines.length === 2 ? [53, 63] : [58];
@@ -54,28 +64,47 @@ document.addEventListener('DOMContentLoaded', () => {
     return `
       <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
         <defs>
+          <linearGradient id="body-${p.id}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${colorLight}"/>
+            <stop offset="45%" stop-color="${color}"/>
+            <stop offset="100%" stop-color="${colorDark}"/>
+          </linearGradient>
+          <linearGradient id="edge-${p.id}" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="rgba(255,255,255,.6)"/>
+            <stop offset="50%" stop-color="rgba(255,255,255,.05)"/>
+            <stop offset="100%" stop-color="rgba(0,0,0,.4)"/>
+          </linearGradient>
           <linearGradient id="shutter-${p.id}" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#f4f5f7"/>
             <stop offset="45%" stop-color="#c7cad0"/>
             <stop offset="55%" stop-color="#aeb2b9"/>
             <stop offset="100%" stop-color="#e2e4e8"/>
           </linearGradient>
+          <linearGradient id="tape-${p.id}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f2ecd9"/>
+            <stop offset="100%" stop-color="#cfc8ae"/>
+          </linearGradient>
         </defs>
-        <path d="M9,4 L91,4 L91,96 L4,96 L4,11 Z" fill="${color}"/>
+        <path d="M9,4 L91,4 L91,96 L4,96 L4,11 Z" fill="url(#body-${p.id})" stroke="url(#edge-${p.id})" stroke-width="1"/>
         <path d="M13,7 L17,11 L9,11 Z" fill="rgba(0,0,0,.35)"/>
         <text x="85" y="10" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="4" fill="rgba(255,255,255,.35)">HD</text>
 
-        <rect x="9" y="13" width="82" height="19" fill="url(#shutter-${p.id})" stroke="rgba(0,0,0,.25)" stroke-width=".5"/>
+        <rect x="8.6" y="13.7" width="82" height="19" fill="rgba(0,0,0,.25)"/>
+        <rect x="9" y="13" width="82" height="19" fill="url(#shutter-${p.id})" stroke="rgba(0,0,0,.3)" stroke-width=".5"/>
+        <path d="M9.4,13.4 L90.6,13.4" stroke="rgba(255,255,255,.6)" stroke-width=".5"/>
         <rect x="31" y="15.5" width="27" height="14" fill="#242424"/>
         <rect x="61" y="17" width="10" height="10" fill="#1a1a1a"/>
 
         <g transform="rotate(${tapeRotate} 50 58)">
-          <rect x="15" y="46" width="70" height="24" fill="#e9e0c8" stroke="rgba(0,0,0,.08)"/>
+          <rect x="15.6" y="46.7" width="70" height="24" fill="rgba(0,0,0,.18)"/>
+          <rect x="15" y="46" width="70" height="24" fill="url(#tape-${p.id})" stroke="rgba(0,0,0,.12)" stroke-width=".4"/>
+          <path d="M15.4,46.4 L84.6,46.4" stroke="rgba(255,255,255,.5)" stroke-width=".4"/>
           ${text}
         </g>
 
         <rect x="9" y="89" width="6" height="6" fill="rgba(0,0,0,.4)"/>
         <rect x="85" y="89" width="6" height="6" fill="#eee" stroke="rgba(0,0,0,.2)" stroke-width=".5"/>
+        <rect x="85" y="89" width="6" height="3" fill="#fff" opacity=".5"/>
       </svg>`;
   }
 
