@@ -29,7 +29,7 @@ window.mpc3d = (function () {
   const padMeshes = [];
   let lcdMesh = null, lcdTexture = null, lcdCanvasEl = null;
   let modelHalfW = null, modelHalfH = null, modelHalfD = null; // set once the model loads; reused to refit the camera whenever the container's aspect changes
-  const CAM_PHI = 0.4; // elevation angle (rad) — near-flat product-shot angle
+  const CAM_PHI = 1.0; // elevation angle (rad) — high top-down 3/4 view, reads clearly at a glance
 
   function refitCamera() {
     if (modelHalfW == null) return; // model hasn't loaded yet

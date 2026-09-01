@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
      size it directly off .hero's own (reliably-sized) box instead. */
   const heroFrame = document.getElementById('hero-frame');
   const hero = document.querySelector('.hero');
-  const HERO_ASPECT = 1; // square, matching the site's original mpc-hero.jpg crop
+  const HERO_ASPECT = 1.35; // wide/flat like the real MPC body, not square — see note above
   function sizeHeroFrame() {
     const box = hero.getBoundingClientRect();
     const maxW = Math.min(900, box.width - 8);
