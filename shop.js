@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return prices.length ? Math.min(...prices) : 0;
   }
   /* ---------- floppy disk cover art (generated, no image assets) ---------- */
-  const FLOPPY_COLORS = ['#1a1a1a', '#2d5fb3', '#c0392b', '#e0b93c', '#7e3fa3', '#3f9e94', '#9aa0a6'];
+  const FLOPPY_COLORS = ['#3b82e8', '#e63e34', '#d4a24e', '#2fb8a8', '#ff5fa8', '#f2b705'];
   function wrapTitle(title, maxChars) {
     const words = title.split(' ');
     const lines = [];

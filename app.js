@@ -1,87 +1,36 @@
-/* RMLUR HOME — the MPC photo is the nav. See hotspots.js for the data. */
+/* RMLUR HOME — the 3D MPC (mpc-3d.js) is the nav. See hotspots.js for pad
+   data (titles/audio/social links) and mpc-3d.js for the model + raycasting.
+   HERO_HOTSPOTS/DRIVES/STICKERS in hotspots.js are the old flat-photo
+   positions — unused for now, kept for when drives get a 3D treatment. */
 document.addEventListener('DOMContentLoaded', () => {
-  const hotspotMap = window.HERO_HOTSPOTS || {};
   const pads = window.PADS || [];
-  const drives = window.DRIVES || [];
   const lcdConfig = window.LCD || {};
-
-  const heroHotspots = document.getElementById('hero-hotspots');
   const padAudio = document.getElementById('pad-audio');
 
-  function placeEl(el, pos) {
-    el.style.left = pos.left + '%';
-    el.style.top = pos.top + '%';
-    el.style.width = pos.width + '%';
-    el.style.height = pos.height + '%';
-  }
-  function makeHotspotShell(extraClass, hotspotId) {
-    const el = document.createElement('div');
-    el.className = 'hotspot' + (extraClass ? ' ' + extraClass : '');
-    el.setAttribute('role', 'button');
-    el.setAttribute('tabindex', '0');
-    if (hotspotId) el.dataset.hotspotId = hotspotId;
-    return el;
-  }
-  function bindActivate(el, fn) {
-    el.addEventListener('click', fn);
-    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } });
-  }
+  /* ================= LCD: idle video <-> LED marquee, drawn onto the
+     same offscreen canvas the 3D scene reads as the screen's texture ================= */
+  const lcdCanvas = document.getElementById('lcdSourceCanvas');
+  const lcdVideo = document.getElementById('lcdIdleVideo');
+  lcdVideo.src = lcdConfig.idleVideo || 'assets/lcd-loop.mp4';
 
-  /* ================= LCD: idle video <-> live waveform on beat playback ================= */
+  const lcdCtx = lcdCanvas.getContext('2d');
   let lcdIdle = true;
-  let lcdVideo, lcdCanvas, wave;
+  const wave = window.createLedMarquee(padAudio, lcdCanvas);
 
-  function renderLcd() {
-    const pos = hotspotMap['lcd'];
-    if (!pos) return;
-
-    const container = makeHotspotShell('lcd-hotspot', 'lcd');
-    placeEl(container, pos);
-    container.setAttribute('aria-label', 'Shop the catalog');
-
-    lcdVideo = document.createElement('video');
-    lcdVideo.className = 'lcd-video';
-    lcdVideo.src = lcdConfig.idleVideo || '';
-    lcdVideo.autoplay = true;
-    lcdVideo.loop = true;
-    lcdVideo.muted = true;
-    lcdVideo.playsInline = true;
-
-    lcdCanvas = document.createElement('canvas');
-    lcdCanvas.className = 'lcd-canvas';
-    lcdCanvas.width = 240;
-    lcdCanvas.height = 60;
-    lcdCanvas.hidden = true;
-
-    container.appendChild(lcdVideo);
-    container.appendChild(lcdCanvas);
-    heroHotspots.appendChild(container);
-
-    // Colors matched to the Blender lcd-loop.mp4 idle screen: near-black
-    // LED-matrix background with the same pink/magenta as its "RMLUR" text,
-    // so the swap from idle video to live bars reads as one continuous screen.
-    wave = window.createWaveform(padAudio, lcdCanvas, { bg: '#0e0b0d', barColor: '#ff6fc6' });
-
-    bindActivate(container, () => {
-      if (lcdIdle) window.location.href = 'shop.html';
-    });
+  function drawIdleFrame() {
+    if (!lcdIdle) return;
+    if (lcdVideo.readyState >= 2) {
+      lcdCtx.drawImage(lcdVideo, 0, 0, lcdCanvas.width, lcdCanvas.height);
+    }
+    requestAnimationFrame(drawIdleFrame);
   }
+  lcdVideo.play().catch(() => {});
+  drawIdleFrame();
 
-  function showLcdWaveform() {
-    lcdIdle = false;
-    lcdVideo.pause();
-    lcdVideo.hidden = true;
-    lcdCanvas.hidden = false;
-  }
-  function showLcdIdle() {
-    lcdIdle = true;
-    wave.stopWave();
-    lcdCanvas.hidden = true;
-    lcdVideo.hidden = false;
-    lcdVideo.play().catch(() => {});
-  }
+  function showLcdWaveform() { lcdIdle = false; }
+  function showLcdIdle() { lcdIdle = true; wave.stopWave(); drawIdleFrame(); }
 
-  /* ================= beat pads (top rows) ================= */
+  /* ================= beat pads ================= */
   let currentPadId = null;
   let playPromise = Promise.resolve();
   async function safeStop() {
@@ -105,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     currentPadId = pad.id;
+    wave.setLabel(pad.title || '');
     showLcdWaveform();
     await safePlay(pad.audio);
   }
@@ -113,9 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showLcdIdle();
   });
 
-  /* ================= pads + drives ================= */
-  // Randomly assign a fresh set of beats to the "beat" pads on every visit,
-  // once window.BEAT_POOL (hotspots.js) actually has entries in it.
   function assignRandomBeats() {
     const pool = window.BEAT_POOL || [];
     if (!pool.length) return;
@@ -124,59 +71,48 @@ document.addEventListener('DOMContentLoaded', () => {
     beatPads.forEach((pad, i) => { pad.audio = shuffled[i % shuffled.length] || null; });
   }
 
-  function renderPads() {
-    pads.forEach(pad => {
-      const pos = hotspotMap[pad.id];
-      if (!pos) return; // not measured on the current photo yet — skip gracefully
+  /* ================= 3D MPC ================= */
+  window.mpc3d.onPadClick = (padIndex) => {
+    const pad = pads[padIndex];
+    if (!pad) return;
+    if (pad.type === 'beat') {
+      playBeat(pad);
+    } else if (pad.type === 'social') {
+      if (!pad.url) return;
+      if (/^https?:\/\//i.test(pad.url)) window.open(pad.url, '_blank', 'noopener');
+      else window.location.href = pad.url;
+    }
+  };
+  // Every other named part (knobs, wheel, transport, cursor, bank/menu/
+  // soft keys) is already hoverable + clickable via mpc-3d.js's raycasting
+  // and flashes on click — not wired to a feature yet, by design.
+  window.mpc3d.onPartClick = () => {};
 
-      const el = makeHotspotShell(null, pad.id);
-      placeEl(el, pos);
-
-      if (pad.type === 'beat') {
-        el.setAttribute('aria-label', pad.title || 'Play beat');
-        bindActivate(el, () => playBeat(pad));
-      } else if (pad.type === 'social') {
-        el.setAttribute('aria-label', pad.label || 'Link');
-        bindActivate(el, () => {
-          if (!pad.url) return;
-          if (/^https?:\/\//i.test(pad.url)) window.open(pad.url, '_blank', 'noopener');
-          else window.location.href = pad.url; // internal page or mailto: — same tab
-        });
-      }
-      heroHotspots.appendChild(el);
-    });
+  /* ================= hero-frame sizing =================
+     The MPC body is a wide, flat panel (~2.6:1), not square — a square
+     box leaves huge empty margins top/bottom. CSS aspect-ratio/min()
+     proved unreliable depending on the surrounding flex/vh context, so
+     size it directly off .hero's own (reliably-sized) box instead. */
+  const heroFrame = document.getElementById('hero-frame');
+  const hero = document.querySelector('.hero');
+  const HERO_ASPECT = 1; // square, matching the site's original mpc-hero.jpg crop
+  function sizeHeroFrame() {
+    const box = hero.getBoundingClientRect();
+    const maxW = Math.min(900, box.width - 8);
+    const maxH = Math.min(640, box.height - 8);
+    let w = maxW, h = w / HERO_ASPECT;
+    if (h > maxH) { h = maxH; w = h * HERO_ASPECT; }
+    w = Math.max(160, w); h = Math.max(160 / HERO_ASPECT, h);
+    heroFrame.style.width = w + 'px';
+    heroFrame.style.height = h + 'px';
   }
+  sizeHeroFrame();
+  window.addEventListener('resize', sizeHeroFrame);
+  window.addEventListener('load', sizeHeroFrame);
+  setTimeout(sizeHeroFrame, 150); // background/prerendered tabs can report a 0-size box on the first synchronous layout query
 
-  function renderStickers() {
-    const stickers = window.STICKERS || {};
-    Object.keys(stickers).forEach(id => {
-      const s = stickers[id];
-      const el = document.createElement('img');
-      el.src = s.src;
-      el.alt = '';
-      el.className = 'sticker-decal';
-      el.dataset.hotspotId = id;
-      placeEl(el, s);
-      heroHotspots.appendChild(el);
-    });
-  }
-
-  function renderDrives() {
-    drives.forEach(drive => {
-      const pos = hotspotMap[drive.id];
-      if (!pos) return; // not measured on the current photo yet — skip gracefully
-
-      const el = makeHotspotShell('drive-hotspot', drive.id);
-      placeEl(el, pos);
-      el.setAttribute('aria-label', drive.label);
-      bindActivate(el, () => { window.location.href = drive.targetPage; });
-      heroHotspots.appendChild(el);
-    });
-  }
-
-  renderLcd();
   assignRandomBeats();
-  renderPads();
-  renderDrives();
-  renderStickers();
+  window.mpc3d.init('mpc3dWrap', lcdCanvas).catch(err => {
+    console.error('[mpc3d] failed to load:', err);
+  });
 });

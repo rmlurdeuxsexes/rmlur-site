@@ -50,42 +50,29 @@ a{color:inherit;text-decoration:none}
 }
 .hero-frame{
   position:relative;
-  max-width:640px;width:100%;
   line-height:0;
 }
-.hero-frame img{
-  width:100%;height:auto;display:block;
-  user-select:none;-webkit-user-drag:none;
-}
-#hero-hotspots{position:absolute;inset:0}
-.hotspot{
-  position:absolute;
-  cursor:pointer;
-}
-.hotspot:focus-visible, .drive-hotspot:focus-visible{
-  outline:none;
-}
-.drive-hotspot{border-radius:4px}
 
-.sticker-decal{
-  position:absolute;
-  pointer-events:none;
-  user-select:none;
-  -webkit-user-drag:none;
-  display:block;
+/* ---- 3D MPC (mpc-3d.js draws into #mpc3dCanvas inside this wrap) ---- */
+#mpc3dWrap{position:absolute;inset:0}
+#mpc3dCanvas{display:block;width:100%;height:100%}
+.mpc3d-tooltip{
+  position:absolute;pointer-events:none;z-index:5;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;
+  background:rgba(0,0,0,.78);color:#eee;
+  padding:3px 6px;border-radius:3px;
+  opacity:0;transform:translateY(2px);
+  transition:opacity .1s ease;
 }
+.mpc3d-tooltip.show{opacity:1;transform:translateY(0)}
 
-.lcd-hotspot{
-  overflow:hidden;
-  display:flex;align-items:center;
+.tape-drive-link{
+  position:absolute;left:8px;bottom:8px;z-index:5;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;
+  color:var(--ink-soft);background:rgba(255,255,255,.85);
+  padding:4px 7px;border-radius:3px;border:1px solid var(--line);
 }
-.lcd-video, .lcd-canvas{
-  position:absolute;inset:0;
-  width:100%;height:100%;
-  object-fit:cover;
-  display:block;
-}
-.lcd-canvas{image-rendering:pixelated}
+.tape-drive-link:hover{color:var(--ink);border-color:var(--ink-soft)}
 
 /* ================= HOME SCREEN — fixed, no scrolling ================= */
 /* The MPC is the whole screen; there's nothing below the fold to scroll
@@ -101,12 +88,10 @@ body.no-scroll .hero{
   display:flex;align-items:center;justify-content:center;
 }
 body.no-scroll .hero-frame{
-  max-width:97vw;max-height:100%;width:auto;
-  display:flex;
-}
-body.no-scroll .hero-frame img{
-  width:auto;height:100%;max-width:100%;max-height:100%;
-  display:block;margin:0 auto;
+  display:flex;margin:0 auto;
+  /* explicit square px size, set by app.js from .hero's own box —
+     CSS aspect-ratio/min() sizing here proved unreliable across
+     rendering contexts, so JS computes it directly instead */
 }
 body.no-scroll .site-footer{
   flex-shrink:0;padding:2px 24px;
