@@ -31,6 +31,13 @@ window.mpc3d = (function () {
   let modelHalfW = null, modelHalfH = null, modelHalfD = null; // set once the model loads; reused to refit the camera whenever the container's aspect changes
   const CAM_PHI = 1.0; // elevation angle (rad) — high top-down 3/4 view, reads clearly at a glance
 
+  // Fader drag — Btn_Fader slides along its own local Y between these two
+  // measured endpoints (top/bottom of the printed slider track).
+  let mpcRoot = null, faderMesh = null, draggingFader = false, suppressNextClick = false;
+  const FADER_Y_MIN = -0.2515, FADER_Y_MAX = -0.1300;
+  const dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1));
+  const dragPoint = new THREE.Vector3();
+
   function refitCamera() {
     if (modelHalfW == null) return; // model hasn't loaded yet
     const vFovRad = THREE.MathUtils.degToRad(camera.fov);
@@ -86,9 +93,11 @@ window.mpc3d = (function () {
     mouse = new THREE.Vector2();
 
     canvasEl.addEventListener('pointermove', onPointerMove);
+    canvasEl.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointerup', onPointerUp);
     canvasEl.addEventListener('click', onClick);
     canvasEl.addEventListener('pointerleave', () => {
-      hoveredPart = null; hideTooltip(); canvasEl.style.cursor = 'default';
+      if (!draggingFader) { hoveredPart = null; hideTooltip(); canvasEl.style.cursor = 'default'; }
     });
 
     const ro = new ResizeObserver(() => {
@@ -120,7 +129,7 @@ window.mpc3d = (function () {
       const loader = new GLTFLoaderClass();
       loader.load('assets/mpc-scene/mpc.glb', (gltf) => {
         try {
-          const mpcRoot = gltf.scene;
+          mpcRoot = gltf.scene;
           mpcRoot.updateMatrixWorld(true);
 
           const box = new THREE.Box3();
@@ -162,7 +171,13 @@ window.mpc3d = (function () {
   const NAMED_RE = /^(Btn_|MPC_DataWheel)/;
 
   function tagPart(obj) {
-    if (obj.name === 'MPC_LCD') { lcdMesh = obj; return; }
+    if (obj.name === 'MPC_LCD') {
+      lcdMesh = obj;
+      obj.userData.mpcName = 'MPC_LCD';
+      (interactives['MPC_LCD'] || (interactives['MPC_LCD'] = [])).push(obj);
+      return;
+    }
+    if (obj.name === 'Btn_Fader') { faderMesh = obj; }
     // The panel photo is the real product photo, already correctly lit —
     // rendering it as a normal lit PBR material double-exposes it (scene
     // lights on top of the baked photo) and ACES tone-mapping then washes
@@ -202,6 +217,10 @@ window.mpc3d = (function () {
     if (!lcdCanvasEl) return;
     lcdTexture = new THREE.CanvasTexture(lcdCanvasEl);
     lcdTexture.colorSpace = THREE.SRGBColorSpace;
+    lcdTexture.magFilter = THREE.LinearFilter;
+    lcdTexture.minFilter = THREE.LinearFilter;
+    lcdTexture.generateMipmaps = false;
+    lcdTexture.anisotropy = 4;
     if (lcdMesh) {
       lcdMesh.material = new THREE.MeshBasicMaterial({ map: lcdTexture, toneMapped: false });
     }
@@ -211,8 +230,16 @@ window.mpc3d = (function () {
     const rect = canvasEl.getBoundingClientRect();
     mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
     raycaster.setFromCamera(mouse, camera);
+
+    if (draggingFader) {
+      if (raycaster.ray.intersectPlane(dragPlane, dragPoint)) {
+        mpcRoot.worldToLocal(dragPoint);
+        faderMesh.position.y = THREE.MathUtils.clamp(dragPoint.y, FADER_Y_MIN, FADER_Y_MAX);
+      }
+      return;
+    }
+
     const hits = raycaster.intersectObjects(allRayMeshes(), false);
     if (hits.length) {
       hoveredPart = hits[0].object;
@@ -223,6 +250,20 @@ window.mpc3d = (function () {
       canvasEl.style.cursor = 'default';
       hideTooltip();
     }
+  }
+
+  function onPointerDown() {
+    if (hoveredPart === faderMesh) {
+      draggingFader = true;
+      // Plane through the fader's current world position, facing +Z (the
+      // model carries no rotation, so world Z stays "up out of the panel").
+      const worldPos = new THREE.Vector3();
+      faderMesh.getWorldPosition(worldPos);
+      dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 0, 1), worldPos);
+    }
+  }
+  function onPointerUp() {
+    if (draggingFader) { draggingFader = false; suppressNextClick = true; }
   }
 
   function labelFor(name) {
@@ -240,21 +281,12 @@ window.mpc3d = (function () {
   function hideTooltip() { tooltipEl.classList.remove('show'); }
 
   function onClick() {
+    if (suppressNextClick) { suppressNextClick = false; return; }
     if (!hoveredPart) return;
-    flash(hoveredPart);
     const name = hoveredPart.userData.mpcName;
     const padMatch = name.match(PAD_RE);
     if (padMatch && bridge.onPadClick) { bridge.onPadClick(parseInt(padMatch[1], 10)); return; }
     if (bridge.onPartClick) bridge.onPartClick(name);
-  }
-
-  function flash(mesh) {
-    if (!mesh.material) return;
-    if (!mesh.material.emissive) return; // MPC_LCD's canvas material has no emissive channel
-    const orig = mesh.material.emissiveIntensity || 0;
-    mesh.material.emissive = new THREE.Color(0xffffff);
-    mesh.material.emissiveIntensity = 0.5;
-    setTimeout(() => { if (mesh.material) mesh.material.emissiveIntensity = orig; }, 160);
   }
 
   function setPadColor(idx, color) {

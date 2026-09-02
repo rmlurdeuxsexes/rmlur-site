@@ -83,10 +83,23 @@ document.addEventListener('DOMContentLoaded', () => {
       else window.location.href = pad.url;
     }
   };
-  // Every other named part (knobs, wheel, transport, cursor, bank/menu/
-  // soft keys) is already hoverable + clickable via mpc-3d.js's raycasting
-  // and flashes on click — not wired to a feature yet, by design.
-  window.mpc3d.onPartClick = () => {};
+  // Every other named part (knobs, wheel, cursor, bank/menu/soft keys) is
+  // already hoverable + clickable via mpc-3d.js's raycasting and flashes on
+  // click — not wired to a feature yet, by design.
+  window.mpc3d.onPartClick = (name) => {
+    if (name === 'MPC_LCD') {
+      window.location.href = 'shop.html'; // the beat store — swap later if the destination changes
+    } else if (name === 'Btn_PLAY') {
+      if (currentPadId && !padAudio.paused) return; // already playing — Play doesn't restart it
+      const pad = pads.find(p => p.id === currentPadId) || pads.find(p => p.type === 'beat' && p.audio);
+      if (pad) playBeat(pad);
+    } else if (name === 'Btn_STOP') {
+      if (!currentPadId) return;
+      currentPadId = null;
+      safeStop();
+      showLcdIdle();
+    }
+  };
 
   /* ================= hero-frame sizing =================
      The MPC body is a wide, flat panel (~2.6:1), not square — a square
