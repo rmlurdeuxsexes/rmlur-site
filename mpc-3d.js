@@ -170,6 +170,36 @@ window.mpc3d = (function () {
   const PAD_RE = /^Pad_(\d+)$/;
   const NAMED_RE = /^(Btn_|MPC_DataWheel)/;
 
+  // The panel photo is the real product photo, already correctly lit —
+  // rendering it as a normal lit PBR material double-exposes it (scene
+  // lights on top of the baked photo) and ACES tone-mapping then washes
+  // the already-bright cream body toward pale/white. Every part that now
+  // samples a crop of that same photo (pads/knobs/wheel excluded — those
+  // keep their flat colors, lit normally, for real 3D shading) needs the
+  // same unlit treatment so it reads as continuous with the panel instead
+  // of washed-out or mismatched next to it. One shared converted material
+  // per source texture, reused everywhere that texture appears.
+  const unlitCache = new Map();
+  function toUnlit(mat) {
+    if (!mat || !mat.map) return mat;
+    if (mat.userData && mat.userData.isPanelPhotoUnlit) return mat;
+    const key = mat.map;
+    let unlit = unlitCache.get(key);
+    if (!unlit) {
+      unlit = new THREE.MeshBasicMaterial({ map: mat.map, toneMapped: false });
+      unlit.userData.isPanelPhotoUnlit = true;
+      unlitCache.set(key, unlit);
+    }
+    return unlit;
+  }
+  function convertPanelPhotoMaterials(obj) {
+    if (Array.isArray(obj.material)) {
+      obj.material = obj.material.map((m) => (m && m.name === 'MPCPanelPhotoMat') ? toUnlit(m) : m);
+    } else if (obj.material && obj.material.name === 'MPCPanelPhotoMat') {
+      obj.material = toUnlit(obj.material);
+    }
+  }
+
   function tagPart(obj) {
     if (obj.name === 'MPC_LCD') {
       lcdMesh = obj;
@@ -178,17 +208,11 @@ window.mpc3d = (function () {
       return;
     }
     if (obj.name === 'Btn_Fader') { faderMesh = obj; }
-    // The panel photo is the real product photo, already correctly lit —
-    // rendering it as a normal lit PBR material double-exposes it (scene
-    // lights on top of the baked photo) and ACES tone-mapping then washes
-    // the already-bright cream body toward pale/white. Render it unlit,
-    // same treatment as the LCD's canvas texture below.
     if (obj.name === 'MPC_PanelPhoto') {
-      if (obj.material && obj.material.map) {
-        obj.material = new THREE.MeshBasicMaterial({ map: obj.material.map, toneMapped: false });
-      }
+      convertPanelPhotoMaterials(obj);
       return;
     }
+    convertPanelPhotoMaterials(obj);
 
     const n = obj.name || '';
     let matchName = n;
