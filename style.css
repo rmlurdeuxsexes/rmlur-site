@@ -234,69 +234,92 @@ main#shop{max-width:1280px;margin:0 auto;padding:60px 32px 160px}
 .tab:hover{color:var(--ink)}
 .tab.active{color:var(--ink);border-color:var(--ink)}
 
-.tape-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  column-gap:32px;
-  row-gap:56px;
+/* ================= FLOPPY BAY — 3D disk browser (replaces the flat grid) ================= */
+.fb-stage-wrap{
+  position:relative;width:100%;
+  height:min(60vh,560px);min-height:360px;
+  border-radius:14px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 30%, var(--paper-warm) 0%, var(--paper) 75%);
+  border:1px solid var(--line);
+  cursor:grab;
 }
-.tape-card{
-  position:relative;
-  background:none;border:none;padding:0;
-}
-.tape-card:hover{transform:none;box-shadow:none}
+.fb-stage-wrap.dragging{cursor:grabbing}
+.fb-stage-wrap canvas{display:block;width:100%;height:100%}
 
-.tc-cover{
-  cursor:pointer;
-  aspect-ratio:1/1;
-  margin-bottom:18px;padding:14%;
-  position:relative;
-}
-.tc-cover svg{
-  width:100%;height:100%;display:block;
-  filter:drop-shadow(0 10px 14px rgba(0,0,0,.18));
-  animation:tc-float 3.6s ease-in-out infinite;
-}
-.tape-card:nth-child(3n+1) .tc-cover svg{animation-delay:0s}
-.tape-card:nth-child(3n+2) .tc-cover svg{animation-delay:-1.2s}
-.tape-card:nth-child(3n+3) .tc-cover svg{animation-delay:-2.4s}
-@keyframes tc-float{
-  0%,100%{transform:translateY(0) rotate(0deg)}
-  50%{transform:translateY(-8px) rotate(-1.5deg)}
-}
-.sr-only{
-  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
-  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
-}
-.tc-play{
-  position:absolute;right:10px;bottom:10px;
-  width:34px;height:34px;border-radius:50%;
-  background:#fff;border:1px solid #ddd;
-  box-shadow:none;
-  font-size:12px;
-  opacity:0;transition:opacity .15s ease;
-}
-.tape-card:hover .tc-play, .tape-card.playing .tc-play{opacity:1}
-.tape-card.playing .tc-play{
-  background:
-    linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.9) 44%, rgba(255,255,255,0) 58%),
-    radial-gradient(160% 220% at 20% -40%, rgba(255,255,255,.45) 0%, rgba(255,255,255,0) 40%),
-    linear-gradient(175deg, #1a1a1a 0%, #000 50%, #050505 100%);
-  color:#fff;border-color:#000;
-  box-shadow:0 1px 0 rgba(255,255,255,.3) inset, 0 5px 12px rgba(0,0,0,.5);
-}
+.fb-tag{position:absolute;top:0;left:0;pointer-events:none;font-family:var(--font-mono);white-space:nowrap}
+.fb-tag-inner{pointer-events:auto;position:relative}
 
-.tc-type{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft)}
-.tc-title{cursor:pointer;font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-top:6px}
-.tc-title:hover{text-decoration:underline}
-.tc-sub{font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);margin-top:3px}
-.tc-data{
-  display:inline-block;margin-top:10px;font-size:10px;letter-spacing:.06em;
-  background:none;border:none;
-  padding:0;color:var(--ink-soft);
+.fb-tag-active{transform:translate(-50%,9px)}
+.fb-tag-active .fb-tag-inner{
+  display:flex;flex-direction:column;gap:2px;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(10px) saturate(140%);
+  -webkit-backdrop-filter:blur(10px) saturate(140%);
+  border:1px solid var(--line);
+  border-radius:9px;
+  padding:6px 9px 7px;
+  box-shadow:0 8px 20px rgba(0,0,0,.12);
+  transform:rotate(-1.2deg);
 }
-.tc-foot{
-  display:flex;align-items:center;justify-content:space-between;margin-top:14px;
+.fb-tag-active .fb-tag-inner::before{
+  content:'';
+  position:absolute;top:-5px;left:16px;
+  width:8px;height:8px;
+  background:rgba(255,255,255,.92);
+  border-left:1px solid var(--line);
+  border-top:1px solid var(--line);
+  transform:rotate(45deg);
+  border-radius:2px 0 0 0;
+}
+.fb-tag-active .fb-title{font-family:var(--font-hand);font-size:14px;color:var(--ink);line-height:1.15}
+.fb-tag-active .fb-meta{font-size:9px;color:var(--ink-soft);font-weight:500}
+.fb-tag-active .fb-row{display:flex;align-items:center;gap:7px;margin-top:2px}
+.fb-tag-active .fb-price{font-size:11px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.fb-load-btn{
+  pointer-events:auto;
+  background:var(--ink);color:var(--paper);border:none;border-radius:6px;
+  padding:3px 8px;font-family:var(--font-mono);font-weight:600;
+  font-size:9px;letter-spacing:.04em;cursor:pointer;transition:opacity .15s;
+}
+.fb-load-btn:hover{opacity:.8}
+.fb-load-btn.zap{animation:fb-zap .3s ease}
+@keyframes fb-zap{0%{opacity:.45}100%{opacity:1}}
+
+.fb-tag-hover{transform:translate(-50%,-100%)}
+.fb-tag-hover .fb-tag-inner{
+  display:flex;flex-direction:column;gap:1px;
+  background:rgba(255,255,255,.8);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  border:1px solid var(--line);
+  border-radius:8px;padding:5px 9px 6px;
+}
+.fb-tag-hover .fb-title{font-family:var(--font-hand);font-size:12px;color:var(--ink)}
+.fb-tag-hover .fb-price{font-size:10px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.fb-tag[hidden]{display:none}
+
+.fb-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:16px}
+.fb-nav button{
+  background:var(--paper-warm);border:1px solid var(--line);color:var(--ink-soft);
+  width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s;
+}
+.fb-nav button:hover{color:var(--ink);border-color:var(--ink-soft)}
+.fb-dots{display:flex;gap:6px}
+.fb-dots span{width:5px;height:5px;border-radius:50%;background:var(--line);transition:background .15s,transform .15s;cursor:pointer}
+.fb-dots span.on{background:var(--ink);transform:scale(1.4)}
+
+@media(max-width:480px){
+  .fb-stage-wrap{height:min(52vh,460px);min-height:320px}
+  .fb-tag-active .fb-tag-inner{padding:4px 7px 5px}
+  .fb-tag-active .fb-title{font-size:11px}
+  .fb-tag-active .fb-meta{font-size:8px}
+  .fb-tag-active .fb-row{gap:5px;margin-top:1px}
+  .fb-tag-active .fb-price{font-size:9px}
+  .fb-load-btn{padding:2px 6px;font-size:8px}
+  .fb-tag-hover .fb-tag-inner{padding:4px 7px 5px}
+  .fb-tag-hover .fb-title{font-size:10px}
+  .fb-tag-hover .fb-price{font-size:9px}
 }
 .tc-price{font-family:var(--font-mono);font-size:13px;font-weight:600}
 

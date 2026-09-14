@@ -29,7 +29,7 @@ window.mpc3d = (function () {
   const padMeshes = [];
   let lcdMesh = null, lcdTexture = null, lcdCanvasEl = null;
   let modelHalfW = null, modelHalfH = null, modelHalfD = null; // set once the model loads; reused to refit the camera whenever the container's aspect changes
-  const CAM_PHI = 1.0; // elevation angle (rad) — high top-down 3/4 view, reads clearly at a glance
+  const CAM_PHI = 1.18; // elevation angle (rad) — leaned-over top-down 3/4 view, looking down and over the MPC
 
   // Fader drag — Btn_Fader slides along its own local Y between these two
   // measured endpoints (top/bottom of the printed slider track).

@@ -74,7 +74,23 @@
     </nav>
   </div>
 
-  <div id="tape-grid" class="tape-grid"></div>
+  <div class="fb-stage-wrap" id="fb-stageWrap">
+    <canvas id="fb-stage"></canvas>
+    <div class="fb-tag fb-tag-active" id="fb-activeTag" hidden><div class="fb-tag-inner">
+      <div class="fb-title" id="fb-activeTitle"></div>
+      <div class="fb-meta" id="fb-activeMeta"></div>
+      <div class="fb-row"><span class="fb-price" id="fb-activePrice"></span><button class="fb-load-btn" id="fb-loadBtn">View &amp; Buy →</button></div>
+    </div></div>
+    <div class="fb-tag fb-tag-hover" id="fb-hoverTag" hidden><div class="fb-tag-inner">
+      <div class="fb-title" id="fb-hoverTitle"></div>
+      <div class="fb-price" id="fb-hoverPrice"></div>
+    </div></div>
+  </div>
+  <div class="fb-nav">
+    <button id="fb-prev" aria-label="Prev">‹</button>
+    <div class="fb-dots" id="fb-dots"></div>
+    <button id="fb-next" aria-label="Next">›</button>
+  </div>
   <p id="empty-state" class="empty-state" hidden>nothing here yet.</p>
 </main>
 
@@ -104,6 +120,8 @@
 <audio id="preview-audio"></audio>
 <script src="products.js"></script>
 <script src="waveform.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="floppy-bay.js"></script>
 <script src="shop.js"></script>
 </body>
 </html>
