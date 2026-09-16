@@ -400,62 +400,41 @@ window.floppyBay = (function () {
 
     const list = buildLayoutList(vis);
     const activeEntry = vis[state.index];
-    const activeIdx = list.findIndex((e) => e.type === 'disk' && e.entry.index === activeEntry.index);
 
-    {
-      const d = disks[activeEntry.index];
-      const hovered = hoverIndex === activeEntry.index;
-      Object.assign(d.target, {
-        x: 0, y: hovered ? 0.06 : 0.035, z: hovered ? 0.3 : 0.24,
-        rx: -0.06, ry: 0, rz: 0,
-        scale: hovered ? 1.08 : 1.045, emissive: hovered ? 1 : 0.4,
-      });
-    }
+    // Even row: every disk stays face-on and readable, like folders actually
+    // standing organized in labeled slots — not fanned/rotated away with
+    // only the active one legible. Slot width adapts to item count so a
+    // full "all" row (disks + genre dividers) still fits inside the tray
+    // walls, while a short filtered list doesn't stretch out unnaturally.
+    const weights = list.map((e) => (e.type === 'disk' ? 1 : 0.5));
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    const available = TRAY.width * 0.82;
+    const unit = Math.min(available / totalWeight, DISK.w * 0.75);
+    let x = -(unit * totalWeight) / 2;
+    const centers = weights.map((w) => { const c = x + (unit * w) / 2; x += unit * w; return c; });
 
-    const SLOT_DISK = 0.13, SLOT_DIV = 0.08, DECAY = 0.74;
-
-    let xR = DISK.w * 0.42, multR = 1;
-    for (let i = activeIdx + 1; i < list.length; i++) {
-      const e = list[i];
-      const diff = i - activeIdx;
-      const t = Math.min(diff / 6, 1);
+    list.forEach((e, i) => {
+      const cx = centers[i];
       if (e.type === 'disk') {
         const d = disks[e.entry.index];
-        const j = hash(e.entry.index);
-        const ry = THREE.MathUtils.lerp(0.55, 1.48, t) + (j - 0.5) * 0.12;
-        const rx = -0.10 + (j - 0.5) * 0.03;
-        xR += SLOT_DISK * multR; multR *= DECAY;
+        const isActive = e.entry.index === activeEntry.index;
         const hovered = hoverIndex === e.entry.index;
+        const j = hash(e.entry.index);
+        const leanRy = -0.12 + (j - 0.5) * 0.1; // slight shared lean + per-disk jitter — still face-on, never edge-on
         Object.assign(d.target, {
-          x: xR, y: hovered ? 0.045 : 0, z: -0.04 - t * 0.09,
-          rx, ry, rz: (j - 0.5) * 0.06,
-          scale: hovered ? 1.06 : 1, emissive: hovered ? 1 : 0,
+          x: cx,
+          y: isActive ? (hovered ? 0.05 : 0.03) : 0,
+          z: isActive ? (hovered ? 0.26 : 0.2) : -0.02,
+          rx: -0.08, ry: leanRy, rz: (j - 0.5) * 0.04,
+          scale: isActive ? (hovered ? 1.1 : 1.06) : (hovered ? 1.04 : 1),
+          emissive: isActive ? (hovered ? 1 : 0.4) : (hovered ? 0.6 : 0),
         });
       } else {
         const dv = dividers[e.key];
-        xR += SLOT_DIV * multR; multR *= DECAY;
-        const ry = THREE.MathUtils.lerp(0.3, 0.95, t);
         dv.inView = true; dv.group.visible = true;
-        Object.assign(dv.target, { x: xR, y: 0, z: -0.03 - t * 0.07, rx: -0.06, ry, rz: 0, scale: 1 });
+        Object.assign(dv.target, { x: cx, y: 0, z: -0.03, rx: -0.08, ry: -0.1, rz: 0, scale: 1 });
       }
-    }
-
-    let xL = -DISK.w * 0.42, multL = 1;
-    for (let i = activeIdx - 1; i >= 0; i--) {
-      const e = list[i];
-      const diff = activeIdx - i;
-      const t = Math.min(diff / 6, 1);
-      if (e.type === 'disk') {
-        const d = disks[e.entry.index];
-        xL -= SLOT_DISK * multL * 0.55; multL *= DECAY;
-        Object.assign(d.target, { x: xL, y: 0, z: -0.05 - t * 0.1, rx: -0.13, ry: -1.4, rz: 0, scale: 1, emissive: 0 });
-      } else {
-        const dv = dividers[e.key];
-        xL -= SLOT_DIV * multL * 0.55; multL *= DECAY;
-        dv.inView = true; dv.group.visible = true;
-        Object.assign(dv.target, { x: xL, y: 0, z: -0.08 - t * 0.1, rx: -0.12, ry: -1.2, rz: 0, scale: 1 });
-      }
-    }
+    });
   }
 
   function selectByIndex(index) {
