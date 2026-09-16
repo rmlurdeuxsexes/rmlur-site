@@ -49,11 +49,27 @@ window.floppyBay = (function () {
     );
     camera.lookAt(0, 0.62, 0);
   }
+  // A fixed radius only frames the tray correctly at the one aspect ratio it
+  // was tuned for — on a wide desktop stage the box renders small with dead
+  // space around it. Refit from the tray's own known physical size instead,
+  // the same approach mpc-3d.js uses for the hero.
+  function refitRadius() {
+    const vFovRad = THREE.MathUtils.degToRad(camera.fov);
+    const hFovRad = 2 * Math.atan(Math.tan(vFovRad / 2) * camera.aspect);
+    const halfW = (TRAY.width / 2) * 1.08;
+    const halfH = backWallH * 1.7; // open lid swings up well above the back wall
+    const halfD = TRAY.depth / 2;
+    const effectiveHalfH = halfH * Math.cos(orbit.phi) + halfD * Math.sin(orbit.phi);
+    const radiusForHeight = effectiveHalfH / Math.tan(vFovRad / 2);
+    const radiusForWidth = halfW / Math.tan(hFovRad / 2);
+    orbit.radius = Math.max(radiusForHeight, radiusForWidth) * 1.1;
+  }
   function resize() {
     const w = stageWrap.clientWidth, h = stageWrap.clientHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    refitRadius();
   }
 
   /* ---------- geometry helpers ---------- */
