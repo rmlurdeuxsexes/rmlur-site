@@ -117,8 +117,14 @@ window.floppyBay = (function () {
     });
   }
 
-  /* ---------- holder (fixed physical proportions — independent of item count) ---------- */
+  /* ---------- holder ---------- */
+  // width scales to the catalog size so a small (or filtered-down) shop
+  // still reads as a packed case instead of one disk floating in front of
+  // a mostly-empty tray — clamped so it never gets absurdly cramped or wide.
   const TRAY = { width: 1.85, depth: 0.98, wallT: 0.045 };
+  function fitTrayWidth(itemCount) {
+    TRAY.width = THREE.MathUtils.clamp(0.95 + itemCount * 0.24, 1.15, 1.85);
+  }
   const DISK = { w: 0.86, h: 0.95, depth: 0.05 };
   const backWallH = DISK.h * 1.05;
   const frontLipH = DISK.h * 0.22;
@@ -741,6 +747,11 @@ window.floppyBay = (function () {
     if (inited) return;
     onSelect = (opts && opts.onSelect) || function () {};
     items = products.map((p, i) => Object.assign({ product: p, index: i }, genreInfo(p.genre)));
+    fitTrayWidth(items.length);
+    // Start on the middle item, not the first — fanning only ever queues
+    // items to one side of the active disk, so starting at index 0 leaves
+    // the whole other side of the tray looking empty.
+    state.index = Math.max(0, Math.floor((items.length - 1) / 2));
     setupThree();
     buildDisks();
     buildDividers();
@@ -749,7 +760,8 @@ window.floppyBay = (function () {
   }
   function setFilter(type) {
     filterType = type;
-    state.index = 0;
+    const vis = visibleItems();
+    state.index = Math.max(0, Math.floor((vis.length - 1) / 2));
     afterNav();
   }
 
