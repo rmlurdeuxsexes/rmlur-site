@@ -361,6 +361,37 @@ window.floppyBay = (function () {
     return tex;
   }
   const dividers = {}; // keyed by genreKey
+
+  /* ---------- slot walls ----------
+     Thin genre-colored partitions so each disk visibly sits IN its own
+     compartment instead of floating in open air between neighbors — a
+     colored "shelf" wall on the near side of every disk, skipped only
+     where a bigger labeled genre-divider card already marks that same
+     boundary. Pool sized to the catalog once and reused across filters. */
+  // Taller than the disks (like the labeled genre-divider cards already
+  // are) — flush with disk height just reads as the disk's own colored
+  // edge, not a separate standing partition.
+  const SLOT_WALL = { w: 0.03, h: DISK.h * 1.22, d: DISK.depth * 2.6 };
+  let slotWallGeo;
+  const slotWalls = [];
+  function buildSlotWalls() {
+    const count = items.length + 2;
+    for (let i = 0; i < count; i++) {
+      const mat = new THREE.MeshStandardMaterial({ color: 0xe7ddc8, roughness: 0.75, metalness: 0 });
+      const mesh = new THREE.Mesh(slotWallGeo, mat);
+      mesh.visible = false;
+      holder.add(mesh);
+      slotWalls.push(mesh);
+    }
+  }
+  function placeSlotWall(i, x, color, z) {
+    if (i >= slotWalls.length) return;
+    const w = slotWalls[i];
+    w.position.set(x, SLOT_WALL.h / 2, z);
+    w.material.color.setHex(color);
+    w.visible = true;
+  }
+
   function buildDividers() {
     const seen = {};
     items.forEach((entry) => { seen[entry.genreKey] = entry; });
@@ -416,6 +447,7 @@ window.floppyBay = (function () {
 
     const list = buildLayoutList(vis);
     const activeEntry = vis[state.index];
+    const activeListIdx = list.findIndex((e) => e.type === 'disk' && e.entry.index === activeEntry.index);
 
     // Even row: every disk stays face-on and readable, like folders actually
     // standing organized in labeled slots — not fanned/rotated away with
@@ -429,6 +461,9 @@ window.floppyBay = (function () {
     let x = -(unit * totalWeight) / 2;
     const centers = weights.map((w) => { const c = x + (unit * w) / 2; x += unit * w; return c; });
 
+    slotWalls.forEach((w) => { w.visible = false; });
+    let wallIdx = 0;
+
     list.forEach((e, i) => {
       const cx = centers[i];
       if (e.type === 'disk') {
@@ -437,14 +472,34 @@ window.floppyBay = (function () {
         const hovered = hoverIndex === e.entry.index;
         const j = hash(e.entry.index);
         const leanRy = -0.12 + (j - 0.5) * 0.1; // slight shared lean + per-disk jitter — still face-on, never edge-on
+        // Recede front-to-back with distance from the active disk — a real
+        // stack has depth; putting every disk at nearly the same z read as
+        // one flat merged plane instead of a deck you could flip through.
+        const dist = Math.abs(i - activeListIdx);
+        const restZ = -0.02 - Math.min(dist, 5) * 0.045;
         Object.assign(d.target, {
           x: cx,
           y: isActive ? (hovered ? 0.05 : 0.03) : 0,
-          z: isActive ? (hovered ? 0.26 : 0.2) : -0.02,
+          z: isActive ? (hovered ? 0.26 : 0.2) : restZ,
           rx: -0.08, ry: leanRy, rz: (j - 0.5) * 0.04,
           scale: isActive ? (hovered ? 1.1 : 1.06) : (hovered ? 1.04 : 1),
           emissive: isActive ? (hovered ? 1 : 0.4) : (hovered ? 0.6 : 0),
         });
+
+        // A colored partition on the near side of this disk's slot — unless
+        // the previous entry is already a labeled genre-divider card
+        // marking that same boundary, so the row doesn't double up on it.
+        // Popped slightly forward of the disk's own rest depth so it reads
+        // as a standing divider, not a flush, merged-together panel.
+        const wallZ = Math.max(restZ, isActive ? 0.2 : restZ) + 0.04;
+        const prev = list[i - 1];
+        if (!prev || prev.type !== 'divider') {
+          placeSlotWall(wallIdx++, cx - unit / 2, e.entry.color, wallZ);
+        }
+        // Close the last slot with a wall on its far side too.
+        if (i === list.length - 1) {
+          placeSlotWall(wallIdx++, cx + unit / 2, e.entry.color, wallZ);
+        }
       } else {
         const dv = dividers[e.key];
         dv.inView = true; dv.group.visible = true;
@@ -697,6 +752,7 @@ window.floppyBay = (function () {
       return geo;
     })();
     dividerGeo = panelGeo(roundedRectShape(DIV.w, DIV.h, 0.03), DIV.depth);
+    slotWallGeo = new THREE.BoxGeometry(SLOT_WALL.w, SLOT_WALL.h, SLOT_WALL.d);
 
     pickGlow = new THREE.Mesh(
       new THREE.PlaneGeometry(1.05, 1.05),
@@ -750,6 +806,7 @@ window.floppyBay = (function () {
     setupThree();
     buildDisks();
     buildDividers();
+    buildSlotWalls();
     boot();
     inited = true;
   }
