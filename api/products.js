@@ -12,7 +12,6 @@ function toProduct(row) {
     genre: row.genre,
     cover: row.cover_url,
     preview: row.preview_url,
-    deliverable: row.deliverable_url,
     tags: row.tags,
     info: row.info,
     tiers: row.tiers,

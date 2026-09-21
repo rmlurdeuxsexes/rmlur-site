@@ -39,13 +39,12 @@ export default {
           ${body.tags ?? []}, ${body.info ?? null},
           ${JSON.stringify(body.tiers ?? [])}, ${body.exclusive ? JSON.stringify(body.exclusive) : null}
         )
-        ON CONFLICT (id) DO UPDATE SET
-          type = EXCLUDED.type, title = EXCLUDED.title, subtitle = EXCLUDED.subtitle,
-          bpm = EXCLUDED.bpm, key = EXCLUDED.key, bars = EXCLUDED.bars, genre = EXCLUDED.genre,
-          cover_url = EXCLUDED.cover_url, preview_url = EXCLUDED.preview_url, deliverable_url = EXCLUDED.deliverable_url,
-          tags = EXCLUDED.tags, info = EXCLUDED.info, tiers = EXCLUDED.tiers, exclusive = EXCLUDED.exclusive
+        ON CONFLICT (id) DO NOTHING
         RETURNING *
       `;
+      if (rows.length === 0) {
+        return Response.json({ error: 'a product with this id already exists' }, { status: 409 });
+      }
       return Response.json(rows[0], { status: 201 });
     } catch (err) {
       console.error('[api/admin-upload] DB error:', err);

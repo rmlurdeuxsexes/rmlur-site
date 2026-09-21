@@ -21,6 +21,7 @@ export default {
             'image/jpeg', 'image/png', 'image/webp',
             'audio/mpeg', 'audio/wav', 'audio/x-wav',
             'application/zip', 'application/x-zip-compressed',
+            'application/octet-stream',
           ],
           addRandomSuffix: true,
         }),
