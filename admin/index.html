@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RMLUR — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<div id="login-form">
+  <h1>Admin Login</h1>
+  <label for="password">Password</label>
+  <input type="password" id="password" autocomplete="current-password">
+  <button id="login-btn">Log In</button>
+  <div class="status" id="login-status"></div>
+</div>
+
+<form id="upload-form">
+  <h1>Add Product</h1>
+
+  <label for="id">ID (slug, e.g. midnight-pager-2)</label>
+  <input type="text" id="id" required>
+
+  <label for="type">Type</label>
+  <select id="type">
+    <option value="beat">Beat</option>
+    <option value="kit">Kit</option>
+    <option value="loopkit">Loop Kit</option>
+    <option value="sample">Sample Pack</option>
+    <option value="project">Project File</option>
+  </select>
+
+  <label for="title">Title</label>
+  <input type="text" id="title" required>
+
+  <label for="genre">Genre</label>
+  <input type="text" id="genre" required>
+
+  <label for="info">Description</label>
+  <textarea id="info" rows="4"></textarea>
+
+  <label for="price">Price (USD)</label>
+  <input type="number" id="price" step="0.01" min="0">
+
+  <label for="stripeLink">Stripe Payment Link</label>
+  <input type="text" id="stripeLink">
+
+  <label for="cover">Cover Art</label>
+  <input type="file" id="cover" accept="image/png,image/jpeg,image/webp">
+
+  <label for="preview">Audio Preview (optional)</label>
+  <input type="file" id="preview" accept="audio/mpeg,audio/wav">
+
+  <label for="deliverable">Deliverable File (the paid download — zip multi-file products before uploading)</label>
+  <input type="file" id="deliverable">
+
+  <button type="submit">Upload</button>
+  <div class="status" id="upload-status"></div>
+</form>
+
+<script type="module" src="admin.js"></script>
+</body>
+</html>

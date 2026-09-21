@@ -1,0 +1,12 @@
+body{max-width:560px;margin:0 auto;padding:60px 24px;font-family:var(--font-mono);color:var(--ink);background:var(--paper)}
+h1{font-size:14px;letter-spacing:.24em;text-transform:uppercase;margin-bottom:32px}
+label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin:18px 0 6px}
+input[type="text"],input[type="number"],input[type="password"],select,textarea{
+  width:100%;padding:8px 10px;font-family:var(--font-mono);font-size:13px;
+  border:1px solid var(--line);border-radius:4px;background:var(--paper-warm);color:var(--ink);
+}
+button{margin-top:24px;padding:10px 16px;border:1px solid var(--ink);border-radius:4px;font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+button:hover{background:var(--ink);color:var(--paper)}
+.status{margin-top:14px;font-size:12px;color:var(--rec-red)}
+.status.ok{color:var(--teal)}
+#upload-form{display:none}
