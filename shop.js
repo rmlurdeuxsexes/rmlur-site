@@ -1,6 +1,17 @@
 /* RMLUR SHOP — storefront logic (no build step, no framework) */
-document.addEventListener('DOMContentLoaded', () => {
-  const products = window.PRODUCTS || [];
+async function loadProducts() {
+  try {
+    const res = await fetch('/api/products');
+    if (!res.ok) throw new Error('bad response');
+    return await res.json();
+  } catch (err) {
+    console.error('[shop] failed to load /api/products:', err);
+    return [];
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  let products = [];
 
   const emptyState = document.getElementById('empty-state');
   const audio = document.getElementById('preview-audio');
@@ -171,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     emptyState.hidden = items.length > 0;
     window.floppyBay.setFilter(filter);
   }
+  products = await loadProducts();
   window.floppyBay.init(products, { onSelect: (p) => openPDP(p) });
 
   /* ---------- preview player ---------- */
