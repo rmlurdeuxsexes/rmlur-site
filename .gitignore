@@ -3,3 +3,6 @@
 .env*
 node_modules/
 .worktrees/
+.agents/
+.claude/skills/
+skills-lock.json
