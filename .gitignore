@@ -1,3 +1,5 @@
 .DS_Store
 .vercel
 .env*
+node_modules/
+.worktrees/
