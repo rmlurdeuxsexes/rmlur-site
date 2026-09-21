@@ -10,6 +10,7 @@ function sign(value) {
 
 export function checkPassword(candidate) {
   const expected = process.env.ADMIN_PASSWORD || '';
+  if (!expected) return false; // Fail closed: reject all passwords if env var is missing/empty
   const a = Buffer.from(candidate || '');
   const b = Buffer.from(expected);
   if (a.length !== b.length) return false; // timingSafeEqual requires equal-length buffers
@@ -27,14 +28,18 @@ export function verifySession(request) {
   const cookieHeader = request.headers.get('cookie') || '';
   const match = cookieHeader.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
   if (!match) return false;
-  const [payload, sig] = decodeURIComponent(match[1]).split('.');
-  if (!payload || !sig) return false;
-  const expectedSig = sign(payload);
-  const sigBuf = Buffer.from(sig, 'hex');
-  const expectedBuf = Buffer.from(expectedSig, 'hex');
-  if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) return false;
-  const expires = parseInt(payload, 10);
-  return Number.isFinite(expires) && Date.now() < expires;
+  try {
+    const [payload, sig] = decodeURIComponent(match[1]).split('.');
+    if (!payload || !sig) return false;
+    const expectedSig = sign(payload);
+    const sigBuf = Buffer.from(sig, 'hex');
+    const expectedBuf = Buffer.from(expectedSig, 'hex');
+    if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) return false;
+    const expires = parseInt(payload, 10);
+    return Number.isFinite(expires) && Date.now() < expires;
+  } catch {
+    return false; // Malformed cookie encoding
+  }
 }
 
 function demo() {
@@ -54,6 +59,18 @@ function demo() {
 
   const noCookieRequest = { headers: { get: () => null } };
   console.assert(verifySession(noCookieRequest) === false, 'FAIL: missing cookie should not verify');
+
+  // Edge case 1: checkPassword fails closed when ADMIN_PASSWORD is unset/empty
+  delete process.env.ADMIN_PASSWORD;
+  console.assert(checkPassword('') === false, 'FAIL: empty password should fail when env var is missing');
+  console.assert(checkPassword('anything') === false, 'FAIL: any password should fail when env var is missing');
+  process.env.ADMIN_PASSWORD = '';
+  console.assert(checkPassword('') === false, 'FAIL: empty password should fail when env var is empty string');
+  process.env.ADMIN_PASSWORD = 'hunter2'; // Restore for remaining tests
+
+  // Edge case 2: verifySession handles malformed cookie encoding gracefully (no throw)
+  const malformedRequest = { headers: { get: () => 'rmlur_admin=%zz' } };
+  console.assert(verifySession(malformedRequest) === false, 'FAIL: malformed cookie should return false, not throw');
 
   console.log('api/_lib/auth.js self-check passed');
 }
