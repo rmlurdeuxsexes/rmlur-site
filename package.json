@@ -1,0 +1,9 @@
+{
+  "name": "rmlur-site",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.0",
+    "@vercel/blob": "^0.27.0"
+  }
+}
