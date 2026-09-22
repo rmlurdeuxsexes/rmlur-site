@@ -148,7 +148,7 @@ window.cassetteBay = (function () {
   }
   // Glossy black chassis/base plastic (spec: roughness 0.2, metalness 0.1).
   function glossBlackMat() {
-    return new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: 0.2, metalness: 0.1 });
+    return new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: 0.15, metalness: 0.12 });
   }
   // Smoked/translucent brown-tinted acrylic flip lid (spec values verbatim).
   function acrylicMat() {
@@ -160,7 +160,7 @@ window.cassetteBay = (function () {
     // genuinely see-through smoked acrylic at every viewport size.
     return new THREE.MeshPhysicalMaterial({
       color: 0x2c2c27, roughness: 0.14, metalness: 0,
-      transparent: true, opacity: 0.34, side: THREE.DoubleSide, depthWrite: false,
+      transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false,
     });
   }
 
@@ -461,7 +461,7 @@ window.cassetteBay = (function () {
       group.position.set(0, origin.y, origin.z);
       holder.add(group);
 
-      const mat = solidMat(color, 0.32);
+      const mat = solidMat(color, 0.22); // glossier than before — reference bins show a clear specular highlight
       {
         const backGeo = panelGeo(roundedRectShape(BIN.w, BIN_BACK_H, 0.03), BIN.wallT);
         const back = new THREE.Mesh(backGeo, mat);
@@ -842,8 +842,8 @@ window.cassetteBay = (function () {
     updateCameraFromOrbit();
     window.addEventListener('resize', resize);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-    const key = new THREE.DirectionalLight(0xfff3e0, 0.95); key.position.set(2.4, 4, 3.2); scene.add(key);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.42));
+    const key = new THREE.DirectionalLight(0xfff3e0, 1.15); key.position.set(2.4, 4, 3.2); scene.add(key);
     const fill = new THREE.DirectionalLight(0xcfe0ff, 0.35); fill.position.set(-3, 2, -1.5); scene.add(fill);
     const rim = new THREE.DirectionalLight(0xe4ecf2, 0.22); rim.position.set(-1, 2.5, -3); scene.add(rim);
 
