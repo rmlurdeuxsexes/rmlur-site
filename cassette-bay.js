@@ -285,7 +285,12 @@ window.cassetteBay = (function () {
 
   function makeLabelTexture(entry) {
     const p = entry.product;
-    const W = 480, H = 512;
+    // Canvas aspect matches the label plane's own aspect — buildDisks()
+    // sizes that plane as DISK.w*0.86 x DISK.h*0.86, i.e. DISK.w/DISK.h
+    // (~1.536, landscape) since Task 3 widened DISK. A portrait canvas
+    // (the old 480x512) mapped onto that landscape plane with no aspect
+    // correction stretched everything drawn here ~64% horizontally.
+    const W = 600, H = 390;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
 
@@ -298,31 +303,35 @@ window.cassetteBay = (function () {
     // Colored top band matching the sleeve's own bin/genre color — a
     // cassette J-card convention, replaces the old floppy-disk metal
     // shutter graphic (which doesn't make sense on a boxy cassette case).
-    const bandH = H * 0.14;
+    const bandH = H * 0.17;
     ctx.fillStyle = '#' + entry.color.toString(16).padStart(6, '0');
     ctx.fillRect(0, 0, W, bandH);
 
-    ctx.fillStyle = '#fff';
-    ctx.font = '700 24px -apple-system, "Helvetica Neue", Arial, sans-serif';
+    // Dark text on light band colors (the yellow bin palette color reads
+    // poorly under white) — luminance check, white everywhere else.
+    const r = (entry.color >> 16) & 255, g = (entry.color >> 8) & 255, b = entry.color & 255;
+    const bandLuminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    ctx.fillStyle = bandLuminance > 0.6 ? '#1c1a16' : '#fff';
+    ctx.font = '700 26px -apple-system, "Helvetica Neue", Arial, sans-serif';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText(entry.genreKey, 20, bandH * 0.68);
+    ctx.fillText(entry.genreKey, 24, bandH * 0.66);
 
     ctx.fillStyle = '#1c1a16';
-    ctx.font = '46px "Kalam", cursive';
+    ctx.font = '40px "Kalam", cursive';
     ctx.save();
-    ctx.translate(26, bandH + 76);
+    ctx.translate(28, bandH + 54);
     ctx.rotate(-0.03);
-    wrapText(ctx, p.title, 0, 0, W - 70, 50);
+    wrapText(ctx, p.title, 0, 0, W - 100, 44);
     ctx.restore();
 
     ctx.fillStyle = '#4a453a';
-    ctx.font = '600 24px -apple-system, "Helvetica Neue", Arial, sans-serif';
+    ctx.font = '600 22px -apple-system, "Helvetica Neue", Arial, sans-serif';
     const metaStr = p.bpm ? (p.bpm + ' BPM' + (p.key ? ' · ' + p.key : '')) : (p.type === 'kit' ? 'SAMPLE KIT' : '');
-    ctx.fillText(metaStr, 26, H - 60);
+    ctx.fillText(metaStr, 28, H - 48);
 
     ctx.fillStyle = '#1c1a16';
-    ctx.font = '700 28px -apple-system, "Helvetica Neue", Arial, sans-serif';
-    ctx.fillText('$' + minPrice(p).toFixed(0), W - 92, H - 22);
+    ctx.font = '700 26px -apple-system, "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText('$' + minPrice(p).toFixed(0), W - 112, H - 20);
 
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
