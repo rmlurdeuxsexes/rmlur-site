@@ -25,8 +25,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   const wave = window.createWaveform(audio, pbWave);
 
   let currentId = null;
-  let filter = 'all';
+  const filterState = { type: 'all', genre: 'all', search: '', sort: 'catalog' };
   let cartCount = 0;
+
+  /* ---------- arrival from the MPC's floppy transition (app.js goToShop) —
+     fade out the same #page-fade overlay it faded in before navigating ---------- */
+  const pageFade = document.getElementById('page-fade');
+  const arrivedFromFloppy = new URLSearchParams(location.search).get('from') === 'floppy';
+  if (arrivedFromFloppy) {
+    pageFade.classList.add('show', 'no-transition');
+    requestAnimationFrame(() => {
+      pageFade.classList.remove('no-transition');
+      requestAnimationFrame(() => pageFade.classList.remove('show'));
+    });
+  }
 
   /* ---------- helpers ---------- */
   function minPrice(p) {
@@ -176,14 +188,57 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   pdpPlay.addEventListener('click', () => { if (pdpProduct) togglePreview(pdpProduct); });
 
-  /* ---------- 3D floppy bay — renders disks, hands selections back here ---------- */
+  /* ---------- 3D cassette bay — renders sleeves, hands selections back here ---------- */
   function applyFilter() {
-    const items = products.filter(p => filter === 'all' || p.type === filter);
-    emptyState.hidden = items.length > 0;
-    window.floppyBay.setFilter(filter);
+    const q = filterState.search.trim().toLowerCase();
+    const visible = products.filter((p) =>
+      (filterState.type === 'all' || p.type === filterState.type) &&
+      (filterState.genre === 'all' || window.cassetteBay.genreInfo(p.genre).genreKey === filterState.genre) &&
+      (!q || p.title.toLowerCase().includes(q) || (p.tags || []).some((t) => t.toLowerCase().includes(q)))
+    );
+    emptyState.hidden = visible.length > 0;
+    window.cassetteBay.setFilter(filterState);
   }
   products = await loadProducts();
-  window.floppyBay.init(products, { onSelect: (p) => openPDP(p) });
+  window.cassetteBay.init(products, { onSelect: (p) => openPDP(p), arrived: arrivedFromFloppy });
+
+  /* ---------- genre pills — derived from the real catalog, never hardcoded;
+     colored to match cassette-bay.js's own genre divider walls ---------- */
+  const genrePillsEl = document.getElementById('genre-pills');
+  const seenGenres = new Map();
+  products.forEach((p) => {
+    const gi = window.cassetteBay.genreInfo(p.genre);
+    if (!seenGenres.has(gi.genreKey)) seenGenres.set(gi.genreKey, gi);
+  });
+  seenGenres.forEach((gi) => {
+    const btn = document.createElement('button');
+    btn.className = 'pill';
+    btn.dataset.genre = gi.genreKey;
+    btn.textContent = gi.genreLabel;
+    btn.addEventListener('click', () => {
+      genrePillsEl.querySelectorAll('.pill').forEach((el) => { el.classList.remove('active'); el.style.background = ''; });
+      btn.classList.add('active');
+      btn.style.background = '#' + gi.color.toString(16).padStart(6, '0');
+      filterState.genre = gi.genreKey;
+      applyFilter();
+    });
+    genrePillsEl.appendChild(btn);
+  });
+  genrePillsEl.querySelector('[data-genre="all"]').addEventListener('click', (e) => {
+    genrePillsEl.querySelectorAll('.pill').forEach((el) => { el.classList.remove('active'); el.style.background = ''; });
+    e.currentTarget.classList.add('active');
+    filterState.genre = 'all';
+    applyFilter();
+  });
+
+  document.getElementById('shop-search').addEventListener('input', (e) => {
+    filterState.search = e.target.value;
+    applyFilter();
+  });
+  document.getElementById('shop-sort').addEventListener('change', (e) => {
+    filterState.sort = e.target.value;
+    applyFilter();
+  });
 
   /* ---------- preview player ---------- */
   async function togglePreview(p) {
@@ -216,7 +271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ---------- filter tabs ---------- */
   document.querySelectorAll('.tab[data-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
-      filter = btn.dataset.filter;
+      filterState.type = btn.dataset.filter;
       document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       applyFilter();

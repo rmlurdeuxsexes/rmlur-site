@@ -77,6 +77,19 @@
     </nav>
   </div>
 
+  <div class="shop-filters">
+    <div class="genre-pills" id="genre-pills" role="group" aria-label="Filter by genre">
+      <button class="pill active" data-genre="all">All Genres</button>
+    </div>
+    <div class="shop-controls">
+      <input type="search" id="shop-search" class="shop-search" placeholder="search title or tag…">
+      <select id="shop-sort" class="shop-sort" aria-label="Sort">
+        <option value="catalog">Catalog order</option>
+        <option value="price">Price: low to high</option>
+      </select>
+    </div>
+  </div>
+
   <div class="fb-stage-wrap" id="fb-stageWrap">
     <canvas id="fb-stage"></canvas>
     <div class="fb-tag fb-tag-active" id="fb-activeTag" hidden><div class="fb-tag-inner">
@@ -114,8 +127,10 @@
   <a id="pb-buy" class="buy-btn buy-btn-sm" href="#" target="_blank" rel="noopener">BUY</a>
 </div>
 
+<div id="page-fade" class="page-fade"></div>
+
 <footer class="site-footer">
-  <span>𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃</span>
+  <span>♪ ♫ ♪ ♫ ♪</span>
   <span>all sales final ▪ files delivered instantly after checkout</span>
   <span>jayrewindbeatz@gmail.com</span>
 </footer>
@@ -123,7 +138,7 @@
 <audio id="preview-audio"></audio>
 <script src="waveform.js"></script>
 <script src="vendor/three.min.js"></script>
-<script src="floppy-bay.js"></script>
+<script src="cassette-bay.js"></script>
 <script src="shop.js"></script>
 </body>
 </html>
