@@ -170,7 +170,11 @@ window.cassetteBay = (function () {
      of vinyl records tilted up toward the back, not a flat single-file row
      or a vertical mail-sorter stack. Each bin is one genre; disks fan
      inside their own bin, same as the old compartment system. */
-  const DISK = { w: 0.86, h: 0.95, depth: 0.05 };
+  // Renders as an upright cassette case now (see bodyGeo in setupThree(),
+  // makeLabelTexture below) — constant/variable names kept as DISK/disks/
+  // diskMeshes throughout the file to keep this diff scoped to the
+  // geometry itself, not a naming pass.
+  const DISK = { w: 0.86, h: 0.56, depth: 0.16 };
   const BIN = { w: 1.18, depth: 0.55, wallT: 0.03 };
   const BIN_BACK_H = DISK.h * 0.6;
   const BIN_LIP_H = DISK.h * 0.13;
@@ -277,27 +281,6 @@ window.cassetteBay = (function () {
   }
 
   /* ---------- disks ---------- */
-  function diskShape() {
-    const w = DISK.w, h = DISK.h, c = 0.16;
-    const hw = w / 2, hh = h / 2;
-    const s = new THREE.Shape();
-    s.moveTo(-hw, hh - c);
-    s.lineTo(-hw + c, hh);
-    s.lineTo(hw, hh);
-    s.lineTo(hw, -hh);
-    s.lineTo(-hw, -hh);
-    s.lineTo(-hw, hh - c);
-    const notchW = 0.09, notchH = 0.05;
-    const nx = hw - 0.15, ny = -hh;
-    const hole = new THREE.Path();
-    hole.moveTo(nx - notchW / 2, ny);
-    hole.lineTo(nx + notchW / 2, ny);
-    hole.lineTo(nx + notchW / 2, ny + notchH);
-    hole.lineTo(nx - notchW / 2, ny + notchH);
-    hole.closePath();
-    s.holes.push(hole);
-    return s;
-  }
   let bodyGeo;
 
   function makeLabelTexture(entry) {
@@ -312,28 +295,22 @@ window.cassetteBay = (function () {
     ctx.lineWidth = 3;
     ctx.strokeRect(4, 4, W - 8, H - 8);
 
-    const shutterH = H * 0.16;
-    const grad = ctx.createLinearGradient(0, 0, 0, shutterH);
-    grad.addColorStop(0, '#e8ecef'); grad.addColorStop(0.5, '#b7bec4'); grad.addColorStop(1, '#8b9298');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, shutterH);
-    ctx.fillStyle = 'rgba(0,0,0,.35)';
-    ctx.fillRect(W * 0.42, shutterH * 0.18, W * 0.4, shutterH * 0.64);
+    // Colored top band matching the sleeve's own bin/genre color — a
+    // cassette J-card convention, replaces the old floppy-disk metal
+    // shutter graphic (which doesn't make sense on a boxy cassette case).
+    const bandH = H * 0.14;
+    ctx.fillStyle = '#' + entry.color.toString(16).padStart(6, '0');
+    ctx.fillRect(0, 0, W, bandH);
 
-    ctx.fillStyle = '#3a352c';
+    ctx.fillStyle = '#fff';
     ctx.font = '700 24px -apple-system, "Helvetica Neue", Arial, sans-serif';
     ctx.textBaseline = 'alphabetic';
-    ctx.save();
-    ctx.translate(28, shutterH + 42);
-    ctx.fillText(entry.genreKey, 0, 0);
-    ctx.restore();
-    ctx.fillStyle = '#' + entry.color.toString(16).padStart(6, '0');
-    ctx.beginPath(); ctx.arc(W - 40, shutterH + 34, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillText(entry.genreKey, 20, bandH * 0.68);
 
     ctx.fillStyle = '#1c1a16';
     ctx.font = '46px "Kalam", cursive';
     ctx.save();
-    ctx.translate(26, shutterH + 118);
+    ctx.translate(26, bandH + 76);
     ctx.rotate(-0.03);
     wrapText(ctx, p.title, 0, 0, W - 70, 50);
     ctx.restore();
@@ -863,11 +840,10 @@ window.cassetteBay = (function () {
 
     buildHolder();
 
-    bodyGeo = (function () {
-      const geo = new THREE.ExtrudeGeometry(diskShape(), { depth: DISK.depth, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 2, curveSegments: 6 });
-      geo.translate(0, 0, -DISK.depth / 2);
-      return geo;
-    })();
+    // A cassette case is a beveled box, not a flat floppy-disk silhouette —
+    // reuse the same rounded-rect + extrude helpers the case shell/bins
+    // already use, instead of a bespoke shape function.
+    bodyGeo = panelGeo(roundedRectShape(DISK.w, DISK.h, 0.05), DISK.depth);
     plateGeo = new THREE.PlaneGeometry(PLATE.w, PLATE.h);
 
     raycaster = new THREE.Raycaster();
