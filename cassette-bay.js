@@ -50,13 +50,13 @@ window.cassetteBay = (function () {
   /* ---------- three basics ---------- */
   let stageWrap, canvas, renderer, scene, camera;
   // Looking down over the crate, like browsing vinyl in a milk crate — the
-  // bins recede in depth (Z), so the camera needs a steep-ish overhead
-  // angle to actually show that depth via perspective, not a level/face-on
-  // view (which would just show one bin hiding the rest behind it).
-  // phi raised toward eye-level (closer to pi/2) than the old 0.95 rad —
-  // the reference is shot standing in front of the case glancing slightly
-  // down into it, not looking down from nearly overhead.
-  const orbit = { theta: 0.24, phi: 1.18, radius: 6.5 };
+  // bins recede in depth (Z) and now also rise in a staircase (Y), so the
+  // camera needs a steep-ish overhead angle (phi well below pi/2) to read
+  // both axes via perspective: too close to eye-level (phi near pi/2)
+  // foreshortens the depth/stair rise into pure height and the case reads
+  // as a tall narrow tower instead of the reference's squat, wider-than-
+  // tall crate.
+  const orbit = { theta: 0.24, phi: 1.1, radius: 6.5 };
   function updateCameraFromOrbit() {
     camera.position.set(
       orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta),
@@ -165,11 +165,11 @@ window.cassetteBay = (function () {
   }
 
   /* ---------- physical organizer: a single crate of 5 fixed color-coded
-     bins laid flat in a row receding in depth — like looking down over a
-     milk crate of vinyl records or a floppy caddy, not a vertical mail-
-     sorter stack. Each bin is one genre; disks fan inside their own bin,
-     same as the old compartment system, just arranged front-to-back
-     instead of stacked upward. */
+     bins nested in a rising staircase — each bin both higher and further
+     back than the one in front of it, like looking down over a milk crate
+     of vinyl records tilted up toward the back, not a flat single-file row
+     or a vertical mail-sorter stack. Each bin is one genre; disks fan
+     inside their own bin, same as the old compartment system. */
   const DISK = { w: 0.86, h: 0.95, depth: 0.05 };
   const BIN = { w: 1.18, depth: 0.55, wallT: 0.03 };
   const BIN_BACK_H = DISK.h * 0.6;
@@ -181,7 +181,10 @@ window.cassetteBay = (function () {
   // so the case stays compact front-to-back instead of the ~2.4:1
   // depth:width ratio the old flat-row layout produced.
   const STEP_Z = BIN.depth * 0.6;
-  const STEP_Y = BIN_LIP_H * 1.6; // each bin rises above the one in front, staircase toward the lid
+  // Modest per-bin rise — 4 steps must add up to well under one bin's own
+  // BIN_BACK_H or the staircase inflates caseTop enough to make the whole
+  // case read as a tall tower instead of the reference's squat crate.
+  const STEP_Y = BIN_LIP_H * 0.5; // each bin rises above the one in front, staircase toward the lid
   // rank 0 = frontmost/closest to camera (yellow) .. rank SLOTS-1 = backmost/furthest (maroon)
   // Centered on Z=0 so the camera math (always looks at world (0, sceneCenterY, 0))
   // is aimed at the row's middle.
@@ -191,7 +194,7 @@ window.cassetteBay = (function () {
     return { y: rank * STEP_Y, z: ROW_CENTER_OFFSET - rank * STEP_Z };
   }
   const CASE_WALL_T = 0.05;
-  const PEDESTAL_H = 0.05;
+  const PEDESTAL_H = 0.2; // tall enough to read as its own plinth, not blend into the case floor
   const caseTop = binOrigin(0).y + BIN_BACK_H + 0.1; // slot 0 (back/top bin) now sets the case height
   const caseFloorY = -0.05; // where the case's own floor panel sits (unchanged from before)
   const caseBottom = caseFloorY - PEDESTAL_H; // extends the framed bounding box down to include the new pedestal
@@ -200,14 +203,13 @@ window.cassetteBay = (function () {
   const caseW = BIN.w + 0.16;
   const caseDepth = caseFrontZ - caseBackZ;
   const LID_CLOSED = Math.PI / 2;
-  // Reclined well past vertical (not "standing almost vertical" like a tall
-  // narrow case) — this crate is long and low, so a near-vertical lid as
-  // long as the whole crate would tower over it and fight the "depth, not
-  // height" read. Propped open at an angle instead, like a cooler lid.
-  // Recede further back than before so the open lid clears the shallower
-  // camera's sightline instead of filling the frame — start here and
-  // adjust in Step 4's screenshot check if the lid still crosses the bins.
-  const LID_OPEN = -1.25;
+  // Propped open near-horizontal, reclined almost all the way back to flat
+  // (close to -pi/2) instead of standing anywhere near vertical — the lid
+  // is as long as the case's full depth, so at a near-vertical angle it
+  // reads as tall as (or taller than) the case itself and dominates the
+  // frame; leaned back nearly flat, its length reads mostly as depth
+  // (foreshortened away from camera) instead of height.
+  const LID_OPEN = -1.55;
   const lidLen = caseDepth * 1.04;
   // The open lid's actual reach (up and back from its hinge) — both the
   // vertical framing budget and the depth (Z) budget must include it, or
