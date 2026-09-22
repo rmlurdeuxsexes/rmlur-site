@@ -53,7 +53,10 @@ window.cassetteBay = (function () {
   // bins recede in depth (Z), so the camera needs a steep-ish overhead
   // angle to actually show that depth via perspective, not a level/face-on
   // view (which would just show one bin hiding the rest behind it).
-  const orbit = { theta: 0.24, phi: 0.95, radius: 6.5 };
+  // phi raised toward eye-level (closer to pi/2) than the old 0.95 rad —
+  // the reference is shot standing in front of the case glancing slightly
+  // down into it, not looking down from nearly overhead.
+  const orbit = { theta: 0.24, phi: 1.18, radius: 6.5 };
   function updateCameraFromOrbit() {
     camera.position.set(
       orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta),
@@ -172,23 +175,26 @@ window.cassetteBay = (function () {
   const BIN_BACK_H = DISK.h * 0.6;
   const BIN_LIP_H = DISK.h * 0.13;
   const SLOTS = BIN_PALETTE.length; // 5 physical bins, always present — matches the real case even when fewer genres exist
-  // Every bin sits at the same height — depth (not height) is what
-  // separates them. Must be close to a full bin depth or adjacent bins'
-  // trough volumes physically overlap in Z and read as a jumbled mess.
-  const STEP_Z = BIN.depth * 1.15; // >1x bin depth: adjacent bins' trough volumes never overlap
+  // The reference organizer nests the bins in a rising staircase — each
+  // bin both higher AND further back than the one in front of it — not a
+  // flat single-file row. STEP_Z now deliberately overlaps (<1x bin depth)
+  // so the case stays compact front-to-back instead of the ~2.4:1
+  // depth:width ratio the old flat-row layout produced.
+  const STEP_Z = BIN.depth * 0.6;
+  const STEP_Y = BIN_LIP_H * 1.6; // each bin rises above the one in front, staircase toward the lid
   // rank 0 = frontmost/closest to camera (yellow) .. rank SLOTS-1 = backmost/furthest (maroon)
-  // Centered on Z=0 (not starting at 0 and running negative) so the
-  // existing camera math — which always looks at world (0, sceneCenterY, 0)
-  // — is actually aimed at the row's middle, the same symmetric-around-
-  // origin assumption the old X-based layout relied on.
+  // Centered on Z=0 so the camera math (always looks at world (0, sceneCenterY, 0))
+  // is aimed at the row's middle.
   const ROW_CENTER_OFFSET = ((SLOTS - 1) / 2) * STEP_Z;
   function binOrigin(slot) {
     const rank = SLOTS - 1 - slot;
-    return { y: 0, z: ROW_CENTER_OFFSET - rank * STEP_Z };
+    return { y: rank * STEP_Y, z: ROW_CENTER_OFFSET - rank * STEP_Z };
   }
   const CASE_WALL_T = 0.05;
-  const caseTop = BIN_BACK_H + 0.1;
-  const caseBottom = -0.05;
+  const PEDESTAL_H = 0.05;
+  const caseTop = binOrigin(0).y + BIN_BACK_H + 0.1; // slot 0 (back/top bin) now sets the case height
+  const caseFloorY = -0.05; // where the case's own floor panel sits (unchanged from before)
+  const caseBottom = caseFloorY - PEDESTAL_H; // extends the framed bounding box down to include the new pedestal
   const caseBackZ = binOrigin(0).z - BIN.depth / 2 - CASE_WALL_T - 0.015;
   const caseFrontZ = binOrigin(SLOTS - 1).z + BIN.depth / 2 + 0.09;
   const caseW = BIN.w + 0.16;
@@ -198,7 +204,10 @@ window.cassetteBay = (function () {
   // narrow case) — this crate is long and low, so a near-vertical lid as
   // long as the whole crate would tower over it and fight the "depth, not
   // height" read. Propped open at an angle instead, like a cooler lid.
-  const LID_OPEN = -1.05;
+  // Recede further back than before so the open lid clears the shallower
+  // camera's sightline instead of filling the frame — start here and
+  // adjust in Step 4's screenshot check if the lid still crosses the bins.
+  const LID_OPEN = -1.25;
   const lidLen = caseDepth * 1.04;
   // The open lid's actual reach (up and back from its hinge) — both the
   // vertical framing budget and the depth (Z) budget must include it, or
@@ -226,8 +235,18 @@ window.cassetteBay = (function () {
       const floorGeo = panelGeo(roundedRectShape(caseW, caseDepth, 0.04), 0.06);
       floorGeo.rotateX(-Math.PI / 2);
       const floor = new THREE.Mesh(floorGeo, glossBlackMat());
-      floor.position.set(0, caseBottom, caseCz);
+      floor.position.set(0, caseFloorY, caseCz);
       holder.add(floor);
+    }
+    {
+      // Black plinth the whole case sits on — visible in the reference,
+      // absent from the case's own flat floor alone. Slightly wider
+      // footprint than the case shell, like a real product base.
+      const pedGeo = panelGeo(roundedRectShape(caseW * 1.12, caseDepth * 1.08, 0.05), PEDESTAL_H);
+      pedGeo.rotateX(-Math.PI / 2);
+      const pedestal = new THREE.Mesh(pedGeo, glossBlackMat());
+      pedestal.position.set(0, caseBottom, caseCz);
+      holder.add(pedestal);
     }
     {
       const backGeo = panelGeo(roundedRectShape(caseW, caseH, 0.03), CASE_WALL_T);
