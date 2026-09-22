@@ -27,8 +27,23 @@ document.addEventListener('DOMContentLoaded', () => {
   lcdVideo.play().catch(() => {});
   drawIdleFrame();
 
-  function showLcdWaveform() { lcdIdle = false; }
-  function showLcdIdle() { lcdIdle = true; wave.stopWave(); drawIdleFrame(); }
+  // IDLE = looping video; PLAYING = waveform + track title; MESSAGE = same
+  // waveform renderer (it already falls back to an idle-breathing pulse when
+  // audio's paused) but with a status string instead of a title — no second
+  // text renderer needed for LOADING-style messages.
+  let lcdState = 'IDLE';
+  function setLcdState(next, opts) {
+    opts = opts || {};
+    lcdIdle = (next === 'IDLE');
+    if (next === 'IDLE') {
+      wave.stopWave();
+      drawIdleFrame();
+    } else {
+      if (opts.label !== undefined) wave.setLabel(opts.label);
+      wave.startWave();
+    }
+    lcdState = next;
+  }
 
   /* ================= beat pads ================= */
   let currentPadId = null;
@@ -50,17 +65,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentPadId === pad.id && !padAudio.paused) {
       currentPadId = null;
       await safeStop();
-      showLcdIdle();
+      setLcdState('IDLE');
       return;
     }
     currentPadId = pad.id;
-    wave.setLabel(pad.title || '');
-    showLcdWaveform();
+    setLcdState('PLAYING', { label: pad.title || '' });
     await safePlay(pad.audio);
   }
   padAudio.addEventListener('ended', () => {
     currentPadId = null;
-    showLcdIdle();
+    setLcdState('IDLE');
   });
 
   function assignRandomBeats() {
@@ -83,12 +97,29 @@ document.addEventListener('DOMContentLoaded', () => {
       else window.location.href = pad.url;
     }
   };
+  // Floppy disk -> beat store: a short LCD status message, then a fade to
+  // black before navigating, so it reads as the machine handing off to the
+  // store rather than a bare page jump. Both physical entry points (the LCD
+  // itself, and the floppy button) share this one path.
+  const pageFade = document.getElementById('page-fade');
+  function goToShop() {
+    if (lcdState === 'MESSAGE') return; // already mid-transition, ignore repeat clicks
+    setLcdState('MESSAGE', { label: 'LOADING BEAT STORE...' });
+    setTimeout(() => {
+      pageFade.classList.add('show');
+      setTimeout(() => { window.location.href = 'shop.html?from=floppy'; }, 380);
+    }, 900);
+  }
+
   // Every other named part (knobs, wheel, cursor, bank/menu/soft keys) is
   // already hoverable + clickable via mpc-3d.js's raycasting and flashes on
   // click — not wired to a feature yet, by design.
   window.mpc3d.onPartClick = (name) => {
-    if (name === 'MPC_LCD') {
-      window.location.href = 'shop.html'; // the beat store — swap later if the destination changes
+    if (name === 'MPC_LCD' || name === 'Btn_Floppy') {
+      goToShop();
+    } else if (name === 'Drive_Body') {
+      const drive = (window.DRIVES || []).find(d => d.id === 'tape');
+      if (drive && drive.targetPage) window.location.href = drive.targetPage;
     } else if (name === 'Btn_PLAY') {
       if (currentPadId && !padAudio.paused) return; // already playing — Play doesn't restart it
       const pad = pads.find(p => p.id === currentPadId) || pads.find(p => p.type === 'beat' && p.audio);
@@ -97,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!currentPadId) return;
       currentPadId = null;
       safeStop();
-      showLcdIdle();
+      setLcdState('IDLE');
     }
   };
 

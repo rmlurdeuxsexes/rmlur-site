@@ -66,13 +66,24 @@ a{color:inherit;text-decoration:none}
 }
 .mpc3d-tooltip.show{opacity:1;transform:translateY(0)}
 
-.tape-drive-link{
-  position:absolute;left:8px;bottom:8px;z-index:5;
+.hero-hint{
+  position:absolute;right:8px;bottom:8px;z-index:5;
   font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;
   color:var(--ink-soft);background:rgba(255,255,255,.85);
   padding:4px 7px;border-radius:3px;border:1px solid var(--line);
+  pointer-events:none;
+  transition:opacity .4s ease;
 }
-.tape-drive-link:hover{color:var(--ink);border-color:var(--ink-soft)}
+.hero-hint.hide{opacity:0}
+
+/* Full-screen cross-fade used for the floppy/LCD -> shop handoff (see
+   goToShop() in app.js) and the matching arrival fade-out in shop.js. */
+.page-fade{
+  position:fixed;inset:0;background:#000;opacity:0;z-index:999;
+  pointer-events:none;transition:opacity .35s ease;
+}
+.page-fade.show{opacity:1;pointer-events:auto}
+.page-fade.no-transition{transition:none}
 
 /* ================= HOME SCREEN — fixed, no scrolling ================= */
 /* The MPC is the whole screen; there's nothing below the fold to scroll
@@ -234,10 +245,31 @@ main#shop{max-width:1280px;margin:0 auto;padding:60px 32px 160px}
 .tab:hover{color:var(--ink)}
 .tab.active{color:var(--ink);border-color:var(--ink)}
 
+/* ---- genre isolate + search/sort (shop.js), colored to match the 3D
+   divider walls via floppyBay.genreInfo — set inline per pill from JS ---- */
+.shop-filters{
+  display:flex;flex-wrap:wrap;align-items:center;gap:16px;
+  margin:-24px 0 32px;
+}
+.genre-pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--ink-soft);
+  transition:color .15s,border-color .15s,background .15s;
+}
+.pill:hover{border-color:var(--ink-soft)}
+.pill.active{color:var(--paper);border-color:transparent}
+.shop-controls{display:flex;flex-wrap:wrap;gap:10px;margin-left:auto}
+.shop-search,.shop-sort{
+  font-family:var(--font-mono);font-size:11px;padding:6px 10px;
+  border:1px solid var(--line);border-radius:6px;background:var(--paper-warm);color:var(--ink);
+}
+.shop-search::placeholder{color:var(--ink-soft)}
+
 /* ================= FLOPPY BAY — 3D disk browser (replaces the flat grid) ================= */
 .fb-stage-wrap{
   position:relative;width:100%;
-  height:min(60vh,560px);min-height:360px;
+  height:min(62vh,600px);min-height:380px;
   border-radius:14px;overflow:hidden;
   background:radial-gradient(ellipse at 50% 30%, var(--paper-warm) 0%, var(--paper) 75%);
   border:1px solid var(--line);
@@ -310,7 +342,7 @@ main#shop{max-width:1280px;margin:0 auto;padding:60px 32px 160px}
 .fb-dots span.on{background:var(--ink);transform:scale(1.4)}
 
 @media(max-width:480px){
-  .fb-stage-wrap{height:min(52vh,460px);min-height:320px}
+  .fb-stage-wrap{height:min(54vh,480px);min-height:340px}
   .fb-tag-active .fb-tag-inner{padding:4px 7px 5px}
   .fb-tag-active .fb-title{font-size:11px}
   .fb-tag-active .fb-meta{font-size:8px}

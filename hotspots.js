@@ -94,7 +94,7 @@ window.PADS = [
 
   { id: "pad-2-0", type: "social", label: "YouTube",   url: "https://www.youtube.com/" },
   { id: "pad-2-1", type: "social", label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
-  { id: "pad-2-2", type: "social", label: "TikTok",     url: null },
+  { id: "pad-2-2", type: "social", label: "TikTok",     url: "https://www.tiktok.com/@jayrewindbeatz" },
   { id: "pad-2-3", type: "social", label: "About",      url: "about.html" },
 
   { id: "pad-3-0", type: "social", label: "Blog",    url: "blog.html" },

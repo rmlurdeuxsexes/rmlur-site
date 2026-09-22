@@ -115,10 +115,17 @@ window.mpc3d = (function () {
   }
 
   // Desk/floor/wall/lamp objects give the scene depth but shouldn't drive
-  // how tightly the camera frames the MPC itself.
-  // "Text"/"Cylinder004" are a leftover floating "RMLUR" text experiment
-  // parked off to the side of the scene, not part of the MPC itself.
-  const ENV_RE = /^(Desk|Floor|WallSeam|LampArm|Backdrop|Drive_Body|Cable|iPod|Leg|Cone|Point|Plane|Text|Cylinder\.?004)/i;
+  // how tightly the camera frames the MPC itself — genuine clutter, hidden
+  // outright. "iPod" is a placeholder mockup prop for an unrelated future
+  // feature (a radio-station player), not final art — stays hidden until
+  // that's actually built. "Text"/"Cylinder004" are a leftover floating
+  // "RMLUR" text experiment parked off to the side of the scene.
+  const HIDE_RE = /^(Desk|Floor|WallSeam|LampArm|Backdrop|iPod|Leg|Cone|Point|Plane|Text|Cylinder\.?004)/i;
+  // The connector cable to the drive renders (it's real geometry, part of
+  // the scene) but its span shouldn't dictate the camera fit the way the
+  // drive housing itself should — excluded from the box below, included
+  // in rendering.
+  const CABLE_RE = /^Cable/i;
 
   function loadModel() {
     return new Promise((resolve, reject) => {
@@ -135,12 +142,11 @@ window.mpc3d = (function () {
           const box = new THREE.Box3();
           mpcRoot.traverse((obj) => {
             if (!obj.isMesh) return;
-            // The desk/wall/lamp/cable/iPod-prop environment reads as
-            // clutter at this preview size (thin wires cutting through
-            // frame, a stray desk-lamp prop) rather than adding context —
-            // hide it and frame on the MPC alone.
-            if (ENV_RE.test(obj.name || '')) { obj.visible = false; return; }
+            if (HIDE_RE.test(obj.name || '')) { obj.visible = false; return; }
             tagPart(obj);
+            // Drive housing (Drive_Body/Gotek*) counts toward the frame fit
+            // so it's actually visible in the crop; the cable itself doesn't.
+            if (CABLE_RE.test(obj.name || '')) return;
             box.expandByObject(obj);
           });
 
@@ -169,6 +175,12 @@ window.mpc3d = (function () {
 
   const PAD_RE = /^Pad_(\d+)$/;
   const NAMED_RE = /^(Btn_|MPC_DataWheel)/;
+  // The satellite tape/floppy drive is several separate meshes (body,
+  // screen, buttons, knob) — grouped under one canonical name so hovering
+  // any part of it gives one consistent tooltip/click target, same as a
+  // real physical unit rather than 5 independently-behaving hotspots.
+  const DRIVE_RE = /^(Drive_Body|Gotek)/i;
+  const DRIVE_NAME = 'Drive_Body';
 
   // The panel photo is the real product photo, already correctly lit —
   // rendering it as a normal lit PBR material double-exposes it (scene
@@ -210,6 +222,12 @@ window.mpc3d = (function () {
     if (obj.name === 'Btn_Fader') { faderMesh = obj; }
     if (obj.name === 'MPC_PanelPhoto') {
       convertPanelPhotoMaterials(obj);
+      return;
+    }
+    if (DRIVE_RE.test(obj.name || '')) {
+      convertPanelPhotoMaterials(obj);
+      obj.userData.mpcName = DRIVE_NAME;
+      (interactives[DRIVE_NAME] || (interactives[DRIVE_NAME] = [])).push(obj);
       return;
     }
     convertPanelPhotoMaterials(obj);
@@ -277,7 +295,7 @@ window.mpc3d = (function () {
   }
 
   function onPointerDown() {
-    if (hoveredPart === faderMesh) {
+    if (faderMesh && hoveredPart === faderMesh) {
       draggingFader = true;
       // Plane through the fader's current world position, facing +Z (the
       // model carries no rotation, so world Z stays "up out of the panel").
@@ -293,6 +311,7 @@ window.mpc3d = (function () {
   function labelFor(name) {
     const padMatch = name.match(PAD_RE);
     if (padMatch) return 'PAD ' + (parseInt(padMatch[1], 10) + 1);
+    if (name === DRIVE_NAME) return 'TAPE';
     return name.replace(/^(Btn_|MPC_)/, '').replace(/_/g, ' ').toUpperCase();
   }
 
@@ -308,6 +327,7 @@ window.mpc3d = (function () {
     if (suppressNextClick) { suppressNextClick = false; return; }
     if (!hoveredPart) return;
     const name = hoveredPart.userData.mpcName;
+    flashPart(name);
     const padMatch = name.match(PAD_RE);
     if (padMatch && bridge.onPadClick) { bridge.onPadClick(parseInt(padMatch[1], 10)); return; }
     if (bridge.onPartClick) bridge.onPartClick(name);
@@ -320,9 +340,30 @@ window.mpc3d = (function () {
     mesh.material.emissiveIntensity = color === '#111111' ? 0.05 : 0.65;
   }
 
+  // Generic click feedback — a quick scale bump, material-agnostic (works on
+  // the unlit panel-photo meshes too, unlike the pad emissive flash above).
+  // Every named part gets this on click; none had any feedback before.
+  const activePulses = [];
+  function flashPart(name, duration) {
+    duration = duration || 220;
+    const meshes = interactives[name] || [];
+    const now = performance.now();
+    meshes.forEach((m) => {
+      if (!m.userData._pulseBase) m.userData._pulseBase = m.scale.clone();
+      activePulses.push({ mesh: m, base: m.userData._pulseBase, start: now, duration });
+    });
+  }
+
   function startLoop() {
     (function tick() {
       requestAnimationFrame(tick);
+      for (let i = activePulses.length - 1; i >= 0; i--) {
+        const p = activePulses[i];
+        const t = (performance.now() - p.start) / p.duration;
+        if (t >= 1) { p.mesh.scale.copy(p.base); activePulses.splice(i, 1); continue; }
+        const bump = 1 + 0.08 * Math.sin(t * Math.PI); // up and back down, peak mid-pulse
+        p.mesh.scale.copy(p.base).multiplyScalar(bump);
+      }
       if (lcdTexture) lcdTexture.needsUpdate = true;
       renderer.render(scene, camera);
     })();
