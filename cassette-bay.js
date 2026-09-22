@@ -582,6 +582,12 @@ window.cassetteBay = (function () {
         const hovered = hoverIndex === entry.index;
         const j = hash(entry.index);
         const leanRy = -0.12 + (j - 0.5) * 0.1; // slight shared lean + per-disk jitter — still face-on, never edge-on
+        // Selecting a sleeve rotates it to face the camera more directly
+        // (rather than resting at the shared bin lean) and pops it further
+        // forward than a mere hover — reads as pulling the case out toward
+        // you, not just a UI hover highlight.
+        const activeRy = isActive ? leanRy * 0.35 : leanRy;
+        const activeRx = isActive ? -0.03 : -0.08;
 
         // Pop-forward distances scaled to the bin's own shallow depth
         // (BIN.depth 0.55) — the old values were tuned for a much deeper
@@ -589,8 +595,8 @@ window.cassetteBay = (function () {
         Object.assign(d.target, {
           x: FAN_STEP.dx * localOffset,
           y: (isActive ? (hovered ? 0.025 : 0.015) : 0) + FAN_STEP.dy * localOffset,
-          z: (isActive ? (hovered ? 0.11 : 0.08) : -0.015) + FAN_STEP.dz * localOffset,
-          rx: -0.08, ry: leanRy, rz: (j - 0.5) * 0.04,
+          z: (isActive ? (hovered ? 0.15 : 0.11) : -0.015) + FAN_STEP.dz * localOffset,
+          rx: activeRx, ry: activeRy, rz: (j - 0.5) * 0.04,
           scale: (isActive ? (hovered ? 1.08 : 1.04) : (hovered ? 1.03 : 1)) * Math.max(0.85, 1 - localOffset * 0.018),
           emissive: isActive ? (hovered ? 1 : 0.4) : (hovered ? 0.6 : 0),
         });
