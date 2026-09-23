@@ -3,8 +3,7 @@ async function loadProducts() {
   try {
     const res = await fetch('/api/products');
     if (!res.ok) throw new Error('bad response');
-    const products = await res.json();
-    if (products && products.length) return products;
+    return await res.json();
   } catch (err) {
     console.error('[shop] failed to load /api/products:', err);
   }

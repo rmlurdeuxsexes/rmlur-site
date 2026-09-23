@@ -29,7 +29,7 @@ export default {
       return Response.json(rows.map(toProduct));
     } catch (err) {
       console.error('[api/products] DB error:', err);
-      return Response.json([], { status: 200 }); // shop.js's empty-state handles this gracefully
+      return Response.json({ error: 'internal error' }, { status: 500 });
     }
   },
 };
