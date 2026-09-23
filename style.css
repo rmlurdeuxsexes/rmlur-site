@@ -248,7 +248,7 @@ main#shop{max-width:1280px;margin:0 auto;padding:60px 32px 160px}
 .tab.active{color:var(--ink);border-color:var(--ink)}
 
 /* ---- genre isolate + search/sort (shop.js), colored to match the 3D
-   divider walls via floppyBay.genreInfo — set inline per pill from JS ---- */
+   divider walls via cassetteBay.genreInfo — set inline per pill from JS ---- */
 .shop-filters{
   display:flex;flex-wrap:wrap;align-items:center;gap:16px;
   margin:-24px 0 32px;
