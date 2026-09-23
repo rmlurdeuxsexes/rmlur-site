@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!lcdIdle) return;
     if (lcdVideo.readyState >= 2) {
       lcdCtx.drawImage(lcdVideo, 0, 0, lcdCanvas.width, lcdCanvas.height);
+      window.drawLcdGlass(lcdCtx, lcdCanvas.width, lcdCanvas.height);
     }
     requestAnimationFrame(drawIdleFrame);
   }
@@ -70,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     currentPadId = pad.id;
     setLcdState('PLAYING', { label: pad.title || '' });
+    wave.flashHit('PAD ' + (pads.indexOf(pad) + 1));
     await safePlay(pad.audio);
   }
   padAudio.addEventListener('ended', () => {

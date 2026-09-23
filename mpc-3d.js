@@ -33,7 +33,7 @@ window.mpc3d = (function () {
 
   // Fader drag — Btn_Fader slides along its own local Y between these two
   // measured endpoints (top/bottom of the printed slider track).
-  let mpcRoot = null, faderMesh = null, draggingFader = false, suppressNextClick = false;
+  let mpcRoot = null, faderMesh = null, cableMesh = null, draggingFader = false, suppressNextClick = false;
   const FADER_Y_MIN = -0.2515, FADER_Y_MAX = -0.1300;
   const dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1));
   const dragPoint = new THREE.Vector3();
@@ -127,49 +127,120 @@ window.mpc3d = (function () {
   // in rendering.
   const CABLE_RE = /^Cable/i;
 
-  function loadModel() {
+  function loadTexture(url) {
     return new Promise((resolve, reject) => {
-      const GLTFLoaderClass = (typeof THREE.GLTFLoader !== 'undefined') ? THREE.GLTFLoader
-        : (typeof window.GLTFLoader !== 'undefined') ? window.GLTFLoader : null;
-      if (!GLTFLoaderClass) { reject(new Error('GLTFLoader not available')); return; }
+      new THREE.TextureLoader().load(url, resolve, undefined, reject);
+    });
+  }
 
-      const loader = new GLTFLoaderClass();
-      loader.load('assets/mpc-scene/mpc.glb', (gltf) => {
-        try {
-          mpcRoot = gltf.scene;
-          mpcRoot.updateMatrixWorld(true);
+  // Pads had zero texture (flat near-black PadMat) — this real photo crop
+  // of an actual pad existed in assets/ already, unused, made for exactly
+  // this. Cloned per-pad (not shared) so setPadColor's per-pad emissive
+  // still works independently once something actually calls it.
+  function applyPadTextures(padTex) {
+    padTex.colorSpace = THREE.SRGBColorSpace;
+    padTex.anisotropy = 4;
+    // The pad photo is dark to begin with, and PBR shading + ACES tone
+    // mapping crushes it further under this scene's flat product-photo
+    // lighting — an emissiveMap keeps the real texture/sheen visible at a
+    // fixed baseline regardless of light angle, while `map` still gives
+    // real lit shading on top for hover/press. (setPadColor, if ever wired
+    // up, would need to blend with this base emissive rather than replace
+    // it outright — it's currently unused, so not handled here.)
+    const base = new THREE.MeshStandardMaterial({
+      map: padTex,
+      emissiveMap: padTex,
+      emissive: new THREE.Color(0xffffff),
+      emissiveIntensity: 0.4,
+      roughness: 0.6,
+      metalness: 0.04,
+    });
+    padMeshes.forEach((mesh) => { if (mesh) mesh.material = base.clone(); });
+  }
 
-          const box = new THREE.Box3();
-          mpcRoot.traverse((obj) => {
-            if (!obj.isMesh) return;
-            if (HIDE_RE.test(obj.name || '')) { obj.visible = false; return; }
-            tagPart(obj);
-            // Drive housing (Drive_Body/Gotek*) counts toward the frame fit
-            // so it's actually visible in the crop; the cable itself doesn't.
-            if (CABLE_RE.test(obj.name || '')) return;
-            box.expandByObject(obj);
-          });
+  // Drive_Body (the satellite tape/floppy unit on the end of the cable) was
+  // authored with iPodBodyMat — the material for the *hidden, unrelated*
+  // iPod placeholder prop (see HIDE_RE) — which is exactly why it read as
+  // a cheap iPod widget instead of a physical drive. Reuse the tone of the
+  // already-built Gotek material set (meant for this kind of unit) instead
+  // of inventing a new one, tuned toward brushed metal for a standalone
+  // satellite case rather than the small dark on-body button cluster.
+  function applyDriveMaterial() {
+    const driveMesh = mpcRoot.getObjectByName('Drive_Body');
+    const source = mpcRoot.getObjectByName('GotekUSB') || mpcRoot.getObjectByName('GotekKnob');
+    if (!driveMesh || !source || !source.material) return;
+    const mat = source.material.clone();
+    mat.color.setRGB(0.42, 0.43, 0.45);
+    mat.metalness = 0.65;
+    mat.roughness = 0.38;
+    driveMesh.material = mat;
+  }
 
-          const size = box.getSize(new THREE.Vector3());
-          const center = box.getCenter(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z);
-          const scale = 2.4 / maxDim;
-          mpcRoot.scale.setScalar(scale);
-          mpcRoot.position.sub(center.clone().multiplyScalar(scale));
+  // The cable mesh is a real curved tube (not a CSS line), but it was
+  // authored almost perfectly taut — under 0.03 units of vertical sag
+  // across its whole span. Rebuild it as a genuinely sagging tube between
+  // its own real endpoints (found from its own geometry, not guessed).
+  function applyCableSag() {
+    if (!cableMesh || !cableMesh.geometry) return;
+    const pos = cableMesh.geometry.attributes.position;
+    let minI = 0, maxI = 0;
+    for (let i = 1; i < pos.count; i++) {
+      if (pos.getX(i) < pos.getX(minI)) minI = i;
+      if (pos.getX(i) > pos.getX(maxI)) maxI = i;
+    }
+    const start = new THREE.Vector3(pos.getX(minI), pos.getY(minI), pos.getZ(minI));
+    const end = new THREE.Vector3(pos.getX(maxI), pos.getY(maxI), pos.getZ(maxI));
+    const span = start.distanceTo(end);
+    const mid = start.clone().lerp(end, 0.5);
+    mid.y -= span * 0.22; // gravity sag, proportional to how far the drive sits from the body
+    const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+    const newGeo = new THREE.TubeGeometry(curve, 48, 0.0055, 8, false);
+    cableMesh.geometry.dispose();
+    cableMesh.geometry = newGeo;
+  }
 
-          buildLcdTexture();
-          scene.add(mpcRoot);
+  function loadModel() {
+    const GLTFLoaderClass = (typeof THREE.GLTFLoader !== 'undefined') ? THREE.GLTFLoader
+      : (typeof window.GLTFLoader !== 'undefined') ? window.GLTFLoader : null;
+    if (!GLTFLoaderClass) return Promise.reject(new Error('GLTFLoader not available'));
 
-          modelHalfW = (size.x * scale) / 2;
-          modelHalfH = (size.y * scale) / 2;
-          modelHalfD = (size.z * scale) / 2;
-          refitCamera();
+    const loader = new GLTFLoaderClass();
+    const gltfPromise = new Promise((resolve, reject) => loader.load('assets/mpc-scene/mpc.glb', resolve, undefined, reject));
+    const padTexPromise = loadTexture('assets/pad-texture.png');
 
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      }, undefined, reject);
+    return Promise.all([gltfPromise, padTexPromise]).then(([gltf, padTex]) => {
+      mpcRoot = gltf.scene;
+      mpcRoot.updateMatrixWorld(true);
+
+      const box = new THREE.Box3();
+      mpcRoot.traverse((obj) => {
+        if (!obj.isMesh) return;
+        if (HIDE_RE.test(obj.name || '')) { obj.visible = false; return; }
+        tagPart(obj);
+        // Drive housing (Drive_Body/Gotek*) counts toward the frame fit
+        // so it's actually visible in the crop; the cable itself doesn't.
+        if (CABLE_RE.test(obj.name || '')) { cableMesh = obj; return; }
+        box.expandByObject(obj);
+      });
+
+      applyPadTextures(padTex);
+      applyDriveMaterial();
+      applyCableSag();
+
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = 2.4 / maxDim;
+      mpcRoot.scale.setScalar(scale);
+      mpcRoot.position.sub(center.clone().multiplyScalar(scale));
+
+      buildLcdTexture();
+      scene.add(mpcRoot);
+
+      modelHalfW = (size.x * scale) / 2;
+      modelHalfH = (size.y * scale) / 2;
+      modelHalfD = (size.z * scale) / 2;
+      refitCamera();
     });
   }
 
