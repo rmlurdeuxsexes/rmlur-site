@@ -194,7 +194,12 @@ document.addEventListener('DOMContentLoaded', async () => {
      hands it to the bay, and owns the PDP/preview-player/purchase flow the
      bay's onSelect callback triggers. ---------- */
   products = await loadProducts();
-  window.cassetteBay.init(products, { onSelect: (p) => openPDP(p), arrived: arrivedFromFloppy, emptyStateEl: emptyState });
+  window.cassetteBay.init(products, {
+    onSelect: (p) => openPDP(p),
+    onPreview: (p) => { if (p && p.preview) safePlay(p.preview); },
+    arrived: arrivedFromFloppy,
+    emptyStateEl: emptyState,
+  });
 
   /* ---------- preview player ---------- */
   async function togglePreview(p) {

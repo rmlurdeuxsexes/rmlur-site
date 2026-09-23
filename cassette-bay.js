@@ -11,7 +11,7 @@
    (init's onSelect) to open its own PDP overlay — this module owns
    rendering/layout only, not purchasing.
 
-   Public API: window.cassetteBay.init(products, {onSelect, arrived}) ,
+   Public API: window.cassetteBay.init(products, {onSelect, onPreview, arrived}) ,
                .setFilter(patch) , .genreInfo(genre)
    ============================================================ */
 window.cassetteBay = (function () {
@@ -19,6 +19,7 @@ window.cassetteBay = (function () {
 
   let inited = false;
   let onSelect = function () {};
+  let onPreview = function () {};
   // type: 'all'|'beat'|'kit', genre: 'all'|<genreKey>, search: string, sort: 'catalog'|'price'
   const filterState = { type: 'all', genre: 'all', search: '', sort: 'catalog' };
   const state = { index: 0 };
@@ -89,16 +90,19 @@ window.cassetteBay = (function () {
   function refitRadius() {
     const vFovRad = THREE.MathUtils.degToRad(camera.fov);
     const hFovRad = 2 * Math.atan(Math.tan(vFovRad / 2) * camera.aspect);
-    const halfW = (caseW / 2) * 1.2;
-    const halfH = (sceneTop - caseBottom) / 2 * 1.15;
+    const halfW = (caseW / 2) * 1.06;
+    const halfH = (sceneTop - caseBottom) / 2 * 1.05;
     // Depth budget must reach back to wherever the reclined-open lid's tip
     // actually ends up (sceneBackZ), not just the case body — it swings
     // further back than caseBackZ alone once it's open.
-    const halfD = (caseFrontZ - sceneBackZ) / 2 * 1.1;
+    const halfD = (caseFrontZ - sceneBackZ) / 2 * 1.03;
     const effectiveHalfH = halfH * Math.cos(orbit.phi) + halfD * Math.sin(orbit.phi);
     const radiusForHeight = effectiveHalfH / Math.tan(vFovRad / 2);
     const radiusForWidth = halfW / Math.tan(hFovRad / 2);
-    orbit.radius = Math.max(radiusForHeight, radiusForWidth) * 1.25;
+    // Tight margin (1.08, not the old 1.25) — the case should fill most of
+    // the stage frame ("immersive", not a small object floating in a lot of
+    // dead space).
+    orbit.radius = Math.max(radiusForHeight, radiusForWidth) * 1.08;
   }
   function resize() {
     const w = stageWrap.clientWidth, h = stageWrap.clientHeight;
@@ -622,7 +626,6 @@ window.cassetteBay = (function () {
       });
   }
   function handleLatchClick(id) {
-    lastInteraction = performance.now();
     if (id === 'type') {
       const next = TYPE_CYCLE[(TYPE_CYCLE.indexOf(filterState.type) + 1) % TYPE_CYCLE.length];
       setFilter({ type: next });
@@ -754,10 +757,15 @@ window.cassetteBay = (function () {
     state.index = ((state.index + delta) % n + n) % n;
     afterNav();
   }
-  function afterNav() { computeTargets(); updateActiveTagContent(); }
+  function afterNav() {
+    computeTargets();
+    updateActiveTagContent();
+    const idx = currentActiveIndex();
+    onPreview(idx !== null ? items[idx].product : null);
+  }
 
   /* ---------- tick / render loop ---------- */
-  let clock, dragging = false, lastInteraction = 0, autoDir = 1;
+  let clock, dragging = false;
   function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
   function tick() {
@@ -794,15 +802,9 @@ window.cassetteBay = (function () {
       // glow are enough active-state feedback on their own.
       d.currentEmissive += (tgt.emissive - d.currentEmissive) * f;
     });
-    if (!dragging && performance.now() - lastInteraction > 2200) {
-      // Kept tighter than the drag clamp (±0.85) — at a small catalog size
-      // (as few as 1-3 items) the near/active disk and the next one behind
-      // it are close enough that swinging out to the full drag range lets
-      // their labels visually cross over from some angles.
-      orbit.theta += dt * 0.045 * autoDir;
-      if (orbit.theta > 0.22) { orbit.theta = 0.22; autoDir = -1; }
-      if (orbit.theta < -0.22) { orbit.theta = -0.22; autoDir = 1; }
-    }
+    // Idle auto-drift and drag-to-orbit removed — the bay now holds one
+    // fixed, deliberately-composed angle (see `orbit` above) instead of
+    // wandering, per the "locked in place" direction.
     // Only the bin holding the active disk shows its floor glow — bins are
     // fixed in place now, so this is just a visibility/position toggle,
     // not a whole-bin lerp.
@@ -840,17 +842,13 @@ window.cassetteBay = (function () {
   function updateFloatingTags() {
     const activeIdx = currentActiveIndex();
     if (activeIdx !== null && disks[activeIdx]) {
-      const d = disks[activeIdx];
-      const p = d.visual.getWorldPosition(new THREE.Vector3());
-      // A narrower/taller stage (mobile portrait) maps the same world-space
-      // drop to a smaller fraction of screen height, so the tag needs to be
-      // pushed further below the disk to clear the fan above it.
-      const boxAspect = stageWrap.clientWidth / stageWrap.clientHeight;
-      const dropFactor = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(boxAspect, 0.8, 1.75, 0.62, 0.44), 0.44, 0.62);
-      p.y -= DISK.h * dropFactor;
-      const s = projectToScreen(p);
-      activeTagEl.style.left = s.x + 'px';
-      activeTagEl.style.top = s.y + 'px';
+      // Fixed dock at the bottom-center of the stage, not a 3D-projected
+      // point on the tape — a bigger, better-framed case (see refitRadius)
+      // fills enough of the frame that a tag tracking the tape's own screen
+      // position sits on top of the case body and blocks it. Docking clear
+      // of the case is what "fixed view" already implies for the label too.
+      activeTagEl.style.left = (stageWrap.clientWidth / 2) + 'px';
+      activeTagEl.style.top = (stageWrap.clientHeight - 18) + 'px';
       activeTagEl.hidden = false;
     } else {
       activeTagEl.hidden = true;
@@ -899,17 +897,15 @@ window.cassetteBay = (function () {
   function bindInteraction() {
     stageWrap.addEventListener('pointerdown', (e) => {
       dragging = true; dragMoved = false;
-      dragStart = { x: e.clientX, y: e.clientY, theta: orbit.theta, phi: orbit.phi };
+      dragStart = { x: e.clientX, y: e.clientY, pointerType: e.pointerType };
       stageWrap.classList.add('dragging');
-      lastInteraction = performance.now();
     });
     window.addEventListener('pointermove', (e) => {
-      lastInteraction = performance.now();
       if (dragging && dragStart) {
         const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
         if (Math.abs(dx) + Math.abs(dy) > 4) dragMoved = true;
-        orbit.theta = THREE.MathUtils.clamp(dragStart.theta - dx * 0.006, -0.85, 0.85);
-        orbit.phi = THREE.MathUtils.clamp(dragStart.phi - dy * 0.006, 0.62, 1.42);
+        // The camera is fixed (no orbit-on-drag) — a drag only still matters
+        // for touch, which pages the stack via swipe (see pointerup).
         return;
       }
       if (e.target === canvas || stageWrap.contains(e.target)) {
@@ -931,13 +927,15 @@ window.cassetteBay = (function () {
         raycaster.setFromCamera(pointerNdc, camera);
         const hits = raycaster.intersectObjects(diskMeshes.concat(binHitMeshes, resetHitMeshes, latchHitMeshes), false);
         if (hits.length) handleHit(hits[0].object);
+      } else if (dragging && dragMoved && dragStart && dragStart.pointerType === 'touch') {
+        // Swipe = page the stack (no orbit on touch — see pointermove).
+        step(e.clientX - dragStart.x < 0 ? 1 : -1);
       }
       dragging = false; dragStart = null;
       stageWrap.classList.remove('dragging');
     });
     stageWrap.addEventListener('wheel', (e) => {
       e.preventDefault();
-      lastInteraction = performance.now();
       step(e.deltaY > 0 ? 1 : -1);
     }, { passive: false });
 
@@ -962,7 +960,6 @@ window.cassetteBay = (function () {
         e.preventDefault();
         return;
       }
-      lastInteraction = performance.now();
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { step(1); e.preventDefault(); }
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { step(-1); e.preventDefault(); }
       else if (e.key === 'Enter' || e.key === ' ') {
@@ -1027,7 +1024,6 @@ window.cassetteBay = (function () {
     raycaster = new THREE.Raycaster();
     pointerNdc = new THREE.Vector2();
     clock = new THREE.Clock();
-    lastInteraction = performance.now();
 
     bindInteraction();
   }
@@ -1051,6 +1047,7 @@ window.cassetteBay = (function () {
   function init(products, opts) {
     if (inited) return;
     onSelect = (opts && opts.onSelect) || function () {};
+    onPreview = (opts && opts.onPreview) || function () {};
     emptyStateEl = (opts && opts.emptyStateEl) || null;
     items = products.map((p, i) => Object.assign({ product: p, index: i }, genreInfo(p.genre)));
     // Start on the first item — every bin rests on its own front disk
