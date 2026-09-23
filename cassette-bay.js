@@ -146,11 +146,12 @@ window.cassetteBay = (function () {
   function solidMat(color, rough) {
     return new THREE.MeshStandardMaterial({ color, roughness: rough !== undefined ? rough : 0.5, metalness: 0.04 });
   }
-  // Glossy black chassis/base plastic (spec: roughness 0.2, metalness 0.1).
+  // Glossy black chassis/base plastic (roughness 0.15, metalness 0.12 — low
+  // roughness for a clear specular highlight on the case shell and bins).
   function glossBlackMat() {
     return new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: 0.15, metalness: 0.12 });
   }
-  // Smoked/translucent brown-tinted acrylic flip lid (spec values verbatim).
+  // Smoked/translucent brown-tinted acrylic flip lid.
   function acrylicMat() {
     // True transmission looked right face-on but rendered solid black or
     // vanished entirely at other camera angles/aspect ratios (angle-
@@ -170,10 +171,10 @@ window.cassetteBay = (function () {
      of vinyl records tilted up toward the back, not a flat single-file row
      or a vertical mail-sorter stack. Each bin is one genre; disks fan
      inside their own bin, same as the old compartment system. */
-  // Renders as an upright cassette case now (see bodyGeo in setupThree(),
-  // makeLabelTexture below) — constant/variable names kept as DISK/disks/
-  // diskMeshes throughout the file to keep this diff scoped to the
-  // geometry itself, not a naming pass.
+  // Renders as an upright cassette case (see bodyGeo in setupThree(),
+  // makeLabelTexture below) — the constant/variable names (DISK, disks,
+  // diskMeshes) are historical and don't reflect the current cassette
+  // shape, but aren't worth a repo-wide rename on their own.
   const DISK = { w: 0.86, h: 0.56, depth: 0.16 };
   const BIN = { w: 1.18, depth: 0.55, wallT: 0.03 };
   const BIN_BACK_H = DISK.h * 0.6;
@@ -285,12 +286,12 @@ window.cassetteBay = (function () {
 
   function makeLabelTexture(entry) {
     const p = entry.product;
-    // Canvas aspect matches the label plane's own aspect — buildDisks()
+    // Canvas aspect must match the label plane's own aspect — buildDisks()
     // sizes that plane as DISK.w*0.86 x DISK.h*0.86, i.e. DISK.w/DISK.h
-    // (~1.536, landscape) since Task 3 widened DISK. A portrait canvas
-    // (the old 480x512) mapped onto that landscape plane with no aspect
-    // correction stretched everything drawn here ~64% horizontally.
-    const W = 600, H = 390;
+    // (currently ~1.536, landscape). Deriving H from DISK here instead of
+    // hardcoding it means a future DISK resize can't silently mismatch the
+    // plane's aspect again and stretch everything drawn on this canvas.
+    const W = 600, H = Math.round(W * DISK.h / DISK.w);
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
 
@@ -425,8 +426,23 @@ window.cassetteBay = (function () {
      exactly like the physical case has 5 slots whether or not you own that
      many genres yet. */
   const FOOT = { w: 0.1, h: 0.022, d: 0.035 };
-  const FAN_STEP = { dx: 0.018, dy: 0.012, dz: -0.05 }; // per-disk offset stacking back into the bin
-  const FAN_MAX = 6; // deepest disk rendered behind the front one — deeper ones reveal as you step past
+  // dz was sized for the old floppy DISK.depth (0.05, touching edge-to-edge,
+  // zero overlap) and never updated when Task 3 tripled DISK.depth to 0.16 —
+  // at the old -0.05 that put ~69% of each sleeve's own depth inside the
+  // next one, reading as one merged blob instead of "several tapes,
+  // partially occluding" once a genre has 2+ products. -0.08 brings that
+  // down to ~50%: each sleeve's front edge still clearly steps out from the
+  // one behind it. BIN.depth (0.55) is shallow, so this can't grow much
+  // further without the 2nd sleeve's own back edge clipping the bin's back
+  // wall — see FAN_MAX below.
+  const FAN_STEP = { dx: 0.018, dy: 0.012, dz: -0.08 }; // per-disk offset stacking back into the bin
+  // Capped at 1 (2 sleeves rendered at once: front + one behind) because the
+  // bin's own back wall sits only ~0.23 behind the resting front sleeve —
+  // at the new dz a 3rd stacked sleeve's own body would already clip
+  // through that wall. Deeper items in a genre still reach the front by
+  // stepping/paging (see the comment on FAN_MAX's caller), they just don't
+  // all render simultaneously.
+  const FAN_MAX = 1; // deepest disk rendered behind the front one — deeper ones reveal as you step past
 
   const PLATE = { w: BIN.w * 0.62, h: BIN.w * 0.62 * (90 / 220) };
   let plateGeo;
@@ -588,13 +604,27 @@ window.cassetteBay = (function () {
         // you, not just a UI hover highlight.
         const activeRy = isActive ? leanRy * 0.35 : leanRy;
         const activeRx = isActive ? -0.03 : -0.08;
+        // Bins overlap in Z (STEP_Z < BIN.depth) and barely rise in Y
+        // (STEP_Y), so a bin further back in the staircase (higher rank) sits
+        // tucked partly underneath the shorter, closer bins in front of it.
+        // Popping the active sleeve forward alone (z, below) pushes it
+        // deeper into that shared overlap volume instead of out of it —
+        // more occluded, not less. Lifting it clear of the nearer bins'
+        // walls is what actually reveals it, scaled by rank since a bin
+        // further back sits behind more/taller near-bin geometry.
+        const rank = SLOTS - 1 - entry.slot;
+        const activeLift = isActive ? 0.14 + rank * 0.05 : 0;
 
-        // Pop-forward distances scaled to the bin's own shallow depth
-        // (BIN.depth 0.55) — the old values were tuned for a much deeper
-        // single tray and pushed the active disk out past its bin's lip.
+        // z's own forward-pop distance is unchanged from before (still just
+        // the fixed 0.11/0.15 below) — it was never the actual constraint
+        // here. The real limit on how far a sleeve can pop is the NEXT bin
+        // forward, not this bin's own lip: STEP_Z overlaps bins by design
+        // (see STEP_Z above), so z alone can't clear the occluding geometry
+        // no matter how far it pushes — activeLift (above) is what does
+        // that, by leaving the shared overlap volume via Y instead.
         Object.assign(d.target, {
           x: FAN_STEP.dx * localOffset,
-          y: (isActive ? (hovered ? 0.025 : 0.015) : 0) + FAN_STEP.dy * localOffset,
+          y: (isActive ? (hovered ? 0.025 : 0.015) : 0) + activeLift + FAN_STEP.dy * localOffset,
           z: (isActive ? (hovered ? 0.15 : 0.11) : -0.015) + FAN_STEP.dz * localOffset,
           rx: activeRx, ry: activeRy, rz: (j - 0.5) * 0.04,
           scale: (isActive ? (hovered ? 1.08 : 1.04) : (hovered ? 1.03 : 1)) * Math.max(0.85, 1 - localOffset * 0.018),
