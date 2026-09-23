@@ -119,8 +119,13 @@ window.mpc3d = (function () {
   // outright. "iPod" is a placeholder mockup prop for an unrelated future
   // feature (a radio-station player), not final art — stays hidden until
   // that's actually built. "Text"/"Cylinder004" are a leftover floating
-  // "RMLUR" text experiment parked off to the side of the scene.
-  const HIDE_RE = /^(Desk|Floor|WallSeam|LampArm|Backdrop|iPod|Leg|Cone|Point|Plane|Text|Cylinder\.?004)/i;
+  // "RMLUR" text experiment parked off to the side of the scene. "MPC_Port"
+  // and "VentSlot" are non-interactive chassis-detail props with no bevel
+  // geometry behind them, so they rendered floating past the chassis
+  // silhouette into the background instead of sitting on a surface —
+  // hidden until they have a proper bevel to sit on. (Btn_Floppy, right
+  // next to the vent slots, is a real functional button — left alone.)
+  const HIDE_RE = /^(Desk|Floor|WallSeam|LampArm|Backdrop|iPod|Leg|Cone|Point|Plane|Text|Cylinder\.?004|MPC_Port|VentSlot)/i;
   // The connector cable to the drive renders (it's real geometry, part of
   // the scene) but its span shouldn't dictate the camera fit the way the
   // drive housing itself should — excluded from the box below, included
@@ -133,27 +138,31 @@ window.mpc3d = (function () {
     });
   }
 
-  // Pads had zero texture (flat near-black PadMat) — this real photo crop
-  // of an actual pad existed in assets/ already, unused, made for exactly
-  // this. Cloned per-pad (not shared) so setPadColor's per-pad emissive
-  // still works independently once something actually calls it.
+  // Pads had zero texture (flat near-black PadMat). assets/pad-texture.png
+  // is a clean crop straight from the real panel photo (mpc-hero.jpg),
+  // pre-processed (brightened, desaturated, tight-cropped with no
+  // white/transparent border) so it fills the pad's full UV range — the
+  // original placeholder file had exactly that kind of border baked in,
+  // which is what caused a bright line where the pad's bevel/side faces
+  // sampled into it. Cloned per-pad (not shared) so setPadColor's per-pad
+  // emissive still works independently once something actually calls it.
   function applyPadTextures(padTex) {
     padTex.colorSpace = THREE.SRGBColorSpace;
     padTex.anisotropy = 4;
-    // The pad photo is dark to begin with, and PBR shading + ACES tone
-    // mapping crushes it further under this scene's flat product-photo
-    // lighting — an emissiveMap keeps the real texture/sheen visible at a
-    // fixed baseline regardless of light angle, while `map` still gives
-    // real lit shading on top for hover/press. (setPadColor, if ever wired
-    // up, would need to blend with this base emissive rather than replace
-    // it outright — it's currently unused, so not handled here.)
+    // emissiveMap keeps the real texture/sheen visible at a fixed baseline
+    // regardless of light angle (this scene's lighting + ACES tone mapping
+    // otherwise crushes dark textures), while `map` gives real lit shading
+    // on top for hover/press. High roughness + zero metalness reads as
+    // matte rubber, not the glossy specular-streaked look low roughness
+    // gave it. (setPadColor, if ever wired up, would need to blend with
+    // this base emissive rather than replace it outright — unused today.)
     const base = new THREE.MeshStandardMaterial({
       map: padTex,
       emissiveMap: padTex,
       emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 0.4,
-      roughness: 0.6,
-      metalness: 0.04,
+      emissiveIntensity: 0.3,
+      roughness: 0.88,
+      metalness: 0,
     });
     padMeshes.forEach((mesh) => { if (mesh) mesh.material = base.clone(); });
   }
@@ -174,6 +183,76 @@ window.mpc3d = (function () {
     mat.metalness = 0.65;
     mat.roughness = 0.38;
     driveMesh.material = mat;
+  }
+
+  // The panel photo has the REC GAIN / MAIN VOLUME knobs baked into it as
+  // printed pixels — a leftover from the original photograph, separate
+  // from the interactive 3D knob mesh that sits on top of it. Whenever
+  // that 3D mesh isn't pixel-perfectly registered with the baked-in knob,
+  // the original printed knob peeks out from behind it — the same
+  // duplicate-geometry failure mode the pads had before they got their
+  // own texture, just showing up differently because this part of the
+  // panel photo has real content to peek through instead of blank plate.
+  // Fix: paint the printed knobs out of the actual texture the mesh uses
+  // (patched at runtime — this file, not the exported mpc-hero.jpg, is
+  // what the 3D panel actually samples; mpc.glb embeds its own copy of
+  // the image), so the 3D knob mesh becomes the sole visual source for
+  // them, matching how pads already work. Coordinates are pixel
+  // positions in the embedded photo (1412x1400), found empirically.
+  function patchPanelKnobs(panelMesh) {
+    const tex = panelMesh && panelMesh.material && panelMesh.material.map;
+    const img = tex && tex.image;
+    if (!img || !img.width) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    function eraseCircle(cx, cy, r, sampleDx) {
+      const stripW = 24, stripH = r * 2;
+      const strip = document.createElement('canvas');
+      strip.width = stripW; strip.height = stripH;
+      strip.getContext('2d').drawImage(canvas, cx + sampleDx - stripW / 2, cy - r, stripW, stripH, 0, 0, stripW, stripH);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+      for (let x = cx - r; x < cx + r + stripW; x += stripW) ctx.drawImage(strip, x, cy - r);
+      ctx.restore();
+    }
+    eraseCircle(1105, 232, 38, -90);
+    eraseCircle(1240, 232, 38, 90);
+
+    const patched = new THREE.CanvasTexture(canvas);
+    patched.colorSpace = THREE.SRGBColorSpace;
+    patched.offset.copy(tex.offset);
+    patched.repeat.copy(tex.repeat);
+    patched.rotation = tex.rotation;
+    patched.center.copy(tex.center);
+    patched.wrapS = tex.wrapS;
+    patched.wrapT = tex.wrapT;
+    panelMesh.material.map = patched;
+    panelMesh.material.needsUpdate = true;
+  }
+
+  // Btn_Floppy (a real nav button) and the Gotek mini-panel (GotekScreen/
+  // USB/Btn1/Btn2/Knob — also real, grouped into the clickable "Drive_Body"
+  // interactive via DRIVE_RE) sit further forward (z~0.345-0.37) than the
+  // thin front-lip trim behind them (MPC_FrontLip, z~0.33-0.338) — nothing
+  // actually backs them, so they render floating past the chassis edge
+  // into the background. These are real functionality, not clutter to
+  // hide (unlike VentSlot/MPC_Port) — ground them with a simple backing
+  // plate instead, sized to their combined footprint, colored to match
+  // the chassis so it reads as a mounting surface, not a new visible part.
+  function addFloppyClusterBacking() {
+    const backing = new THREE.Mesh(
+      new THREE.BoxGeometry(0.17, 0.03, 0.05),
+      new THREE.MeshStandardMaterial({ color: 0x2e2e33, roughness: 0.7, metalness: 0.1 })
+    );
+    backing.position.set(-0.435, 0.758, 0.335);
+    mpcRoot.add(backing);
   }
 
   // The cable mesh is a real curved tube (not a CSS line), but it was
@@ -206,7 +285,7 @@ window.mpc3d = (function () {
 
     const loader = new GLTFLoaderClass();
     const gltfPromise = new Promise((resolve, reject) => loader.load('assets/mpc-scene/mpc.glb', resolve, undefined, reject));
-    const padTexPromise = loadTexture('assets/pad-texture.png');
+    const padTexPromise = loadTexture('assets/pad-texture.png?v=2');
 
     return Promise.all([gltfPromise, padTexPromise]).then(([gltf, padTex]) => {
       mpcRoot = gltf.scene;
@@ -226,6 +305,8 @@ window.mpc3d = (function () {
       applyPadTextures(padTex);
       applyDriveMaterial();
       applyCableSag();
+      addFloppyClusterBacking();
+      patchPanelKnobs(mpcRoot.getObjectByName('MPC_PanelPhoto'));
 
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());

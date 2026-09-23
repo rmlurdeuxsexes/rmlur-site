@@ -530,8 +530,69 @@ main#shop{max-width:1280px;margin:0 auto;padding:60px 32px 160px}
   .site-watermark{width:40px;left:8px}
 }
 
+/* ================= RADIO PLAYER — site-wide, floating, ambient =================
+   Placeholder content only (see TRACKS in radio-player.js) — swap in
+   real mixes/DJ sets/collab tracks once they're ready, nothing here
+   needs to change. Transparent/embedded like the watermark, not a
+   boxed player: a brief NOW PLAYING card, then a small persistent
+   reactive waveform. */
+.radio-player{
+  position:fixed;right:18px;bottom:18px;z-index:60;
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.35);
+  backdrop-filter:blur(10px) saturate(1.3);
+  -webkit-backdrop-filter:blur(10px) saturate(1.3);
+  border:1px solid rgba(95,163,156,0.25);
+  box-shadow:0 6px 24px rgba(0,0,0,0.08);
+  cursor:pointer;
+  opacity:.55;
+  transition:opacity .25s ease, transform .25s ease;
+}
+.radio-player:hover{opacity:1;transform:translateY(-2px)}
+.radio-player--playing{opacity:.85}
+.radio-player__wave{width:64px;height:28px;display:block}
+.radio-player__title{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-soft);
+  max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.radio-player:not(.radio-player--playing) .radio-player__title::before{content:"\25B6  "}
+
+.radio-player__toast{
+  position:absolute;right:0;bottom:calc(100% + 10px);
+  min-width:180px;padding:10px 14px;border-radius:14px;
+  background:rgba(27,27,27,0.82);
+  backdrop-filter:blur(6px);
+  color:#fff;
+  opacity:0;transform:translateY(8px) scale(.96);
+  pointer-events:none;
+}
+.radio-player__toast-label{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.16em;
+  color:var(--teal);
+}
+.radio-player__toast-title{
+  font-family:var(--font-hand);font-size:18px;color:#fff;margin-top:2px;
+}
+.radio-player--toast .radio-player__toast{
+  animation:radioToast 3.2s ease forwards;
+}
+@keyframes radioToast{
+  0%{opacity:0;transform:translateY(8px) scale(.96)}
+  12%{opacity:1;transform:translateY(0) scale(1)}
+  78%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-6px) scale(.98)}
+}
+@media(max-width:640px){
+  .radio-player{right:10px;bottom:10px;padding:8px 10px}
+  .radio-player__title{max-width:70px}
+}
+
 :focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){
   #pb-marquee{animation:none}
+  .radio-player--toast .radio-player__toast{animation:none;opacity:1}
   *{transition:none !important}
 }
