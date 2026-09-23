@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const wave = window.createWaveform(audio, pbWave);
 
   let currentId = null;
-  const filterState = { type: 'all', genre: 'all', search: '', sort: 'catalog' };
   let cartCount = 0;
 
   /* ---------- arrival from the MPC's floppy transition (app.js goToShop) —
@@ -184,62 +183,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (p.bars) meta.push(['BARS', p.bars]);
       if (p.genre) meta.push(['GENRE', p.genre]);
       const metaHtml = meta.map(([k, v]) => `<div><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
-      pdpInfoPanel.innerHTML = `<div class="pdp-info-meta">${metaHtml}</div><p>${p.info || ''}</p>`;
+      pdpInfoPanel.innerHTML = `<div class="pdp-info-meta">${metaHtml}</div><p>${p.info || ''}</p><p class="pdp-license"><a href="/licenses.html" target="_blank" rel="noopener">License terms for this purchase &rarr;</a></p>`;
     }
   }
   pdpPlay.addEventListener('click', () => { if (pdpProduct) togglePreview(pdpProduct); });
 
-  /* ---------- 3D cassette bay — renders sleeves, hands selections back here ---------- */
-  function applyFilter() {
-    const q = filterState.search.trim().toLowerCase();
-    const visible = products.filter((p) =>
-      (filterState.type === 'all' || p.type === filterState.type) &&
-      (filterState.genre === 'all' || window.cassetteBay.genreInfo(p.genre).genreKey === filterState.genre) &&
-      (!q || p.title.toLowerCase().includes(q) || (p.tags || []).some((t) => t.toLowerCase().includes(q)))
-    );
-    emptyState.hidden = visible.length > 0;
-    window.cassetteBay.setFilter(filterState);
-  }
+  /* ---------- 3D cassette bay — the bay IS the navigator/store now: type
+     tabs, genre pills, search and sort all live as physical controls on
+     the case itself (see cassette-bay.js). shop.js just loads the catalog,
+     hands it to the bay, and owns the PDP/preview-player/purchase flow the
+     bay's onSelect callback triggers. ---------- */
   products = await loadProducts();
-  window.cassetteBay.init(products, { onSelect: (p) => openPDP(p), arrived: arrivedFromFloppy });
-
-  /* ---------- genre pills — derived from the real catalog, never hardcoded;
-     colored to match cassette-bay.js's own genre divider walls ---------- */
-  const genrePillsEl = document.getElementById('genre-pills');
-  const seenGenres = new Map();
-  products.forEach((p) => {
-    const gi = window.cassetteBay.genreInfo(p.genre);
-    if (!seenGenres.has(gi.genreKey)) seenGenres.set(gi.genreKey, gi);
-  });
-  seenGenres.forEach((gi) => {
-    const btn = document.createElement('button');
-    btn.className = 'pill';
-    btn.dataset.genre = gi.genreKey;
-    btn.textContent = gi.genreLabel;
-    btn.addEventListener('click', () => {
-      genrePillsEl.querySelectorAll('.pill').forEach((el) => { el.classList.remove('active'); el.style.background = ''; });
-      btn.classList.add('active');
-      btn.style.background = '#' + gi.color.toString(16).padStart(6, '0');
-      filterState.genre = gi.genreKey;
-      applyFilter();
-    });
-    genrePillsEl.appendChild(btn);
-  });
-  genrePillsEl.querySelector('[data-genre="all"]').addEventListener('click', (e) => {
-    genrePillsEl.querySelectorAll('.pill').forEach((el) => { el.classList.remove('active'); el.style.background = ''; });
-    e.currentTarget.classList.add('active');
-    filterState.genre = 'all';
-    applyFilter();
-  });
-
-  document.getElementById('shop-search').addEventListener('input', (e) => {
-    filterState.search = e.target.value;
-    applyFilter();
-  });
-  document.getElementById('shop-sort').addEventListener('change', (e) => {
-    filterState.sort = e.target.value;
-    applyFilter();
-  });
+  window.cassetteBay.init(products, { onSelect: (p) => openPDP(p), arrived: arrivedFromFloppy, emptyStateEl: emptyState });
 
   /* ---------- preview player ---------- */
   async function togglePreview(p) {
@@ -268,16 +223,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (audio.duration) pbProgress.style.width = (audio.currentTime / audio.duration * 100) + '%';
   });
   audio.addEventListener('ended', () => { pbProgress.style.width = '0%'; });
-
-  /* ---------- filter tabs ---------- */
-  document.querySelectorAll('.tab[data-filter]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterState.type = btn.dataset.filter;
-      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      applyFilter();
-    });
-  });
-
-  applyFilter();
 });

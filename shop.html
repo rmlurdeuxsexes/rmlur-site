@@ -61,51 +61,19 @@
   </div>
 </div>
 
-<!-- ================= SHOP — full catalog, tape-label styled ================= -->
+<!-- ================= SHOP — the bay IS the store: no controls outside it ================= -->
 <main id="shop">
   <a class="back-link" href="index.html">← Back</a>
-  <div class="shop-head">
-    <h1>Shop</h1>
-    <nav class="tabs" aria-label="Filter products">
-      <button class="tab active" data-filter="all">All</button>
-      <button class="tab" data-filter="beat">Beats</button>
-      <button class="tab" data-filter="kit">Kits</button>
-      <button class="tab" data-filter="loopkit">Loop Kits</button>
-      <button class="tab" data-filter="sample">Samples</button>
-      <button class="tab" data-filter="project">Projects</button>
-      <a class="tab tab-link" href="mailto:jayrewindbeatz@gmail.com?subject=Custom%20work">Custom</a>
-    </nav>
-  </div>
 
-  <div class="shop-filters">
-    <div class="genre-pills" id="genre-pills" role="group" aria-label="Filter by genre">
-      <button class="pill active" data-genre="all">All Genres</button>
-    </div>
-    <div class="shop-controls">
-      <input type="search" id="shop-search" class="shop-search" placeholder="search title or tag…">
-      <select id="shop-sort" class="shop-sort" aria-label="Sort">
-        <option value="catalog">Catalog order</option>
-        <option value="price">Price: low to high</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="fb-stage-wrap" id="fb-stageWrap">
+  <div class="fb-stage-wrap" id="fb-stageWrap" tabindex="0" aria-label="Cassette bay — browse and buy. Arrow keys to browse, click a tape to select, click again to buy.">
     <canvas id="fb-stage"></canvas>
     <div class="fb-tag fb-tag-active" id="fb-activeTag" hidden><div class="fb-tag-inner">
       <div class="fb-title" id="fb-activeTitle"></div>
       <div class="fb-meta" id="fb-activeMeta"></div>
-      <div class="fb-row"><span class="fb-price" id="fb-activePrice"></span><button class="fb-load-btn" id="fb-loadBtn">View &amp; Buy →</button></div>
     </div></div>
     <div class="fb-tag fb-tag-hover" id="fb-hoverTag" hidden><div class="fb-tag-inner">
       <div class="fb-title" id="fb-hoverTitle"></div>
-      <div class="fb-price" id="fb-hoverPrice"></div>
     </div></div>
-  </div>
-  <div class="fb-nav">
-    <button id="fb-prev" aria-label="Prev">‹</button>
-    <div class="fb-dots" id="fb-dots"></div>
-    <button id="fb-next" aria-label="Next">›</button>
   </div>
   <p id="empty-state" class="empty-state" hidden>nothing here yet.</p>
 </main>

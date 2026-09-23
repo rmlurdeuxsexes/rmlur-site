@@ -23,6 +23,9 @@ window.cassetteBay = (function () {
   const filterState = { type: 'all', genre: 'all', search: '', sort: 'catalog' };
   const state = { index: 0 };
   let hoverIndex = null;
+  let emptyStateEl = null;
+  // true while the SEARCH latch has focus-captured typing — see buildLatches()/bindInteraction()
+  let searching = false;
 
   /* ---------- genre color: the 5 real bins on the physical organizer,
      assigned to genres in first-seen catalog order (not a hash) — a real
@@ -41,6 +44,18 @@ window.cassetteBay = (function () {
     const color = slot < BIN_PALETTE.length ? BIN_PALETTE[slot] : OVERFLOW_COLOR;
     return { genreKey, genreLabel: key, color, slot };
   }
+  function genreKeyForSlot(slot) {
+    for (const [key, s] of genreSlot) if (s === slot) return key;
+    return null;
+  }
+
+  /* ---------- TYPE/SORT — physical latches on the pedestal (buildLatches
+     below) replace the old page-chrome tabs + <select>. ---------- */
+  const TYPE_CYCLE = ['all', 'beat', 'kit', 'loopkit', 'sample', 'project'];
+  const TYPE_LABEL = { all: 'ALL', beat: 'BEATS', kit: 'KITS', loopkit: 'LOOP KITS', sample: 'SAMPLES', project: 'PROJECTS' };
+  const SORT_CYCLE = ['catalog', 'price'];
+  const SORT_LABEL = { catalog: 'CATALOG', price: 'PRICE ↑' };
+
   function minPrice(p) {
     const prices = (p.tiers || []).map((t) => t.price);
     return prices.length ? Math.min(...prices) : 0;
@@ -243,7 +258,9 @@ window.cassetteBay = (function () {
       floorGeo.rotateX(-Math.PI / 2);
       const floor = new THREE.Mesh(floorGeo, glossBlackMat());
       floor.position.set(0, caseFloorY, caseCz);
+      floor.userData.resetGenre = true;
       holder.add(floor);
+      resetHitMeshes.push(floor);
     }
     {
       // Black plinth the whole case sits on — visible in the reference,
@@ -253,7 +270,9 @@ window.cassetteBay = (function () {
       pedGeo.rotateX(-Math.PI / 2);
       const pedestal = new THREE.Mesh(pedGeo, glossBlackMat());
       pedestal.position.set(0, caseBottom, caseCz);
+      pedestal.userData.resetGenre = true;
       holder.add(pedestal);
+      resetHitMeshes.push(pedestal);
     }
     {
       const backGeo = panelGeo(roundedRectShape(caseW, caseH, 0.03), CASE_WALL_T);
@@ -357,6 +376,13 @@ window.cassetteBay = (function () {
   let items = []; // {product, index, genreKey, genreLabel, color}
   const disks = [];
   const diskMeshes = [];
+  // Extra raycast targets so genre/type/sort/search are physical bay
+  // interactions instead of outside-the-frame HTML controls: clicking a
+  // bin's own walls filters to that genre, clicking the case floor/pedestal
+  // resets it, clicking a latch cycles type/sort or toggles search-typing.
+  const binHitMeshes = [];
+  const resetHitMeshes = [];
+  const latchHitMeshes = [];
 
   function buildDisks() {
     items.forEach((entry) => {
@@ -478,17 +504,20 @@ window.cassetteBay = (function () {
       holder.add(group);
 
       const mat = solidMat(color, 0.22); // glossier than before — reference bins show a clear specular highlight
+      const hitMeshes = [];
       {
         const backGeo = panelGeo(roundedRectShape(BIN.w, BIN_BACK_H, 0.03), BIN.wallT);
         const back = new THREE.Mesh(backGeo, mat);
         back.position.set(0, BIN_BACK_H / 2, -BIN.depth / 2 + BIN.wallT / 2);
         group.add(back);
+        hitMeshes.push(back);
       }
       [-1, 1].forEach((side) => {
         const geo = slopedSideGeo(BIN.depth, BIN_LIP_H, BIN_BACK_H, BIN.wallT);
         const wall = new THREE.Mesh(geo, mat);
         wall.position.set(side * (BIN.w / 2 - BIN.wallT / 2), 0, 0);
         group.add(wall);
+        hitMeshes.push(wall);
       });
       const lipZ = BIN.depth / 2 - BIN.wallT / 2;
       {
@@ -497,7 +526,12 @@ window.cassetteBay = (function () {
         const lip = new THREE.Mesh(geo, mat);
         lip.position.set(0, BIN_LIP_H / 2, lipZ);
         group.add(lip);
+        hitMeshes.push(lip);
       }
+      // Clicking any wall of a bin filters the bay to that bin's genre —
+      // the bin IS the genre control, no chip/pill needed outside the frame.
+      hitMeshes.forEach((m) => { m.userData.binSlot = slot; });
+      binHitMeshes.push(...hitMeshes);
       [-1, 1].forEach((side) => {
         const foot = new THREE.Mesh(new THREE.BoxGeometry(FOOT.w, FOOT.h, FOOT.d), glossBlackMat());
         foot.position.set(side * BIN.w * 0.26, -FOOT.h / 2, lipZ + BIN.wallT / 2);
@@ -534,6 +568,76 @@ window.cassetteBay = (function () {
     });
   }
 
+  /* ---------- physical latches: TYPE / SORT / SEARCH — the pedestal's own
+     controls, replacing the old outside-the-frame tabs/dropdown/search box.
+     Same canvas-texture-on-a-plane trick as the bin name-plates above, sat
+     on the unused front margin of the pedestal (it's built wider/deeper
+     than the case shell on purpose, see buildHolder). No new interaction
+     model: these are just more raycast targets, handled in handleHit(). */
+  const LATCH = { w: BIN.w * 0.3, h: BIN.w * 0.3 * (60 / 160) };
+  let latchGeo;
+  const latches = {}; // id -> mesh
+  function makeLatchTexture(top, bottom, active) {
+    const W = 160, H = 60;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = active ? '#1c1a16' : '#f6f3ea';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2;
+    ctx.strokeRect(2, 2, W - 4, H - 4);
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = active ? 'rgba(246,243,234,.65)' : 'rgba(28,26,22,.55)';
+    ctx.font = '700 13px -apple-system, "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText(top, 10, 24);
+    ctx.fillStyle = active ? '#f6f3ea' : '#1c1a16';
+    ctx.font = '600 17px -apple-system, "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText(bottom.length > 11 ? bottom.slice(0, 10) + '…' : bottom, 10, 47);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
+    return tex;
+  }
+  function refreshLatch(id, top, bottom, active) {
+    const mesh = latches[id];
+    if (!mesh) return;
+    mesh.material.map = makeLatchTexture(top, bottom, active);
+    mesh.material.map.needsUpdate = true;
+  }
+  function buildLatches() {
+    latchGeo = new THREE.PlaneGeometry(LATCH.w, LATCH.h);
+    const y = caseBottom + PEDESTAL_H + 0.006;
+    const z = caseFrontZ + 0.03; // pedestal's front overhang past the case shell
+    const spread = caseW * 0.36;
+    [['type', -spread, 'TYPE', TYPE_LABEL.all], ['sort', 0, 'SORT', SORT_LABEL.catalog], ['search', spread, 'FIND', '—']]
+      .forEach(([id, x, top, bottom]) => {
+        const mesh = new THREE.Mesh(latchGeo, new THREE.MeshStandardMaterial({
+          map: makeLatchTexture(top, bottom, false), roughness: 0.85, metalness: 0, side: THREE.DoubleSide,
+        }));
+        mesh.position.set(x, y, z);
+        mesh.rotation.x = -0.5;
+        mesh.userData.latchId = id;
+        holder.add(mesh);
+        latches[id] = mesh;
+        latchHitMeshes.push(mesh);
+      });
+  }
+  function handleLatchClick(id) {
+    lastInteraction = performance.now();
+    if (id === 'type') {
+      const next = TYPE_CYCLE[(TYPE_CYCLE.indexOf(filterState.type) + 1) % TYPE_CYCLE.length];
+      setFilter({ type: next });
+      refreshLatch('type', 'TYPE', TYPE_LABEL[next], next !== 'all');
+    } else if (id === 'sort') {
+      const next = SORT_CYCLE[(SORT_CYCLE.indexOf(filterState.sort) + 1) % SORT_CYCLE.length];
+      setFilter({ sort: next });
+      refreshLatch('sort', 'SORT', SORT_LABEL[next], next !== 'catalog');
+    } else if (id === 'search') {
+      searching = !searching;
+      if (searching) stageWrap.focus();
+      refreshLatch('search', 'FIND', searching ? (filterState.search || '···') : (filterState.search || '—'), searching || !!filterState.search);
+    }
+  }
+
   /* ---------- layout / targets ---------- */
   function minPriceOf(entry) { return minPrice(entry.product); }
   function visibleItems() {
@@ -568,6 +672,7 @@ window.cassetteBay = (function () {
   function computeTargets() {
     const vis = visibleItems();
     clampIndex();
+    if (emptyStateEl) emptyStateEl.hidden = vis.length > 0;
     if (!vis.length) { disks.forEach((d) => { d.inView = false; d.group.visible = false; }); return; }
 
     disks.forEach((d) => {
@@ -649,7 +754,7 @@ window.cassetteBay = (function () {
     state.index = ((state.index + delta) % n + n) % n;
     afterNav();
   }
-  function afterNav() { computeTargets(); updateActiveTagContent(); updateDots(); }
+  function afterNav() { computeTargets(); updateActiveTagContent(); }
 
   /* ---------- tick / render loop ---------- */
   let clock, dragging = false, lastInteraction = 0, autoDir = 1;
@@ -720,7 +825,7 @@ window.cassetteBay = (function () {
   }
 
   /* ---------- floating contextual UI ---------- */
-  let activeTagEl, activeTitleEl, activeMetaEl, activePriceEl, loadBtn, hoverTagEl, hoverTitleEl, hoverPriceEl;
+  let activeTagEl, activeTitleEl, activeMetaEl, hoverTagEl, hoverTitleEl;
   const _v = new THREE.Vector3();
   function projectToScreen(worldPos) {
     const rect = stageWrap.getBoundingClientRect();
@@ -763,33 +868,23 @@ window.cassetteBay = (function () {
       hoverTagEl.hidden = true;
     }
   }
+  // Slim 2-line HUD: title, then "87 BPM · F#m · $24.99" — no separate
+  // price row, no buy button (clicking the already-selected tape IS buy).
   function updateActiveTagContent() {
     const idx = currentActiveIndex();
     if (idx === null) return;
-    const entry = items[idx];
-    activeTitleEl.textContent = entry.product.title;
-    activeMetaEl.textContent = entry.product.bpm ? (entry.product.bpm + ' BPM · ' + entry.product.key) : (entry.product.type === 'kit' ? 'Sample Kit' : '');
-    activePriceEl.textContent = 'FROM $' + minPrice(entry.product).toFixed(2);
+    const p = items[idx].product;
+    activeTitleEl.textContent = p.title;
+    const parts = [];
+    if (p.bpm) parts.push(p.bpm + ' BPM');
+    if (p.key) parts.push(p.key);
+    if (!p.bpm && !p.key && p.type === 'kit') parts.push('Sample Kit');
+    parts.push('$' + minPrice(p).toFixed(2));
+    activeMetaEl.textContent = parts.join(' · ');
   }
   function updateHoverTagContent() {
     if (hoverIndex === null) return;
-    const entry = items[hoverIndex];
-    hoverTitleEl.textContent = entry.product.title;
-    hoverPriceEl.textContent = 'FROM $' + minPrice(entry.product).toFixed(2);
-  }
-
-  const dotsEl = () => document.getElementById('fb-dots');
-  function updateDots() {
-    const el = dotsEl();
-    if (!el) return;
-    el.innerHTML = '';
-    const vis = visibleItems();
-    vis.forEach((e, i) => {
-      const s = document.createElement('span');
-      if (i === state.index) s.classList.add('on');
-      s.addEventListener('click', () => { state.index = i; afterNav(); });
-      el.appendChild(s);
-    });
+    hoverTitleEl.textContent = items[hoverIndex].product.title;
   }
 
   /* ---------- pointer interaction: orbit + hover + click-to-select ---------- */
@@ -834,8 +929,8 @@ window.cassetteBay = (function () {
       if (dragging && !dragMoved) {
         setPointerFromEvent(e);
         raycaster.setFromCamera(pointerNdc, camera);
-        const hits = raycaster.intersectObjects(diskMeshes, false);
-        if (hits.length) selectByIndex(hits[0].object.userData.diskIndex);
+        const hits = raycaster.intersectObjects(diskMeshes.concat(binHitMeshes, resetHitMeshes, latchHitMeshes), false);
+        if (hits.length) handleHit(hits[0].object);
       }
       dragging = false; dragStart = null;
       stageWrap.classList.remove('dragging');
@@ -846,14 +941,55 @@ window.cassetteBay = (function () {
       step(e.deltaY > 0 ? 1 : -1);
     }, { passive: false });
 
-    document.getElementById('fb-prev').addEventListener('click', () => { lastInteraction = performance.now(); step(-1); });
-    document.getElementById('fb-next').addEventListener('click', () => { lastInteraction = performance.now(); step(1); });
-    loadBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      loadBtn.classList.remove('zap'); void loadBtn.offsetWidth; loadBtn.classList.add('zap');
-      const idx = currentActiveIndex();
-      if (idx !== null) onSelect(items[idx].product);
+    // Pagination is the stack itself — no dots/arrows outside the frame.
+    // Arrow keys browse, Enter/Space buys the selected tape, all only
+    // while the bay itself is focused (tabindex on #fb-stageWrap).
+    stageWrap.addEventListener('keydown', (e) => {
+      if (searching) {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.key === 'Escape' || e.key === 'Enter') {
+          searching = false;
+          refreshLatch('search', 'FIND', filterState.search || '—', !!filterState.search);
+        } else if (e.key === 'Backspace') {
+          setFilter({ search: filterState.search.slice(0, -1) });
+          refreshLatch('search', 'FIND', filterState.search || '···', true);
+        } else if (e.key.length === 1) {
+          setFilter({ search: (filterState.search + e.key).slice(0, 24) });
+          refreshLatch('search', 'FIND', filterState.search, true);
+        } else {
+          return;
+        }
+        e.preventDefault();
+        return;
+      }
+      lastInteraction = performance.now();
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { step(1); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { step(-1); e.preventDefault(); }
+      else if (e.key === 'Enter' || e.key === ' ') {
+        const idx = currentActiveIndex();
+        if (idx !== null) onSelect(items[idx].product);
+        e.preventDefault();
+      }
     });
+  }
+
+  /* ---------- click routing: a tape, a bin wall, the floor/pedestal, or a
+     latch — see binHitMeshes/resetHitMeshes/latchHitMeshes above. ---------- */
+  function handleHit(obj) {
+    const ud = obj.userData;
+    if (ud.diskIndex !== undefined) {
+      if (ud.diskIndex === currentActiveIndex()) onSelect(items[ud.diskIndex].product);
+      else selectByIndex(ud.diskIndex);
+    } else if (ud.binSlot !== undefined) {
+      // An unpopulated bin (no genre assigned yet) has nothing to isolate
+      // to, so it acts the same as the empty floor: clears the filter.
+      const key = genreKeyForSlot(ud.binSlot);
+      setFilter({ genre: key && filterState.genre !== key ? key : 'all' });
+    } else if (ud.resetGenre) {
+      setFilter({ genre: 'all' });
+    } else if (ud.latchId) {
+      handleLatchClick(ud.latchId);
+    }
   }
 
   /* ---------- setup ---------- */
@@ -863,11 +999,8 @@ window.cassetteBay = (function () {
     activeTagEl = document.getElementById('fb-activeTag');
     activeTitleEl = document.getElementById('fb-activeTitle');
     activeMetaEl = document.getElementById('fb-activeMeta');
-    activePriceEl = document.getElementById('fb-activePrice');
-    loadBtn = document.getElementById('fb-loadBtn');
     hoverTagEl = document.getElementById('fb-hoverTag');
     hoverTitleEl = document.getElementById('fb-hoverTitle');
-    hoverPriceEl = document.getElementById('fb-hoverPrice');
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -903,7 +1036,6 @@ window.cassetteBay = (function () {
     resize();
     computeTargets();
     updateActiveTagContent();
-    updateDots();
     tick();
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => {
@@ -919,6 +1051,7 @@ window.cassetteBay = (function () {
   function init(products, opts) {
     if (inited) return;
     onSelect = (opts && opts.onSelect) || function () {};
+    emptyStateEl = (opts && opts.emptyStateEl) || null;
     items = products.map((p, i) => Object.assign({ product: p, index: i }, genreInfo(p.genre)));
     // Start on the first item — every bin rests on its own front disk
     // regardless, so there's no lopsided-fan reason to start mid-catalog.
@@ -926,6 +1059,7 @@ window.cassetteBay = (function () {
     setupThree(); // builds the case shell + lid (holder)
     buildBins();
     buildBinLabels();
+    buildLatches();
     buildDisks();
     if (opts && opts.arrived) { holder.position.y = -0.6; holderIntro.active = true; }
     boot();
