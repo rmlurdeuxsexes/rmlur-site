@@ -116,16 +116,19 @@ window.mpc3d = (function () {
 
   // Desk/floor/wall/lamp objects give the scene depth but shouldn't drive
   // how tightly the camera frames the MPC itself — genuine clutter, hidden
-  // outright. "iPod" is a placeholder mockup prop for an unrelated future
-  // feature (a radio-station player), not final art — stays hidden until
-  // that's actually built. "Text"/"Cylinder004" are a leftover floating
-  // "RMLUR" text experiment parked off to the side of the scene. "MPC_Port"
-  // and "VentSlot" are non-interactive chassis-detail props with no bevel
+  // outright. "Text"/"Cylinder004" are a leftover floating "RMLUR" text
+  // experiment parked off to the side of the scene. "MPC_Port" and
+  // "VentSlot" are non-interactive chassis-detail props with no bevel
   // geometry behind them, so they rendered floating past the chassis
   // silhouette into the background instead of sitting on a surface —
   // hidden until they have a proper bevel to sit on. (Btn_Floppy, right
   // next to the vent slots, is a real functional button — left alone.)
-  const HIDE_RE = /^(Desk|Floor|WallSeam|LampArm|Backdrop|iPod|Leg|Cone|Point|Plane|Text|Cylinder\.?004|MPC_Port|VentSlot)/i;
+  const HIDE_RE = /^(Desk|Floor|WallSeam|LampArm|Backdrop|Leg|Cone|Point|Plane|Text|Cylinder\.?004|MPC_Port|VentSlot)/i;
+  // "iPod" was a placeholder mockup prop for the radio-station player —
+  // that player shipped for real (radio-player.js, site-wide), so the
+  // mockup has no future use left. Actually removed from the scene graph
+  // (not just hidden) so it's gone for good, not lingering dead weight.
+  const REMOVE_RE = /^iPod/i;
   // The connector cable to the drive renders (it's real geometry, part of
   // the scene) but its span shouldn't dictate the camera fit the way the
   // drive housing itself should — excluded from the box below, included
@@ -168,8 +171,8 @@ window.mpc3d = (function () {
   }
 
   // Drive_Body (the satellite tape/floppy unit on the end of the cable) was
-  // authored with iPodBodyMat — the material for the *hidden, unrelated*
-  // iPod placeholder prop (see HIDE_RE) — which is exactly why it read as
+  // authored with iPodBodyMat — the material for the *removed, unrelated*
+  // iPod placeholder prop (see REMOVE_RE) — which is exactly why it read as
   // a cheap iPod widget instead of a physical drive. Reuse the tone of the
   // already-built Gotek material set (meant for this kind of unit) instead
   // of inventing a new one, tuned toward brushed metal for a standalone
@@ -255,6 +258,31 @@ window.mpc3d = (function () {
     mpcRoot.add(backing);
   }
 
+  // Drive_Body (the satellite unit at the end of the cable) sits well off
+  // the main chassis with nothing beneath it — Desk/Floor/Backdrop are
+  // hidden (see HIDE_RE), so it read as floating in a void with no cue
+  // it's resting on anything. A soft radial contact shadow gives it an
+  // implied surface without reintroducing a full floor/backdrop.
+  function addDriveGroundShadow() {
+    const drive = mpcRoot.getObjectByName('Drive_Body');
+    if (!drive) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, 'rgba(0,0,0,0.26)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 128);
+    const shadow = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.22, 0.22),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, depthWrite: false })
+    );
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.set(drive.position.x + 0.03, drive.position.y - 0.28, drive.position.z + 0.02);
+    mpcRoot.add(shadow);
+  }
+
   // The cable mesh is a real curved tube (not a CSS line), but it was
   // authored almost perfectly taut — under 0.03 units of vertical sag
   // across its whole span. Rebuild it as a genuinely sagging tube between
@@ -292,14 +320,23 @@ window.mpc3d = (function () {
       mpcRoot.updateMatrixWorld(true);
 
       const box = new THREE.Box3();
+      const toRemove = [];
       mpcRoot.traverse((obj) => {
         if (!obj.isMesh) return;
+        if (REMOVE_RE.test(obj.name || '')) { toRemove.push(obj); return; }
         if (HIDE_RE.test(obj.name || '')) { obj.visible = false; return; }
         tagPart(obj);
         // Drive housing (Drive_Body/Gotek*) counts toward the frame fit
         // so it's actually visible in the crop; the cable itself doesn't.
         if (CABLE_RE.test(obj.name || '')) { cableMesh = obj; return; }
         box.expandByObject(obj);
+      });
+      // Removed after the traverse completes, not during it — mutating the
+      // scene graph mid-traverse can skip nodes.
+      toRemove.forEach((obj) => {
+        obj.geometry && obj.geometry.dispose();
+        (Array.isArray(obj.material) ? obj.material : [obj.material]).forEach((m) => m && m.dispose());
+        if (obj.parent) obj.parent.remove(obj);
       });
 
       applyPadTextures(padTex);
@@ -315,6 +352,7 @@ window.mpc3d = (function () {
       mpcRoot.scale.setScalar(scale);
       mpcRoot.position.sub(center.clone().multiplyScalar(scale));
 
+      addDriveGroundShadow();
       buildLcdTexture();
       scene.add(mpcRoot);
 
