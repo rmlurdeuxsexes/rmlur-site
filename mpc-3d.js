@@ -170,6 +170,42 @@ window.mpc3d = (function () {
     padMeshes.forEach((mesh) => { if (mesh) mesh.material = base.clone(); });
   }
 
+  // The jog wheel (MPC_DataWheel) and its 16 grip-ridge meshes (WheelGrip_0
+  // ..15, the knurled rim) shared one flat, untextured MeshStandardMaterial
+  // ("WheelMat", #4b4b50, no map) — the same zero-texture situation pads
+  // were in before pad-texture.png. mpc-hero.jpg has the real photographed
+  // wheel (with its actual embossed ring detail and gloss) sitting unused
+  // behind this flat disc; assets/wheel-texture.png is that same crop
+  // treatment (flat-fielded to remove the photo's own vignette, brightened)
+  // applied to the wheel instead of reinventing a material from scratch.
+  // The grips get a separate, darker, more matte clone (not the photo
+  // texture — their UV is a narrow reused strip, not one-per-grip content)
+  // so the rim reads as a distinct rubberized ring against the smoother
+  // disc face, matching real MPC2000XL wheel hardware.
+  function applyWheelTexture(wheelTex) {
+    wheelTex.colorSpace = THREE.SRGBColorSpace;
+    wheelTex.anisotropy = 4;
+    const faceMat = new THREE.MeshStandardMaterial({
+      map: wheelTex,
+      emissiveMap: wheelTex,
+      emissive: new THREE.Color(0xffffff),
+      emissiveIntensity: 0.22,
+      roughness: 0.42,
+      metalness: 0.08,
+    });
+    const wheelObj = mpcRoot.getObjectByName('MPC_DataWheel');
+    if (wheelObj) wheelObj.material = faceMat;
+
+    const gripMat = new THREE.MeshStandardMaterial({
+      color: 0x232326,
+      roughness: 0.8,
+      metalness: 0,
+    });
+    mpcRoot.children.forEach((obj) => {
+      if (/^WheelGrip_/.test(obj.name || '') && obj.isMesh) obj.material = gripMat;
+    });
+  }
+
   // Drive_Body (the satellite tape/floppy unit on the end of the cable) was
   // authored with iPodBodyMat — the material for the *removed, unrelated*
   // iPod placeholder prop (see REMOVE_RE) — which is exactly why it read as
@@ -290,13 +326,24 @@ window.mpc3d = (function () {
   function applyCableSag() {
     if (!cableMesh || !cableMesh.geometry) return;
     const pos = cableMesh.geometry.attributes.position;
-    let minI = 0, maxI = 0;
+    let minI = 0;
     for (let i = 1; i < pos.count; i++) {
       if (pos.getX(i) < pos.getX(minI)) minI = i;
-      if (pos.getX(i) > pos.getX(maxI)) maxI = i;
     }
     const start = new THREE.Vector3(pos.getX(minI), pos.getY(minI), pos.getZ(minI));
-    const end = new THREE.Vector3(pos.getX(maxI), pos.getY(maxI), pos.getZ(maxI));
+    // The end anchors to Drive_Body's *current* position rather than the
+    // cable's own originally-authored max-X vertex, so a repositioned drive
+    // (see repositionDrive) keeps the cable visually attached to it instead
+    // of the cable pointing at where the drive used to be.
+    const driveObj = mpcRoot.getObjectByName('Drive_Body');
+    let end;
+    if (driveObj) {
+      end = driveObj.position.clone();
+    } else {
+      let maxI = 0;
+      for (let i = 1; i < pos.count; i++) { if (pos.getX(i) > pos.getX(maxI)) maxI = i; }
+      end = new THREE.Vector3(pos.getX(maxI), pos.getY(maxI), pos.getZ(maxI));
+    }
     const span = start.distanceTo(end);
     const mid = start.clone().lerp(end, 0.5);
     mid.y -= span * 0.22; // gravity sag, proportional to how far the drive sits from the body
@@ -304,6 +351,24 @@ window.mpc3d = (function () {
     const newGeo = new THREE.TubeGeometry(curve, 48, 0.0055, 8, false);
     cableMesh.geometry.dispose();
     cableMesh.geometry = newGeo;
+  }
+
+  // Drive_Body was authored ~0.49 units out along the cable — after the
+  // scene's normalization that put it right at the edge of the camera's
+  // fit frame, which is both what made the whitespace/composition fit so
+  // wide AND what made the satellite unit read as a detached floating
+  // object instead of a nearby accessory. Pull it in toward its own
+  // cable's chassis-side anchor point (not a made-up direction) so both
+  // problems are fixed by the same, single positional change.
+  function repositionDrive() {
+    const drive = mpcRoot.getObjectByName('Drive_Body');
+    const cable = mpcRoot.getObjectByName('Cable');
+    if (!drive || !cable || !cable.geometry) return;
+    const pos = cable.geometry.attributes.position;
+    let minI = 0;
+    for (let i = 1; i < pos.count; i++) { if (pos.getX(i) < pos.getX(minI)) minI = i; }
+    const anchor = new THREE.Vector3(pos.getX(minI), pos.getY(minI), pos.getZ(minI));
+    drive.position.lerp(anchor, 0.55); // moves 45% of the way from its old spot toward the anchor
   }
 
   function loadModel() {
@@ -314,9 +379,12 @@ window.mpc3d = (function () {
     const loader = new GLTFLoaderClass();
     const gltfPromise = new Promise((resolve, reject) => loader.load('assets/mpc-scene/mpc.glb', resolve, undefined, reject));
     const padTexPromise = loadTexture('assets/pad-texture.png?v=2');
+    const wheelTexPromise = loadTexture('assets/wheel-texture.png');
 
-    return Promise.all([gltfPromise, padTexPromise]).then(([gltf, padTex]) => {
+    return Promise.all([gltfPromise, padTexPromise, wheelTexPromise]).then(([gltf, padTex, wheelTex]) => {
       mpcRoot = gltf.scene;
+      mpcRoot.updateMatrixWorld(true);
+      repositionDrive();
       mpcRoot.updateMatrixWorld(true);
 
       const box = new THREE.Box3();
@@ -326,8 +394,6 @@ window.mpc3d = (function () {
         if (REMOVE_RE.test(obj.name || '')) { toRemove.push(obj); return; }
         if (HIDE_RE.test(obj.name || '')) { obj.visible = false; return; }
         tagPart(obj);
-        // Drive housing (Drive_Body/Gotek*) counts toward the frame fit
-        // so it's actually visible in the crop; the cable itself doesn't.
         if (CABLE_RE.test(obj.name || '')) { cableMesh = obj; return; }
         box.expandByObject(obj);
       });
@@ -340,6 +406,7 @@ window.mpc3d = (function () {
       });
 
       applyPadTextures(padTex);
+      applyWheelTexture(wheelTex);
       applyDriveMaterial();
       applyCableSag();
       addFloppyClusterBacking();

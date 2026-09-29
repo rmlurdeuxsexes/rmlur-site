@@ -27,6 +27,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let currentId = null;
   let cartCount = 0;
+  let lastPreviewProduct = null;
+  let statusRevertTimer = null;
+
+  // A missing/broken preview file used to fail completely silently (safePlay's
+  // catch swallows the rejection) — no error visible anywhere, PDP or player
+  // bar, just a play button that looked like it did nothing. That's a real
+  // gap independent of whether the current 404s are placeholder content: once
+  // real preview files are live, any future failure (typo, bad upload, CDN
+  // hiccup) would look identical to "nothing happened" for the store owner's
+  // actual customers. One shared handler covers both trigger paths (PDP play
+  // button and the cassette bay's own hover-preview).
+  audio.addEventListener('error', () => {
+    if (!audio.src) return;
+    const p = lastPreviewProduct;
+    playerBar.hidden = false;
+    pbTitle.textContent = (p ? p.title + ' — ' : '') + 'PREVIEW UNAVAILABLE';
+    pbProgress.style.width = '0%';
+    if (p && pdpProduct && pdpProduct.id === p.id && !pdp.hidden) {
+      clearTimeout(statusRevertTimer);
+      pdpStatus.classList.remove('flash');
+      pdpStatus.textContent = 'PREVIEW UNAVAILABLE';
+      statusRevertTimer = setTimeout(() => {
+        pdpStatus.textContent = pdpSelectedTier ? pdpSelectedTier.label + ' ADDED' : 'SELECT FORMAT';
+      }, 2200);
+    }
+  });
 
   /* ---------- arrival from the MPC's floppy transition (app.js goToShop) —
      fade out the same #page-fade overlay it faded in before navigating ---------- */
@@ -196,7 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   products = await loadProducts();
   window.cassetteBay.init(products, {
     onSelect: (p) => openPDP(p),
-    onPreview: (p) => { if (p && p.preview) safePlay(p.preview); },
+    onPreview: (p) => { if (p && p.preview) { lastPreviewProduct = p; safePlay(p.preview); } },
     arrived: arrivedFromFloppy,
     emptyStateEl: emptyState,
   });
@@ -210,6 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       pbTitle.textContent = `${p.title} — ${p.subtitle || (p.type === 'kit' ? 'drum kit' : 'beat')}`;
       pbBuy.href = (p.tiers && p.tiers[0]) ? p.tiers[0].stripeLink : '#';
       playerBar.hidden = false;
+      lastPreviewProduct = p;
       await safePlay(p.preview);
     }
   }

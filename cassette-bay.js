@@ -87,22 +87,45 @@ window.cassetteBay = (function () {
   // the same approach mpc-3d.js uses for the hero. Framed symmetrically
   // around the SAME sceneCenterY the camera actually looks at, or the two
   // disagree and crop one edge.
+  // Fits the camera to the scene's true bounding box (pedestal width,
+  // case-to-lid-tip height, case-to-receded-lid depth) by projecting each
+  // of its 8 corners into the camera's own basis and solving the exact
+  // distance each needs to stay inside the FOV — not a linear cos/sin
+  // blend of separate height and depth budgets. That blend badly
+  // overestimated the required distance here: the open lid recedes ~2x
+  // the case's own height in Z, and weighting that whole depth span by
+  // sin(phi) inflated the vertical budget far past what the (much farther
+  // away, so smaller on screen) lid tip actually needs — the case rendered
+  // tiny with a big dead gap above it as a result. |dx|/|dy| below make
+  // this immune to the right/up basis's sign convention.
   function refitRadius() {
     const vFovRad = THREE.MathUtils.degToRad(camera.fov);
     const hFovRad = 2 * Math.atan(Math.tan(vFovRad / 2) * camera.aspect);
-    const halfW = (caseW / 2) * 1.06;
-    const halfH = (sceneTop - caseBottom) / 2 * 1.05;
-    // Depth budget must reach back to wherever the reclined-open lid's tip
-    // actually ends up (sceneBackZ), not just the case body — it swings
-    // further back than caseBackZ alone once it's open.
-    const halfD = (caseFrontZ - sceneBackZ) / 2 * 1.03;
-    const effectiveHalfH = halfH * Math.cos(orbit.phi) + halfD * Math.sin(orbit.phi);
-    const radiusForHeight = effectiveHalfH / Math.tan(vFovRad / 2);
-    const radiusForWidth = halfW / Math.tan(hFovRad / 2);
-    // Tight margin (1.08, not the old 1.25) — the case should fill most of
-    // the stage frame ("immersive", not a small object floating in a lot of
-    // dead space).
-    orbit.radius = Math.max(radiusForHeight, radiusForWidth) * 1.08;
+    const tanV = Math.tan(vFovRad / 2), tanH = Math.tan(hFovRad / 2);
+
+    const dir = new THREE.Vector3(
+      Math.sin(orbit.phi) * Math.sin(orbit.theta),
+      Math.cos(orbit.phi),
+      Math.sin(orbit.phi) * Math.cos(orbit.theta)
+    ); // unit vector from target toward camera, matches updateCameraFromOrbit
+    const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize();
+    const up = new THREE.Vector3().crossVectors(dir, right).normalize();
+
+    const halfPedW = (PEDESTAL_W / 2) * 1.06;
+    let radius = 0;
+    const v = new THREE.Vector3();
+    [-halfPedW, halfPedW].forEach((x) => {
+      [caseBottom, sceneTop].forEach((y) => {
+        [sceneBackZ, caseFrontZ].forEach((z) => {
+          v.set(x, y - sceneCenterY, z - sceneCenterZ);
+          const alongDir = v.dot(dir); // + toward camera, - away (e.g. the receded lid tip)
+          radius = Math.max(radius, alongDir + Math.abs(v.dot(right)) / tanH, alongDir + Math.abs(v.dot(up)) / tanV);
+        });
+      });
+    });
+    // Tight margin — the case should fill most of the stage frame
+    // ("immersive", not a small object floating in a lot of dead space).
+    orbit.radius = radius * 1.04;
   }
   function resize() {
     const w = stageWrap.clientWidth, h = stageWrap.clientHeight;
@@ -162,13 +185,42 @@ window.cassetteBay = (function () {
     geo.scale(1, 1, -1);
     return geo;
   }
-  function solidMat(color, rough) {
-    return new THREE.MeshStandardMaterial({ color, roughness: rough !== undefined ? rough : 0.5, metalness: 0.04 });
+  // Fine grain for matte ABS/Nylex-type plastic — a shiny toy-black case
+  // reads as low-poly game asset next to the MPC scene's grained chassis.
+  // One small tileable noise map, shared (not cloned) across every
+  // material below, repeated per-surface via .repeat so it never looks
+  // like a single smeared blotch on a large panel.
+  let grainTexture = null;
+  function getGrainTexture() {
+    if (grainTexture) return grainTexture;
+    const S = 128;
+    const cv = document.createElement('canvas'); cv.width = S; cv.height = S;
+    const ctx = cv.getContext('2d');
+    const img = ctx.createImageData(S, S);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = 200 + Math.random() * 55; // narrow band around mid-grey — subtle, not visible noise
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    grainTexture = new THREE.CanvasTexture(cv);
+    grainTexture.wrapS = grainTexture.wrapT = THREE.RepeatWrapping;
+    return grainTexture;
   }
-  // Glossy black chassis/base plastic (roughness 0.15, metalness 0.12 — low
-  // roughness for a clear specular highlight on the case shell and bins).
+  function applyGrain(mat, repeat) {
+    const tex = getGrainTexture();
+    mat.roughnessMap = tex;
+    if (repeat) { mat.roughnessMap = tex.clone(); mat.roughnessMap.wrapS = mat.roughnessMap.wrapT = THREE.RepeatWrapping; mat.roughnessMap.repeat.set(repeat, repeat); mat.roughnessMap.needsUpdate = true; }
+    return mat;
+  }
+  function solidMat(color, rough) {
+    return applyGrain(new THREE.MeshStandardMaterial({ color, roughness: rough !== undefined ? rough : 0.6, metalness: 0.05 }), 3);
+  }
+  // Matte ABS/Nylex-type chassis plastic — same era/weight as the MPC
+  // scene's own chassis material (mpc-3d.js: roughness 0.7, metalness 0.1),
+  // not a glossy toy-black shell.
   function glossBlackMat() {
-    return new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: 0.15, metalness: 0.12 });
+    return applyGrain(new THREE.MeshStandardMaterial({ color: 0x141412, roughness: 0.62, metalness: 0.08 }), 4);
   }
   // Smoked/translucent brown-tinted acrylic flip lid.
   function acrylicMat() {
@@ -194,7 +246,11 @@ window.cassetteBay = (function () {
   // makeLabelTexture below) — the constant/variable names (DISK, disks,
   // diskMeshes) are historical and don't reflect the current cassette
   // shape, but aren't worth a repo-wide rename on their own.
-  const DISK = { w: 0.86, h: 0.56, depth: 0.16 };
+  // Cut back down from the cassette pass's 0.16 (roughly 1/3, real
+  // 3.5"-floppy proportions, not VHS-thick) so many sleeves read as a slim
+  // stack in one bin instead of a handful of fat blocks. FAN_STEP.dz and
+  // FAN_MAX below are re-derived from this value, not independent knobs.
+  const DISK = { w: 0.86, h: 0.56, depth: 0.06 };
   const BIN = { w: 1.18, depth: 0.55, wallT: 0.03 };
   const BIN_BACK_H = DISK.h * 0.6;
   const BIN_LIP_H = DISK.h * 0.13;
@@ -226,6 +282,13 @@ window.cassetteBay = (function () {
   const caseFrontZ = binOrigin(SLOTS - 1).z + BIN.depth / 2 + 0.09;
   const caseW = BIN.w + 0.16;
   const caseDepth = caseFrontZ - caseBackZ;
+  // Pedestal is deliberately wider/deeper than the case shell (visible base
+  // lip, see buildHolder) — refitRadius's horizontal framing must budget for
+  // THIS, not caseW alone, or the pedestal (and the TYPE/SORT/FIND latch
+  // plates mounted on its front edge) render wider than the camera frustum
+  // and clip/hang off the stage frame's edges, worst on narrow viewports.
+  const PEDESTAL_W = caseW * 1.12;
+  const PEDESTAL_D = caseDepth * 1.08;
   const LID_CLOSED = Math.PI / 2;
   // Propped open near-horizontal, reclined almost all the way back to flat
   // (close to -pi/2) instead of standing anywhere near vertical — the lid
@@ -240,7 +303,15 @@ window.cassetteBay = (function () {
   // the two disagree with what the camera really needs to show and crop it.
   const sceneTop = Math.max(caseTop, caseTop + lidLen * Math.cos(LID_OPEN)) + 0.1;
   const sceneBackZ = Math.min(caseBackZ, caseBackZ + CASE_WALL_T / 2 + lidLen * Math.sin(LID_OPEN)) - 0.1;
-  const sceneCenterY = (sceneTop + caseBottom) / 2;
+  // Look-at Y is biased to the case SHELL's own center (caseTop), not the
+  // lid-inflated sceneTop — the open lid reclines almost flat (LID_OPEN is
+  // near -pi/2) and reads far smaller on screen than its raw vertical
+  // reach into sceneTop implies. Centering on the full sceneTop..caseBottom
+  // span pointed the camera above the case's actual visual mass, which
+  // pushed the whole case toward the bottom of the frame with a dead gap
+  // above it. refitRadius's halfH still budgets up to the real sceneTop so
+  // the lid tip never clips.
+  const sceneCenterY = (caseTop + caseBottom) / 2;
   const sceneCenterZ = (caseFrontZ + sceneBackZ) / 2;
   let holder, lidGroup;
   const lidAnim = { t: 0 };
@@ -270,7 +341,7 @@ window.cassetteBay = (function () {
       // Black plinth the whole case sits on — visible in the reference,
       // absent from the case's own flat floor alone. Slightly wider
       // footprint than the case shell, like a real product base.
-      const pedGeo = panelGeo(roundedRectShape(caseW * 1.12, caseDepth * 1.08, 0.05), PEDESTAL_H);
+      const pedGeo = panelGeo(roundedRectShape(PEDESTAL_W, PEDESTAL_D, 0.05), PEDESTAL_H);
       pedGeo.rotateX(-Math.PI / 2);
       const pedestal = new THREE.Mesh(pedGeo, glossBlackMat());
       pedestal.position.set(0, caseBottom, caseCz);
@@ -340,12 +411,14 @@ window.cassetteBay = (function () {
     ctx.textBaseline = 'alphabetic';
     ctx.fillText(entry.genreKey, 24, bandH * 0.66);
 
+    // Printed type, not handwritten — a real media label is machine-
+    // printed/typewritten, not a marker-on-a-sticky-note (the old Kalam
+    // cursive + slight rotation read as a friendly craft-fair sticker).
     ctx.fillStyle = '#1c1a16';
-    ctx.font = '40px "Kalam", cursive';
+    ctx.font = '700 34px "IBM Plex Mono", monospace';
     ctx.save();
-    ctx.translate(28, bandH + 54);
-    ctx.rotate(-0.03);
-    wrapText(ctx, p.title, 0, 0, W - 100, 44);
+    ctx.translate(28, bandH + 52);
+    wrapText(ctx, p.title.toUpperCase(), 0, 0, W - 100, 42);
     ctx.restore();
 
     ctx.fillStyle = '#4a453a';
@@ -395,7 +468,12 @@ window.cassetteBay = (function () {
       visual.position.y = DISK.h / 2;
       group.add(visual);
 
-      const bodyMat = solidMat(entry.color, 0.55);
+      // Body is the same worn dark plastic for every disk regardless of
+      // genre — entry.color now only shows up as the label's thin top
+      // band (makeLabelTexture) and the bin lip accent, not the whole
+      // shell. A full-saturation body per genre was the single biggest
+      // "candy/toy" cue on the whole case.
+      const bodyMat = solidMat(0x1e1c18, 0.58);
       bodyMat.emissive = new THREE.Color(0x39ff6a);
       bodyMat.emissiveIntensity = 0;
       const body = new THREE.Mesh(bodyGeo, bodyMat);
@@ -429,18 +507,21 @@ window.cassetteBay = (function () {
     });
   }
 
-  /* soft floor spotlight under the active disk, one per bin (each bin is
-     its own local coordinate space now) — depthTest:false + a high
+  /* Soft dark contact shadow under the active disk, one per bin (each bin
+     is its own local coordinate space) — depthTest:false + a high
      renderOrder are BOTH required, or the opaque floor mesh depth-occludes
-     it and it silently renders invisible. */
+     it and it silently renders invisible. Was an additive neon-green
+     "glow" (arcade/app-UI active-state feedback); a real studio product
+     shot grounds an object with a shadow, not a light source underneath
+     it, so this is now a plain dark radial falloff, normally blended. */
   function makeGlowTexture() {
     const S = 256;
     const cv = document.createElement('canvas'); cv.width = cv.height = S;
     const ctx = cv.getContext('2d');
     const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
-    g.addColorStop(0, 'rgba(90,255,150,0.5)');
-    g.addColorStop(0.55, 'rgba(90,255,150,0.16)');
-    g.addColorStop(1, 'rgba(90,255,150,0)');
+    g.addColorStop(0, 'rgba(0,0,0,0.38)');
+    g.addColorStop(0.55, 'rgba(0,0,0,0.14)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, S, S);
     return new THREE.CanvasTexture(cv);
@@ -456,42 +537,44 @@ window.cassetteBay = (function () {
      exactly like the physical case has 5 slots whether or not you own that
      many genres yet. */
   const FOOT = { w: 0.1, h: 0.022, d: 0.035 };
-  // dz was sized for the old floppy DISK.depth (0.05, touching edge-to-edge,
-  // zero overlap) and never updated when Task 3 tripled DISK.depth to 0.16 —
-  // at the old -0.05 that put ~69% of each sleeve's own depth inside the
-  // next one, reading as one merged blob instead of "several tapes,
-  // partially occluding" once a genre has 2+ products. -0.08 brings that
-  // down to ~50%: each sleeve's front edge still clearly steps out from the
-  // one behind it. BIN.depth (0.55) is shallow, so this can't grow much
-  // further without the 2nd sleeve's own back edge clipping the bin's back
-  // wall — see FAN_MAX below.
-  const FAN_STEP = { dx: 0.018, dy: 0.012, dz: -0.08 }; // per-disk offset stacking back into the bin
+  // Re-derived for the slimmed DISK.depth (0.06, was 0.16) — -0.022 keeps
+  // roughly the same ~35% front-face reveal per layer as before, just at
+  // the new thickness, so the stack still reads as distinct stepped
+  // sleeves rather than one merged blob or a row of floating gaps.
+  const FAN_STEP = { dx: 0.018, dy: 0.012, dz: -0.022 }; // per-disk offset stacking back into the bin
   // Capped at 1 (2 sleeves rendered at once: front + one behind) because the
   // bin's own back wall sits only ~0.23 behind the resting front sleeve —
   // at the new dz a 3rd stacked sleeve's own body would already clip
   // through that wall. Deeper items in a genre still reach the front by
   // stepping/paging (see the comment on FAN_MAX's caller), they just don't
   // all render simultaneously.
-  const FAN_MAX = 1; // deepest disk rendered behind the front one — deeper ones reveal as you step past
+  // Deepest disk rendered behind the front one — deeper ones reveal as you
+  // step past. Bin's back wall clearance from the front resting sleeve is
+  // ~0.23 (see buildBins); at the new slim depth+step (0.06 + N*0.022) that
+  // clearance fits 7 stacked behind the front one (8 visible at once) with
+  // margin to spare, vs. just 1 (2 visible) at the old cassette thickness —
+  // this is what actually makes a genre bin read as a slim stack instead of
+  // a couple of fat blocks.
+  const FAN_MAX = 7;
 
   const PLATE = { w: BIN.w * 0.62, h: BIN.w * 0.62 * (90 / 220) };
   let plateGeo;
+  // Plain engraved-style plate — was cream paper with green ruled
+  // notebook lines (a craft-store touch), now a flat bone plate with a
+  // hairline inset border, matching the latch plates' material language.
   function makePlateTexture(label) {
     const W = 220, H = 90;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
-    ctx.fillStyle = '#f6f3ea';
+    ctx.fillStyle = '#eee8d9';
     ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = 'rgba(70,150,95,.55)';
+    ctx.strokeStyle = 'rgba(0,0,0,.28)';
     ctx.lineWidth = 2;
-    for (let i = 0; i < 3; i++) {
-      const ly = 34 + i * 20;
-      ctx.beginPath(); ctx.moveTo(12, ly); ctx.lineTo(W - 12, ly); ctx.stroke();
-    }
+    ctx.strokeRect(3, 3, W - 6, H - 6);
     ctx.fillStyle = '#1c1a16';
-    ctx.font = '700 22px -apple-system, "Helvetica Neue", Arial, sans-serif';
+    ctx.font = '700 22px "IBM Plex Mono", monospace';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText(label.toUpperCase(), 12, 22);
+    ctx.fillText(label.toUpperCase(), 14, H / 2 + 8);
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.needsUpdate = true;
@@ -507,18 +590,23 @@ window.cassetteBay = (function () {
       group.position.set(0, origin.y, origin.z);
       holder.add(group);
 
-      const mat = solidMat(color, 0.22); // glossier than before — reference bins show a clear specular highlight
+      // Genre color is confined to the lip — a real thin accent tab/bar,
+      // not the whole bin — everything else is the same worn dark plastic
+      // as the case, matching MPC-adjacent "one material language" instead
+      // of a full-saturation candy-colored compartment.
+      const bodyMat = glossBlackMat();
+      const lipMat = solidMat(color, 0.5);
       const hitMeshes = [];
       {
         const backGeo = panelGeo(roundedRectShape(BIN.w, BIN_BACK_H, 0.03), BIN.wallT);
-        const back = new THREE.Mesh(backGeo, mat);
+        const back = new THREE.Mesh(backGeo, bodyMat);
         back.position.set(0, BIN_BACK_H / 2, -BIN.depth / 2 + BIN.wallT / 2);
         group.add(back);
         hitMeshes.push(back);
       }
       [-1, 1].forEach((side) => {
         const geo = slopedSideGeo(BIN.depth, BIN_LIP_H, BIN_BACK_H, BIN.wallT);
-        const wall = new THREE.Mesh(geo, mat);
+        const wall = new THREE.Mesh(geo, bodyMat);
         wall.position.set(side * (BIN.w / 2 - BIN.wallT / 2), 0, 0);
         group.add(wall);
         hitMeshes.push(wall);
@@ -527,7 +615,7 @@ window.cassetteBay = (function () {
       {
         const shape = frontLipShape(BIN.w, BIN_LIP_H, 0.03, 0.09);
         const geo = panelGeo(shape, BIN.wallT);
-        const lip = new THREE.Mesh(geo, mat);
+        const lip = new THREE.Mesh(geo, lipMat);
         lip.position.set(0, BIN_LIP_H / 2, lipZ);
         group.add(lip);
         hitMeshes.push(lip);
@@ -543,7 +631,7 @@ window.cassetteBay = (function () {
       });
       const glow = new THREE.Mesh(
         new THREE.PlaneGeometry(0.85, 0.85),
-        new THREE.MeshBasicMaterial({ map: getGlowTexture(), transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending })
+        new THREE.MeshBasicMaterial({ map: getGlowTexture(), transparent: true, depthWrite: false, depthTest: false })
       );
       glow.renderOrder = 10;
       glow.rotation.x = -Math.PI / 2;
@@ -1002,16 +1090,25 @@ window.cassetteBay = (function () {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // Same tone-mapping pipeline as the homepage MPC scene (mpc-3d.js) —
+    // without it this canvas renders flat/raw next to the MPC's filmic
+    // contrast, reading as a different, cheaper render even with matched
+    // materials.
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
 
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(32, 1, 0.1, 50);
     updateCameraFromOrbit();
     window.addEventListener('resize', resize);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.42));
-    const key = new THREE.DirectionalLight(0xfff3e0, 1.15); key.position.set(2.4, 4, 3.2); scene.add(key);
-    const fill = new THREE.DirectionalLight(0xcfe0ff, 0.35); fill.position.set(-3, 2, -1.5); scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xe4ecf2, 0.22); rim.position.set(-1, 2.5, -3); scene.add(rim);
+    // One neutral-white key + soft fill, no tinted rim — the old warm-key/
+    // cool-fill/cool-rim trio was a "product photography" lighting cliché
+    // that reads as playful marketplace styling next to the MPC scene's
+    // plain, quiet white-light rig (mpc-3d.js uses the same approach).
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 0.9); key.position.set(2.4, 4, 3.2); scene.add(key);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.3); fill.position.set(-3, 2.2, 1.5); scene.add(fill);
 
     buildHolder();
 

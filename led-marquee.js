@@ -44,7 +44,7 @@ window.createLedMarquee = function createLedMarquee(audioEl, canvasEl, opts) {
   const BRAND = (opts && opts.brand) || 'RMLUR DEUX SEXES';
   const HIT_FLASH_MS = 650; // how long a pad-hit readout holds before the marquee resumes, same beat as the reference hardware's trig-flash
 
-  let audioCtx = null, analyser = null, freqData = null, timeData = null, rafId = null;
+  let audioCtx = null, analyser = null, freqData = null, rafId = null;
   let label = '';
   let mask = null, maskTextCols = 0, maskTotalCols = 0, maskText = null;
   let scrollCells = 0, lastTs = 0;
@@ -56,9 +56,8 @@ window.createLedMarquee = function createLedMarquee(audioEl, canvasEl, opts) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioCtx.createMediaElementSource(audioEl);
       analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256; // enough samples for a readable scope line, still cheap
+      analyser.fftSize = 256; // enough bins for 16 meter bars, still cheap
       freqData = new Uint8Array(analyser.frequencyBinCount);
-      timeData = new Uint8Array(analyser.fftSize);
       source.connect(analyser);
       analyser.connect(audioCtx.destination);
     } catch (_) { /* visualizer is optional, playback still works without it */ }
@@ -77,36 +76,73 @@ window.createLedMarquee = function createLedMarquee(audioEl, canvasEl, opts) {
     hitUntil = performance.now() + HIT_FLASH_MS;
   }
 
-  // Live oscilloscope line — MiniMeters-style thin glowing waveform, not a
-  // canned animation: real samples off the analyser, redrawn every frame.
-  // Flatlines (still glowing, not dead) when nothing's actually playing.
-  function drawScope(x, y, w, h) {
-    const midY = y + h / 2;
+  // Pad-reactive meter bank — MiniMeters/hardware-VU style dot-matrix bars
+  // (same amber LED cell technique as the marquee below, not a smooth scope
+  // line) driven by real frequency data off the analyser, not a canned
+  // animation. Each bar gets a peak-hold cap that snaps up instantly and
+  // decays slowly, matching real hardware meter behavior. Idle state is a
+  // slow shared breathing pulse with a per-bar phase offset, echoing the
+  // marquee's own idle-breathing level rather than going dead.
+  const METER_BARS = 16;
+  const METER_ROWS = 7;
+  const meterPeaks = new Float32Array(METER_BARS);
+  const meterPeakHold = new Float32Array(METER_BARS);
+  let meterLastTs = 0;
+  function drawMeters(x, y, w, h) {
+    const now = performance.now();
+    const dt = meterLastTs ? Math.min(0.25, (now - meterLastTs) / 1000) : 0;
+    meterLastTs = now;
+
+    let levels;
+    if (analyser && !audioEl.paused) {
+      analyser.getByteFrequencyData(freqData);
+      const perBar = Math.floor(freqData.length / METER_BARS) || 1;
+      levels = new Array(METER_BARS);
+      for (let b = 0; b < METER_BARS; b++) {
+        let sum = 0;
+        const start = b * perBar;
+        for (let i = 0; i < perBar; i++) sum += freqData[start + i] || 0;
+        levels[b] = (sum / perBar) / 255;
+      }
+    } else {
+      const t = now * 0.0012;
+      levels = new Array(METER_BARS);
+      for (let b = 0; b < METER_BARS; b++) levels[b] = 0.16 + 0.06 * Math.sin(t + b * 0.5);
+    }
+
+    const gap = 2;
+    const barW = (w - gap * (METER_BARS - 1)) / METER_BARS;
+    const pitch = h / METER_ROWS;
+    const dotR = Math.min(barW, pitch) * 0.4;
+
     ctx.save();
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 2;
-    if (!analyser || audioEl.paused) {
-      ctx.strokeStyle = 'rgba(' + LED_ON + ',0.32)';
-      ctx.beginPath();
-      ctx.moveTo(x, midY);
-      ctx.lineTo(x + w, midY);
-      ctx.stroke();
-      ctx.restore();
-      return;
-    }
-    analyser.getByteTimeDomainData(timeData);
-    ctx.strokeStyle = 'rgb(' + LED_ON + ')';
     ctx.shadowColor = 'rgb(' + LED_ON + ')';
-    ctx.shadowBlur = 9;
-    ctx.beginPath();
-    const n = timeData.length;
-    for (let i = 0; i < n; i++) {
-      const v = (timeData[i] - 128) / 128; // -1..1
-      const px = x + (i / (n - 1)) * w;
-      const py = midY - v * (h / 2) * 0.88;
-      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    ctx.shadowBlur = 4;
+    for (let b = 0; b < METER_BARS; b++) {
+      const lvl = levels[b];
+      if (lvl >= meterPeaks[b]) { meterPeaks[b] = lvl; meterPeakHold[b] = 550; }
+      else if (meterPeakHold[b] > 0) { meterPeakHold[b] -= dt * 1000; }
+      else { meterPeaks[b] = Math.max(lvl, meterPeaks[b] - dt * 0.9); }
+
+      const litRows = Math.round(lvl * METER_ROWS);
+      const peakRow = Math.min(METER_ROWS - 1, Math.round(meterPeaks[b] * METER_ROWS));
+      const bx = x + b * (barW + gap) + barW / 2;
+
+      for (let r = 0; r < METER_ROWS; r++) {
+        const by = y + h - r * pitch - pitch / 2;
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        ctx.beginPath(); ctx.arc(bx, by, dotR * 0.86, 0, Math.PI * 2); ctx.fill();
+        if (r < litRows) {
+          const alpha = Math.min(1, 0.45 + 0.55 * ((r + 1) / Math.max(1, litRows)));
+          ctx.fillStyle = 'rgba(' + LED_ON + ',' + alpha.toFixed(3) + ')';
+          ctx.beginPath(); ctx.arc(bx, by, dotR, 0, Math.PI * 2); ctx.fill();
+        }
+        if (r === peakRow && meterPeakHold[b] > 0) {
+          ctx.fillStyle = 'rgb(255,235,210)';
+          ctx.beginPath(); ctx.arc(bx, by, dotR, 0, Math.PI * 2); ctx.fill();
+        }
+      }
     }
-    ctx.stroke();
     ctx.restore();
   }
 
@@ -212,7 +248,7 @@ window.createLedMarquee = function createLedMarquee(audioEl, canvasEl, opts) {
     ctx.fillStyle = '#0e0b0d';
     ctx.fillRect(0, 0, w, h);
 
-    drawScope(0, 0, w, scopeH);
+    drawMeters(0, 0, w, scopeH);
 
     if (now < hitUntil) {
       drawHitScreen(0, lowerY, w, lowerH);
@@ -249,6 +285,7 @@ window.createLedMarquee = function createLedMarquee(audioEl, canvasEl, opts) {
   function startWave() {
     ensureVisualizer();
     lastTs = 0;
+    meterLastTs = 0;
     if (!rafId) drawWave();
   }
   function stopWave() {
