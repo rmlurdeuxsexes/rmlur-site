@@ -135,30 +135,30 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /* ================= hero-frame sizing =================
-     The MPC body is a wide, flat panel (~2.6:1), not square — a square
-     box leaves huge empty margins top/bottom. CSS aspect-ratio/min()
-     proved unreliable depending on the surrounding flex/vh context, so
-     size it directly off .hero's own (reliably-sized) box instead. */
+     Filling .hero at 100%/100% (a prior attempt) still left margins
+     whenever the viewport wasn't the model's own shape, because the
+     camera's refitCamera() does a "contain" fit — it always leaves
+     slack on whichever axis doesn't match the model's real proportions.
+     Fix: size the frame to that exact proportion (measured live off the
+     loaded model via mpc3d.getFitAspect(), not guessed) and let it grow
+     as large as .hero allows — a plain CSS-level "contain" at the right
+     ratio, so refitCamera() has nothing left to compensate for. */
   const heroFrame = document.getElementById('hero-frame');
   const hero = document.querySelector('.hero');
-  const HERO_ASPECT = 1.35; // wide/flat like the real MPC body, not square — see note above
   function sizeHeroFrame() {
+    const aspect = (window.mpc3d && window.mpc3d.getFitAspect()) || 1.587;
     const box = hero.getBoundingClientRect();
-    const maxW = Math.min(900, box.width - 8);
-    const maxH = Math.min(640, box.height - 8);
-    let w = maxW, h = w / HERO_ASPECT;
-    if (h > maxH) { h = maxH; w = h * HERO_ASPECT; }
-    w = Math.max(160, w); h = Math.max(160 / HERO_ASPECT, h);
+    const maxW = box.width - 8, maxH = box.height - 8;
+    let w = maxW, h = w / aspect;
+    if (h > maxH) { h = maxH; w = h * aspect; }
     heroFrame.style.width = w + 'px';
     heroFrame.style.height = h + 'px';
   }
   sizeHeroFrame();
   window.addEventListener('resize', sizeHeroFrame);
-  window.addEventListener('load', sizeHeroFrame);
-  setTimeout(sizeHeroFrame, 150); // background/prerendered tabs can report a 0-size box on the first synchronous layout query
 
   assignRandomBeats();
-  window.mpc3d.init('mpc3dWrap', lcdCanvas).catch(err => {
+  window.mpc3d.init('mpc3dWrap', lcdCanvas).then(sizeHeroFrame).catch(err => {
     console.error('[mpc3d] failed to load:', err);
   });
 });

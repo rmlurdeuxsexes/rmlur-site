@@ -100,9 +100,10 @@ body.no-scroll .hero{
 }
 body.no-scroll .hero-frame{
   display:flex;margin:0 auto;
-  /* explicit square px size, set by app.js from .hero's own box —
-     CSS aspect-ratio/min() sizing here proved unreliable across
-     rendering contexts, so JS computes it directly instead */
+  /* explicit px size, set by app.js's sizeHeroFrame() using the
+     model's real measured fit-aspect (mpc3d.getFitAspect()) — see
+     app.js for why a guessed ratio or a plain 100%/100% fill both
+     still left margins. */
 }
 body.no-scroll .site-footer{
   flex-shrink:0;padding:2px 24px;

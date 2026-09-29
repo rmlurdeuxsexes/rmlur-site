@@ -20,6 +20,11 @@ window.mpc3d = (function () {
     onPartClick: null,
     init: init,
     setPadColor: setPadColor,
+    getFitAspect: function () {
+      if (modelHalfW == null) return null;
+      const effectiveHalfH = modelHalfH * Math.cos(CAM_PHI) + modelHalfD * Math.sin(CAM_PHI);
+      return modelHalfW / effectiveHalfH;
+    },
   };
 
   let scene, camera, renderer, canvasEl, wrapEl, tooltipEl;
@@ -161,9 +166,10 @@ window.mpc3d = (function () {
     // this base emissive rather than replace it outright — unused today.)
     const base = new THREE.MeshStandardMaterial({
       map: padTex,
+      color: new THREE.Color(0x3a3a3e), // multiplies the (brightened) map back down to a near-black pad
       emissiveMap: padTex,
       emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 0.3,
+      emissiveIntensity: 0.06,
       roughness: 0.88,
       metalness: 0,
     });
@@ -187,9 +193,10 @@ window.mpc3d = (function () {
     wheelTex.anisotropy = 4;
     const faceMat = new THREE.MeshStandardMaterial({
       map: wheelTex,
+      color: new THREE.Color(0x3a3a3e),
       emissiveMap: wheelTex,
       emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 0.22,
+      emissiveIntensity: 0.06,
       roughness: 0.42,
       metalness: 0.08,
     });
@@ -368,7 +375,13 @@ window.mpc3d = (function () {
     let minI = 0;
     for (let i = 1; i < pos.count; i++) { if (pos.getX(i) < pos.getX(minI)) minI = i; }
     const anchor = new THREE.Vector3(pos.getX(minI), pos.getY(minI), pos.getZ(minI));
-    drive.position.lerp(anchor, 0.55); // moves 45% of the way from its old spot toward the anchor
+    // Pulled in less than a prior pass tried (that used 0.55, which left the
+    // cable so short between drive and anchor it read as invisible — the
+    // reference photo shows a real, visibly-sagging cable here). Now that
+    // the frame's aspect ratio is measured live off the model (see
+    // mpc3d.getFitAspect() / app.js), pulling the drive in less doesn't
+    // reintroduce the old whitespace bug — the frame just adapts.
+    drive.position.lerp(anchor, 0.22);
   }
 
   function loadModel() {
