@@ -7,10 +7,22 @@
   var audio = document.getElementById('audio');
   var playingBtn = null;
 
+  // /api/products (Neon) is authoritative. If it is unavailable, use the
+  // drop-folder catalog (data/beats.catalog.json) plus the static products.js.
   function loadProducts() {
     return fetch('/api/products')
       .then(function (r) { if (!r.ok) throw new Error('bad'); return r.json(); })
-      .catch(function () { return window.PRODUCTS || []; });
+      .then(function (list) { if (!list.length) throw new Error('empty'); return list; })
+      .catch(function () {
+        return fetch('data/beats.catalog.json', { cache: 'no-cache' })
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .catch(function () { return []; })
+          .then(function (published) {
+            var seen = {};
+            published.forEach(function (p) { seen[p.id] = true; });
+            return published.concat((window.PRODUCTS || []).filter(function (p) { return !seen[p.id]; }));
+          });
+      });
   }
 
   function money(n) { return '$' + Number(n).toFixed(2).replace(/\.00$/, ''); }

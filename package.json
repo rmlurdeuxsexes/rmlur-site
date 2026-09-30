@@ -7,6 +7,7 @@
     "@vercel/blob": "^0.27.0"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "publish-beats": "node scripts/publish-beats.mjs"
   }
 }
