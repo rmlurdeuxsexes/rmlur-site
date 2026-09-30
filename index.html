@@ -10,38 +10,29 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body class="no-scroll">
-<img src="assets/worldstar-watermark.png" alt="RMLUR STAR" class="site-watermark">
+<body class="home-static">
+<nav class="home-nav" aria-label="Main">
+  <a href="index.html" aria-current="page">Home</a>
+  <a href="store.html">Beats</a>
+  <a href="https://www.youtube.com/" target="_blank" rel="noopener">YouTube</a>
+  <a href="https://www.instagram.com/kennethglamour/" target="_blank" rel="noopener">Instagram</a>
+  <a href="https://www.tiktok.com/@jayrewindbeatz" target="_blank" rel="noopener">TikTok</a>
+  <a href="about.html">About</a>
+  <a href="mailto:jayrewindbeatz@gmail.com">Contact</a>
+</nav>
 
-<!-- No corner-nav here on purpose: the MPC is the only navigation on this
-     screen. About/Blog/Design/Contact are reachable via pads instead (see
-     hotspots.js PADS) — click-through-the-machine, not a text nav bar. -->
-
-<!-- ================= HERO — the MPC is the site. every click below is a real nav action. ================= -->
-<section class="hero">
-  <div class="hero-frame" id="hero-frame">
-    <!-- mpc-3d.js renders the real textured MPC2000XL model here, with
-         every pad/knob/button individually clickable — see mpc-3d.js -->
-    <div id="mpc3dWrap"></div>
-    <canvas id="lcdSourceCanvas" width="960" height="240" hidden></canvas>
-    <video id="lcdIdleVideo" muted loop playsinline hidden></video>
-  </div>
-</section>
-
-<audio id="pad-audio"></audio>
-
-<div id="page-fade" class="page-fade"></div>
+<!-- Live homepage = the original Readymag MPC 2000XL hero. The 3D MPC scene
+     (mpc-3d.js, cassette-bay.js, hotspots.js) is untouched and just not
+     loaded here; see PROGRESS.md. -->
+<main class="home-hero">
+  <a href="store.html" class="home-hero-link" aria-label="Buy beats">
+    <img src="assets/hero-mpc-2000xl-readymag.png" width="1412" height="1136"
+         alt="Worn cream Akai MPC 2000XL covered in stickers — buy beats here">
+  </a>
+</main>
 
 <footer class="site-footer mini-footer">
   <span>jayrewindbeatz@gmail.com</span>
 </footer>
-
-<script src="hotspots.js"></script>
-<script src="led-marquee.js"></script>
-<script src="vendor/three.min.js"></script>
-<script src="vendor/GLTFLoader.js"></script>
-<script src="mpc-3d.js"></script>
-<script src="app.js"></script>
-<script src="radio-player.js"></script>
 </body>
 </html>
