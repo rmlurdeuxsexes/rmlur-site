@@ -1,0 +1,44 @@
+# PROGRESS — Track A status (2026-09-30)
+
+## Shipped (branch `claude/new-session-a0q905`, not yet merged to `main`)
+- `/` — static Readymag MPC hero (`assets/hero-mpc-2000xl-readymag.png`). 3D scene files untouched, just not loaded on `/`.
+- `/store.html` — white store, 3.5" floppy disks, beat info handwritten on the label rules, Play / license picker / Buy.
+- Checkout — Stripe Checkout (REST, no SDK):
+  - `POST /api/checkout {productId, tierId}` → session URL. Price comes from the DB, never the browser.
+  - `GET /api/checkout` → `{enabled, testMode}`; store shows a TEST MODE banner for `sk_test_` keys.
+  - `POST /api/stripe-webhook` → verifies signature, records the order in `orders` (auto-created), emails the download link if `RESEND_API_KEY` is set.
+  - `/thanks.html` → `GET /api/order?session_id=` (paid-only) lists files; `GET /api/license?session_id=` returns the license PDF.
+  - Without `STRIPE_SECRET_KEY` Buy falls back to each tier's existing `stripeLink` (mailto today).
+- Security fix: `/api/products` no longer leaks `deliverableUrl` inside `tiers`/`exclusive`.
+- Tests: `npm test` (checkout session, signature, PDF).
+
+## Drop-folder publishing — `npm run publish-beats`
+Drop files in `beats-inbox/` (or set `BEATS_INBOX_PATH`), then run it:
+```
+Name.wav|aiff|flac   master (or just Name.mp3)      Name.json  overrides: title, genre, bpm, key,
+Name.mp3             preview (else ffmpeg, 60s)                  price, prices{}, subtitle, info, tags,
+Name.jpg|png         cover (else floppy art)                     youtubeUrl, exclusive:false
+Name STEMS.zip       adds a STEMS tier
+```
+- Output: `previews/<id>.mp3`, `assets/covers/<id>.jpg`, `data/beats.catalog.json`; masters move to `beats-published/<id>/` (gitignored, never public).
+- Then commit + push `data previews assets/covers` — the store picks the catalog up (used when `/api/products` is down/empty, merged with `products.js`).
+- `--sync` (or `DATABASE_URL` + `BLOB_READ_WRITE_TOKEN` set): uploads masters to Vercel Blob and upserts the Neon `products` row so checkout can deliver files. Without it, catalog beats have no deliverable and Buy falls back to mailto.
+- `--dry-run` previews what would publish. Re-dropping a file updates its entry, never duplicates.
+- Genre uses the one shared classifier (`scripts/lib/beat-meta.mjs`, also used by `beat-drop-watch.mjs`). Fill `data/genre-playlists.json` (`{"Soul / R&B": "<youtube playlist url>"}`) to attach a playlist per genre.
+- Prices: existing scheme (MP3 24.99 / WAV 34.99 / STEMS 59.99 / EXCLUSIVE 249.99).
+- No HTTP publish endpoint: Vercel functions can't see your local inbox, so the CLI is the publish path.
+
+## Env vars to set in Vercel
+| Var | Needed for |
+|---|---|
+| `STRIPE_SECRET_KEY` | checkout (use `sk_test_…` first) |
+| `STRIPE_WEBHOOK_SECRET` | webhook; endpoint `https://rmlur.com/api/stripe-webhook`, event `checkout.session.completed` |
+| `NEXT_PUBLIC_SITE_URL` | optional; defaults to request origin |
+| `RESEND_API_KEY`, `MAIL_FROM` | optional download email |
+| `DATABASE_URL` | already in use |
+
+## Still open
+- Real floppy photo: save watermark-free image at `assets/store/floppy-3.5-blue.png` (SVG placeholder used until then).
+- Deliverables: tiers without a `deliverableUrl` show "files will be emailed" on `/thanks.html`.
+- Dropbox link delivery (not built).
+- Track B (floppy cabinet) not started.

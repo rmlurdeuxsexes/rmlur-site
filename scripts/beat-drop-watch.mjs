@@ -17,6 +17,8 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 
+import { parseBeatFilename, inferGenre } from './lib/beat-meta.mjs';
+
 const execFileAsync = promisify(execFile);
 
 const HOME = os.homedir();
@@ -53,48 +55,6 @@ function saveState(state) {
 
 // ---------- filename parsing (extends src/beatNameParser.js's convention
 // in the GlamPushAPP repo to handle multiple @collaborators + stray tokens) ----------
-function parseBeatFilename(filename) {
-  let name = filename.replace(AUDIO_EXT, '').replace(/\.flp$/i, '');
-  name = name.replace(/^untitled\.?\s*/i, '');
-  name = name.replace(/_/g, ' ');
-
-  const bpmMatches = [...name.matchAll(/(\d+)\s*bpm/gi)];
-  const bpm = bpmMatches.length ? parseInt(bpmMatches[bpmMatches.length - 1][1], 10) : null;
-
-  const handles = [...new Set((name.match(/@[\w.]+/g) || []).map(h => h.toLowerCase()))];
-  const collaborators = handles.filter(h => h !== '@jayrewind');
-
-  let title = name
-    .replace(/\d+\s*bpm/gi, '')
-    .replace(/@[\w.]+/g, '')
-    .replace(/type\s*beat/gi, '')
-    .replace(/\+/g, ' ')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
-    .replace(/^[-.\s]+|[-.\s]+$/g, '');
-
-  if (!title) title = `untitled beat ${Date.now()}`;
-
-  const displayTitle = title.toUpperCase();
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `beat-${Date.now()}`;
-
-  return { title: displayTitle, slug, bpm, collaborators };
-}
-
-const GENRE_RULES = [
-  [/jersey/i, 'Jersey Club / Trap'],
-  [/soul|rnb|r&b/i, 'Soul / R&B'],
-  [/jazz/i, 'Jazz / Neo-Soul'],
-  [/edm|dance|club/i, 'EDM / Dance'],
-  [/dancehall|afro/i, 'Dancehall / Afrobeat'],
-  [/rock|guitar|indie/i, 'Rock'],
-  [/drill/i, 'Drill'],
-];
-function inferGenre(title) {
-  for (const [re, genre] of GENRE_RULES) if (re.test(title)) return genre;
-  return 'Trap / Hip-Hop';
-}
-
 function creditLine(collaborators) {
   let line = 'Prod. by JayRewind';
   if (collaborators.length) {

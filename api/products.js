@@ -1,5 +1,12 @@
 import { sql } from './_lib/db.js';
 
+// tiers/exclusive carry deliverableUrl (paid files) — never expose it publicly.
+function publicTier(t) {
+  if (!t) return t;
+  const { deliverableUrl, ...rest } = t;
+  return rest;
+}
+
 function toProduct(row) {
   return {
     id: row.id,
@@ -14,8 +21,8 @@ function toProduct(row) {
     preview: row.preview_url,
     tags: row.tags,
     info: row.info,
-    tiers: row.tiers,
-    exclusive: row.exclusive,
+    tiers: Array.isArray(row.tiers) ? row.tiers.map(publicTier) : row.tiers,
+    exclusive: publicTier(row.exclusive),
   };
 }
 
