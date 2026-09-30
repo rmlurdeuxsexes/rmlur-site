@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thanks — RMLUR :: deux SEXES</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="store.css">
+</head>
+<body>
+<nav class="home-nav"><a href="index.html">Home</a><a href="store.html">Beats</a></nav>
+<main style="max-width:560px;text-align:center">
+  <h1 style="font-weight:500;font-size:18px">Thank you.</h1>
+  <p id="msg" class="empty">Confirming your payment…</p>
+  <div id="files" style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:18px"></div>
+</main>
+<script>
+(function () {
+  var id = new URLSearchParams(location.search).get('session_id');
+  var msg = document.getElementById('msg'), box = document.getElementById('files');
+  function link(href, text) { var a = document.createElement('a'); a.className = 'btn buy'; a.href = href; a.textContent = text; box.appendChild(a); }
+  function tryOnce(n) {
+    fetch('/api/order?session_id=' + encodeURIComponent(id)).then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); })
+    .then(function (res) {
+      if (!res[0]) { if (n < 5) return setTimeout(function () { tryOnce(n + 1); }, 2000); msg.textContent = 'We could not confirm this order yet. If you were charged, email jayrewindbeatz@gmail.com with your receipt.'; return; }
+      var o = res[1];
+      msg.textContent = o.title + ' — ' + o.license + ' license' + (o.email ? ' (receipt sent to ' + o.email + ')' : '');
+      o.files.forEach(function (f) { link(f.url, 'Download ' + f.label); });
+      link(o.licenseUrl, 'License PDF');
+      if (o.fulfilment === 'manual') { var p = document.createElement('p'); p.className = 'empty'; p.textContent = 'Your files are being prepared and will be emailed to you shortly.'; box.appendChild(p); }
+    }).catch(function () { msg.textContent = 'Something went wrong loading your order. Email jayrewindbeatz@gmail.com.'; });
+  }
+  if (!id) msg.textContent = 'No order found.'; else tryOnce(0);
+})();
+</script>
+</body>
+</html>

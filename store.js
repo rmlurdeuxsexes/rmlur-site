@@ -14,10 +14,6 @@
   }
 
   function money(n) { return '$' + Number(n).toFixed(2).replace(/\.00$/, ''); }
-  function cheapest(p) {
-    var t = (p.tiers || []).slice().sort(function (a, b) { return a.price - b.price; });
-    return t[0] || null;
-  }
   function el(tag, cls, text) {
     var e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -25,8 +21,28 @@
     return e;
   }
 
+  function options(p) {
+    var o = (p.tiers || []).slice().sort(function (a, b) { return a.price - b.price; });
+    if (p.exclusive) o.push({ id: 'exclusive', label: 'EXCLUSIVE', price: p.exclusive.price, stripeLink: p.exclusive.stripeLink });
+    return o;
+  }
+
+  var checkoutLive = false;
+  function buy(p, tier, btn) {
+    function fallback() {
+      location.href = tier.stripeLink || 'mailto:jayrewindbeatz@gmail.com?subject=' + encodeURIComponent('Buy "' + p.title + '" — ' + tier.label);
+    }
+    if (!checkoutLive) return fallback();
+    btn.textContent = '…';
+    fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: p.id, tierId: tier.id }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (j.url) location.href = j.url; else throw new Error(j.error); })
+      .catch(function () { btn.textContent = 'Buy'; fallback(); });
+  }
+
   function card(p) {
-    var tier = cheapest(p);
+    var opts = options(p);
+    var tier = opts[0] || null;
     var c = el('article', 'card');
     var disk = el('div', 'disk');
     var img = el('img');
@@ -36,13 +52,13 @@
     disk.appendChild(img);
 
     var bpmKey = [p.bpm ? p.bpm + ' bpm' : '', p.key || ''].filter(Boolean).join(' · ');
-    var lines = [
-      [p.title ? p.title.toLowerCase().replace(/(^|\s)\S/g, function (m) { return m.toUpperCase(); }) : '', 't'],
-      [p.genre || '', ''],
-      [bpmKey, ''],
-      [tier ? money(tier.price) + ' · ' + tier.label + ' lease' : '', '']
-    ];
-    lines.forEach(function (l) { disk.appendChild(el('div', 'ln ' + l[1], l[0])); });
+    var priceLine = el('div', 'ln', '');
+    function setPrice() { priceLine.textContent = tier ? money(tier.price) + ' · ' + tier.label + ' lease' : ''; }
+    setPrice();
+    disk.appendChild(el('div', 'ln t', p.title ? p.title.toLowerCase().replace(/(^|\s)\S/g, function (m) { return m.toUpperCase(); }) : ''));
+    disk.appendChild(el('div', 'ln', p.genre || ''));
+    disk.appendChild(el('div', 'ln', bpmKey));
+    disk.appendChild(priceLine);
     c.appendChild(disk);
 
     var ctl = el('div', 'ctl');
@@ -50,10 +66,16 @@
     play.setAttribute('aria-pressed', 'false');
     play.addEventListener('click', function () { toggle(p, play); });
     ctl.appendChild(play);
-    var buy = el('a', 'btn buy', 'Buy');
-    if (tier && tier.stripeLink) { buy.href = tier.stripeLink; buy.target = '_blank'; buy.rel = 'noopener'; }
-    else { buy.href = 'mailto:jayrewindbeatz@gmail.com?subject=' + encodeURIComponent('Buy "' + p.title + '"'); }
-    ctl.appendChild(buy);
+    if (opts.length > 1) {
+      var sel = el('select', 'btn');
+      sel.setAttribute('aria-label', 'License');
+      opts.forEach(function (t, i) { var op = el('option', null, t.label + ' ' + money(t.price)); op.value = i; sel.appendChild(op); });
+      sel.addEventListener('change', function () { tier = opts[sel.value]; setPrice(); });
+      ctl.appendChild(sel);
+    }
+    var buyBtn = el('button', 'btn buy', 'Buy');
+    buyBtn.addEventListener('click', function () { if (tier) buy(p, tier, buyBtn); });
+    ctl.appendChild(buyBtn);
     c.appendChild(ctl);
     return c;
   }
@@ -69,6 +91,11 @@
     audio.play().catch(function () { btn.textContent = 'Unavailable'; playingBtn = null; });
   }
   audio.addEventListener('ended', reset);
+
+  fetch('/api/checkout').then(function (r) { return r.json(); }).then(function (j) {
+    checkoutLive = !!j.enabled;
+    if (j.testMode) { var b = el('div', 'testbar', 'TEST MODE — no real charges (use card 4242 4242 4242 4242)'); document.body.insertBefore(b, document.body.firstChild); }
+  }).catch(function () {});
 
   loadProducts().then(function (list) {
     list = list || [];
