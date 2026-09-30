@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+<!-- PLACEHOLDER: replace by dropping the real photo at assets/store/floppy-3.5-blue.png (same 800x800 framing). -->
+<path d="M128 106h442l14 10h98l0 12 16 26v516a18 18 0 0 1-18 18H146a18 18 0 0 1-18-18z" transform="translate(-0 0)" fill="#2b3b8f"/>
+<rect x="268" y="106" width="302" height="198" fill="#55575a"/>
+<rect x="446" y="136" width="76" height="154" fill="#2b3b8f"/>
+<path d="M151 143l-10 22h6v24h8v-24h6z" fill="#1e2a6b"/>
+<rect x="191" y="352" width="443" height="338" fill="#f2f2ee"/>
+<rect x="191" y="352" width="443" height="63" fill="#3f86d6"/>
+<rect x="191" y="667" width="443" height="23" fill="#3f86d6"/>
+<text x="200" y="389" font-family="Arial,sans-serif" font-size="15" fill="#fff">INDEX</text>
+<line x1="191" x2="634" y1="449" y2="449" stroke="#4a8fd8" stroke-width="1.6"/><line x1="191" x2="634" y1="486" y2="486" stroke="#4a8fd8" stroke-width="1.6"/><line x1="191" x2="634" y1="522" y2="522" stroke="#4a8fd8" stroke-width="1.6"/><line x1="191" x2="634" y1="559" y2="559" stroke="#4a8fd8" stroke-width="1.6"/><line x1="191" x2="634" y1="596" y2="596" stroke="#4a8fd8" stroke-width="1.6"/><line x1="191" x2="634" y1="632" y2="632" stroke="#4a8fd8" stroke-width="1.6"/>
+<rect x="145" y="625" width="27" height="24" fill="#10143a"/>
+</svg>
