@@ -6,14 +6,17 @@
 //     Name.mp3                optional preview (else generated with ffmpeg)
 //     Name.jpg|png            optional cover (else the store shows the floppy)
 //     Name.json               optional overrides: title, genre, bpm, key, price, prices,
-//                             subtitle, info, tags, youtubeUrl, exclusive:false
+//                             subtitle, info, tags, youtubeUrl, exclusive:false, vault:true,
+//                             dropbox:{mp3,wav,stems,exclusive} -> "dropbox:/path" or a dropbox share link;
+//                             those tiers are delivered from Dropbox instead of Vercel Blob
 //     Name STEMS.zip          optional -> adds a STEMS tier
 //   beats-published/<id>/     masters are moved here after publishing (gitignored)
 //   previews/<id>.mp3         web-safe preview   assets/covers/<id>.jpg   cover
 //   data/beats.catalog.json   the catalog the store reads (commit + push it)
 //
 // --sync (or DATABASE_URL + BLOB_READ_WRITE_TOKEN set): also uploads masters to
-// Vercel Blob and upserts the Neon `products` row so checkout can deliver them.
+// Vercel Blob (or references your Dropbox paths) and upserts the Neon `products`
+// row so checkout can deliver them.
 
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
@@ -30,7 +33,7 @@ const PUBLISHED = path.join(ROOT, 'beats-published');
 const CATALOG = path.join(ROOT, 'data', 'beats.catalog.json');
 const PLAYLISTS = path.join(ROOT, 'data', 'genre-playlists.json');
 const DRY = process.argv.includes('--dry-run');
-const SYNC = process.argv.includes('--sync') || !!(process.env.DATABASE_URL && process.env.BLOB_READ_WRITE_TOKEN);
+const SYNC = process.argv.includes('--sync') || !!(process.env.DATABASE_URL && (process.env.BLOB_READ_WRITE_TOKEN || process.env.DROPBOX_ACCESS_TOKEN || process.env.DROPBOX_REFRESH_TOKEN));
 
 const LOSSLESS = /\.(wav|aiff?|flac)$/i;
 const readJson = (p, dflt) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return dflt; } };
@@ -100,7 +103,7 @@ async function main() {
       if (g[k]) { moved[k] = path.join(dest, g[k]); await fsp.rename(path.join(INBOX, g[k]), moved[k]); }
     }
     catalog = upsertCatalog(catalog, entry);
-    synced.push({ entry, files: moved });
+    synced.push({ entry, files: moved, dropbox: sidecar.dropbox || {} });
   }
 
   if (!DRY) {
@@ -115,18 +118,20 @@ async function main() {
 
 async function syncToStore(items) {
   const { neon } = await import('@neondatabase/serverless');
-  const { put } = await import('@vercel/blob');
   const sql = neon(process.env.DATABASE_URL);
-  const up = async (file, blobPath) => (await put(blobPath, await fsp.readFile(file), {
-    access: 'public', token: process.env.BLOB_READ_WRITE_TOKEN, addRandomSuffix: true })).url;
+  const up = async (file, blobPath) => {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error(`BLOB_READ_WRITE_TOKEN not set — add a "dropbox" entry to the sidecar or set the token (${blobPath})`);
+    const { put } = await import('@vercel/blob');
+    return (await put(blobPath, await fsp.readFile(file), { access: 'public', token: process.env.BLOB_READ_WRITE_TOKEN, addRandomSuffix: true })).url;
+  };
 
-  for (const { entry, files } of items) {
-    const masterUrl = files.master ? await up(files.master, `deliverables/${entry.id}/wav/${path.basename(files.master)}`) : null;
-    const mp3Url = files.mp3 ? await up(files.mp3, `deliverables/${entry.id}/mp3/${path.basename(files.mp3)}`) : masterUrl;
-    const stemsUrl = files.stems ? await up(files.stems, `deliverables/${entry.id}/stems/${path.basename(files.stems)}`) : null;
+  for (const { entry, files, dropbox } of items) {
+    const masterUrl = dropbox.wav || (files.master ? await up(files.master, `deliverables/${entry.id}/wav/${path.basename(files.master)}`) : null);
+    const mp3Url = dropbox.mp3 || (files.mp3 ? await up(files.mp3, `deliverables/${entry.id}/mp3/${path.basename(files.mp3)}`) : masterUrl);
+    const stemsUrl = dropbox.stems || (files.stems ? await up(files.stems, `deliverables/${entry.id}/stems/${path.basename(files.stems)}`) : null);
     const urlFor = { mp3: mp3Url, wav: masterUrl, stems: stemsUrl };
     const tiers = entry.tiers.map(t => ({ ...t, deliverableUrl: urlFor[t.id] || null }));
-    const exclusive = entry.exclusive ? { ...entry.exclusive, deliverableUrl: stemsUrl || masterUrl } : null;
+    const exclusive = entry.exclusive ? { ...entry.exclusive, deliverableUrl: dropbox.exclusive || stemsUrl || masterUrl } : null;
     await sql`
       INSERT INTO products (id, type, title, subtitle, bpm, key, bars, genre, cover_url, preview_url, deliverable_url, tags, info, tiers, exclusive)
       VALUES (${entry.id}, 'beat', ${entry.title}, ${entry.subtitle}, ${entry.bpm}, ${entry.key}, ${entry.bars}, ${entry.genre},
