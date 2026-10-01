@@ -300,13 +300,14 @@ window.name = 'Drawer_Window'; label.name = 'Drawer_Label'; dl.name = 'Disk_Labe
 print('OBJECTS', [(o.name, len(o.data.polygons)) for o in bpy.data.objects if o.type == 'MESH'])
 
 # ------------------------------------------------------------------ showcase render (visual check only)
-def showcase(path, open_idx=1, res=(1280, 800), samples=48):
+def showcase(path, open_idx=1, res=(1100, 700), samples=32):
     scene.render.engine = 'CYCLES'; scene.cycles.device = 'CPU'; scene.cycles.samples = samples
     scene.cycles.use_denoising = True
     scene.render.resolution_x, scene.render.resolution_y = res
     scene.render.film_transparent = False
     w = bpy.data.worlds.new('w'); scene.world = w; w.use_nodes = True
-    w.node_tree.nodes['Background'].inputs['Color'].default_value = (1, 1, 1, 1); w.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.9
+    w.node_tree.nodes['Background'].inputs['Color'].default_value = (1, 1, 1, 1); w.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.55
+    scene.view_settings.view_transform = 'Standard'; scene.view_settings.exposure = -0.35
     # ground
     bpy.ops.mesh.primitive_plane_add(size=600, location=(0, 0, 0)); g = bpy.context.active_object
     gm = flat_mat('ground', (1, 1, 1), 0.9); assign(g, gm)
@@ -321,16 +322,16 @@ def showcase(path, open_idx=1, res=(1280, 800), samples=48):
         if idx == open_idx:
             for i in range(6):
                 k = disk.copy(); k.data = disk.data; bpy.context.collection.objects.link(k)
-                k.location = T(cx + (4.9 if i % 2 else -4.9), cy - 2.7, z - FACE_D / 2 - 25 + (i // 2) * 1.5); k.rotation_euler = (math.radians(90 - 35.5), 0, 0)
+                k.location = T(cx + (4.9 if i % 2 else -4.9), cy - 2.7, z - FACE_D / 2 - 25 + (i // 2) * 1.5); k.rotation_euler = (math.radians(-35.5), 0, 0)
                 kl = dl.copy(); kl.data = dl.data; bpy.context.collection.objects.link(kl); kl.parent = k; kl.location = (0, 0, 0)
                 kl.matrix_parent_inverse = k.matrix_world.inverted() if False else kl.matrix_parent_inverse
     for o in (window, label, disk, dl, drawer, dv, key): o.hide_render = True
     # lights: big soft key upper-left, weak fill
-    ld = bpy.data.lights.new('key', 'AREA'); ld.energy = 25000; ld.size = 120; ko = bpy.data.objects.new('key', ld); bpy.context.collection.objects.link(ko)
+    ld = bpy.data.lights.new('key', 'AREA'); ld.energy = 7000; ld.size = 120; ko = bpy.data.objects.new('key', ld); bpy.context.collection.objects.link(ko)
     ko.location = T(-70, 110, 90); ko.rotation_euler = (math.radians(55), 0, math.radians(-35))
-    ld2 = bpy.data.lights.new('fill', 'AREA'); ld2.energy = 6000; ld2.size = 150; fo = bpy.data.objects.new('fill', ld2); bpy.context.collection.objects.link(fo)
+    ld2 = bpy.data.lights.new('fill', 'AREA'); ld2.energy = 1800; ld2.size = 150; fo = bpy.data.objects.new('fill', ld2); bpy.context.collection.objects.link(fo)
     fo.location = T(90, 40, 80); fo.rotation_euler = (math.radians(75), 0, math.radians(45))
-    cam = bpy.data.cameras.new('cam'); cam.lens = 85; cam.sensor_width = 36
+    cam = bpy.data.cameras.new('cam'); cam.lens = 50; cam.sensor_width = 36
     co = bpy.data.objects.new('cam', cam); bpy.context.collection.objects.link(co); scene.camera = co
     co.location = T(0, 112, 104)
     tgt = T(0, 16, 26); co.rotation_euler = (tgt - co.location).to_track_quat('-Z', 'Y').to_euler()
