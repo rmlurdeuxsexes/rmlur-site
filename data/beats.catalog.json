@@ -1,9 +1,9 @@
 [
   {
-    "id": "spiritual-trance",
+    "id": "spiretrual-trance",
     "type": "beat",
-    "source": "spiritual trance 120BPM @jayrewind + @mikewavvs",
-    "title": "SPIRITUAL TRANCE",
+    "source": "spiretrual trance 120BPM @jayrewind + @mikewavvs",
+    "title": "SPIRETRUAL TRANCE",
     "subtitle": "trance type beat",
     "bpm": 120,
     "key": null,
@@ -13,7 +13,6 @@
     "preview": null,
     "tags": [
       "trance",
-      "spiritual",
       "collab"
     ],
     "info": "Prod. by JayRewind (co-produced with mikewavvs). Untagged, mix-ready audio. Every purchase includes a license; see rmlur.com/licenses.html.",
@@ -22,18 +21,18 @@
         "id": "mp3",
         "label": "MP3",
         "price": 24.99,
-        "stripeLink": "mailto:jayrewindbeatz@gmail.com?subject=Buy%20%22SPIRITUAL%20TRANCE%22%20%E2%80%94%20MP3"
+        "stripeLink": "mailto:jayrewindbeatz@gmail.com?subject=Buy%20%22SPIRETRUAL%20TRANCE%22%20%E2%80%94%20MP3"
       },
       {
         "id": "wav",
         "label": "WAV",
         "price": 34.99,
-        "stripeLink": "mailto:jayrewindbeatz@gmail.com?subject=Buy%20%22SPIRITUAL%20TRANCE%22%20%E2%80%94%20WAV"
+        "stripeLink": "mailto:jayrewindbeatz@gmail.com?subject=Buy%20%22SPIRETRUAL%20TRANCE%22%20%E2%80%94%20WAV"
       }
     ],
     "exclusive": {
       "price": 249.99,
-      "stripeLink": "mailto:jayrewindbeatz@gmail.com?subject=Buy%20%22SPIRITUAL%20TRANCE%22%20%E2%80%94%20EXCLUSIVE"
+      "stripeLink": "mailto:jayrewindbeatz@gmail.com?subject=Buy%20%22SPIRETRUAL%20TRANCE%22%20%E2%80%94%20EXCLUSIVE"
     }
   }
 ]
