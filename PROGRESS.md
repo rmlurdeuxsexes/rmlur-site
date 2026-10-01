@@ -35,12 +35,13 @@ Name STEMS.zip       adds a STEMS tier
 | `STRIPE_WEBHOOK_SECRET` | webhook; endpoint `https://rmlur.com/api/stripe-webhook`, event `checkout.session.completed` |
 | `NEXT_PUBLIC_SITE_URL` | optional; defaults to request origin |
 | `RESEND_API_KEY`, `MAIL_FROM` | optional download email |
+| `DROPBOX_REFRESH_TOKEN` + `DROPBOX_APP_KEY` + `DROPBOX_APP_SECRET` | Dropbox delivery (recommended; never expires) |
+| `DROPBOX_ACCESS_TOKEN` | Dropbox delivery, simple alternative (short-lived unless it is a long-lived legacy token) |
 | `DATABASE_URL` | already in use |
 
 ## Still open
 - Real floppy photo: save watermark-free image at `assets/store/floppy-3.5-blue.png` (SVG placeholder used until then).
 - Deliverables: tiers without a `deliverableUrl` show "files will be emailed" on `/thanks.html`.
-- Dropbox link delivery (not built).
 - Track B (floppy cabinet) not started.
 
 ## Track B — floppy cabinet (lab, not linked from the site)
@@ -50,3 +51,11 @@ Name STEMS.zip       adds a STEMS tier
 - VAULT (locked): holds products flagged `vault:true` (sidecar `{"vault":true}` for publish-beats). Key animates into the lock; right password turns and opens, wrong one jams. **Default password `rmlur` — change `passwordHash` in the config** (command in the config's `_comment`). This is UI gating only: the hash and the vault catalog entries are public files, so don't put anything there that must stay secret.
 - Tests: `npm test` covers drawer assignment and the password check.
 - Not done: Blender/GLB photoreal pass with baked textures, dust/scuff detail maps, mobile polish, `/api/products` does not return `vault` (vault items come from the JSON catalog only), swapping the molded mark text from "rmlur" if you want a different mark.
+
+## Dropbox delivery
+- A tier's deliverable can be `dropbox:/path/in/your/Dropbox/Name.wav` or an existing Dropbox share link. `/api/order` (the `/thanks.html` page) resolves a path into a fresh 4-hour temporary link on every load, so the emailed thanks-page link keeps working; share links are forced to `dl=1`. Anything else (Vercel Blob URLs) passes through unchanged.
+- No credentials or a Dropbox error -> the buyer sees "files will be emailed" (manual fulfilment) instead of a broken link. Paths and tokens never reach the public `/api/products`.
+- Setup: create a Dropbox app (scoped access, permission `files.content.read`, access to the folder holding your masters), then set the env vars above in Vercel. Refresh-token flow: authorize once with `token_access_type=offline` to get the refresh token.
+- Per beat, in the `Name.json` sidecar: `{"dropbox": {"mp3": "dropbox:/RMLUR/Beats/Name.mp3", "wav": "dropbox:/RMLUR/Beats/Name.wav", "stems": "dropbox:/RMLUR/Beats/Name STEMS.zip", "exclusive": "dropbox:/RMLUR/Beats/Name STEMS.zip"}}`. With `npm run publish-beats --sync` those tiers point at Dropbox and nothing is uploaded to Blob; any tier without an entry still falls back to Blob.
+- The admin upload's `deliverable` field also accepts `dropbox:/...`.
+- Not built: uploading masters *to* Dropbox from the CLI (you keep the files there yourself).
