@@ -54,7 +54,9 @@
 
   function card(p) {
     var opts = options(p);
-    var tier = opts[0] || null;
+    // WAV is the full-quality default; MP3 is just the cheaper, lower-quality option.
+    var defIdx = Math.max(0, opts.findIndex(function (t) { return t.id === 'wav'; }));
+    var tier = opts[defIdx] || null;
     var c = el('article', 'card');
     var disk = el('div', 'disk');
     var img = el('img');
@@ -82,6 +84,7 @@
       var sel = el('select', 'btn');
       sel.setAttribute('aria-label', 'License');
       opts.forEach(function (t, i) { var op = el('option', null, t.label + ' ' + money(t.price)); op.value = i; sel.appendChild(op); });
+      sel.value = defIdx;
       sel.addEventListener('change', function () { tier = opts[sel.value]; setPrice(); });
       ctl.appendChild(sel);
     }
