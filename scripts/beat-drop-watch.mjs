@@ -18,6 +18,7 @@ import path from 'node:path';
 import os from 'node:os';
 
 import { parseBeatFilename, inferGenre } from './lib/beat-meta.mjs';
+import { r2Config, r2Put } from '../api/_lib/r2.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -33,6 +34,9 @@ const AUDIO_EXT = /\.(wav|aiff?|flac)$/i;
 const RUN_ONCE = process.argv.includes('--once');
 const DRY_RUN = process.argv.includes('--dry-run');
 
+// Paid files (deliverables/*) go to private Cloudflare R2 when configured; the public
+// cover/preview images still use Vercel Blob.
+const USE_R2 = !!r2Config();
 if (!DRY_RUN && (!process.env.DATABASE_URL || !process.env.BLOB_READ_WRITE_TOKEN)) {
   console.error('Missing DATABASE_URL / BLOB_READ_WRITE_TOKEN — run with --env-file=.env.production.local');
   process.exit(1);
@@ -138,6 +142,7 @@ async function makeLeaseMp3(srcWav, outPath) {
 async function uploadFile(localPath, blobPath) {
   if (DRY_RUN) return `[DRY-RUN would upload ${(await fsp.stat(localPath)).size} bytes -> ${blobPath}]`;
   const buf = await fsp.readFile(localPath);
+  if (USE_R2 && blobPath.startsWith('deliverables/')) return r2Put(blobPath, buf);
   const blob = await put(blobPath, buf, {
     access: 'public',
     token: process.env.BLOB_READ_WRITE_TOKEN,
@@ -186,7 +191,8 @@ function fallbackBuyLink(title, tierLabel) {
 }
 
 async function buildTier({ id, label, price, productTitle, coverUrl, deliverableUrl }) {
-  const stripeLink = deliverableUrl
+  // r2: files are delivered by the site's own checkout (/api/checkout), so no Payment Link here.
+  const stripeLink = deliverableUrl && !deliverableUrl.startsWith('r2:')
     ? await stripeCreatePaymentLink({ productTitle, coverUrl, priceUsd: price, tierLabel: label, deliverableUrl })
     : null;
   return {

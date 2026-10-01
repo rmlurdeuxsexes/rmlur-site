@@ -1,9 +1,12 @@
 // Resolve a stored deliverable into a URL the buyer can download.
 //   dropbox:/Apps/RMLUR/Beats/Name.wav   -> 4-hour temporary link via the Dropbox API
 //   https://www.dropbox.com/s/...?dl=0   -> existing shared link, forced to dl=1
+//   r2:deliverables/<id>/wav/Name.wav   -> 4-hour presigned Cloudflare R2 link (see r2.js)
 //   anything else (e.g. Vercel Blob URL) -> returned as is
 // Auth: DROPBOX_REFRESH_TOKEN + DROPBOX_APP_KEY + DROPBOX_APP_SECRET (recommended,
 // tokens never expire) or a plain DROPBOX_ACCESS_TOKEN.
+
+import { isR2Key, r2DownloadUrl, r2Config } from './r2.js';
 
 let cached = { token: null, exp: 0 };
 
@@ -41,6 +44,11 @@ export function isDropboxShareLink(v) {
 // returns { url, expiresInSec? } or null when it cannot be resolved (caller falls back to manual fulfilment)
 export async function resolveDeliverable(value, opts = {}) {
   if (!value) return null;
+  if (isR2Key(value)) {
+    const env = opts.env || process.env;
+    if (!r2Config(env)) return null;
+    return { url: r2DownloadUrl(value.slice('r2:'.length), { env }), expiresInSec: 4 * 3600 };
+  }
   if (isDropboxPath(value)) {
     const token = await dropboxToken(opts);
     if (!token) return null;

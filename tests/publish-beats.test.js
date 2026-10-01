@@ -42,10 +42,12 @@ test('CLI end to end: inbox -> previews + catalog, idempotent re-drop', () => {
   fs.writeFileSync(path.join(inbox, 'Dusty Jazz 90bpm.mp3'), 'fake-mp3');
   fs.writeFileSync(path.join(inbox, 'Dusty Jazz 90bpm.json'), JSON.stringify({ key: 'Dm' }));
   fs.writeFileSync(path.join(inbox, 'Dusty Jazz 90bpm.jpg'), 'fake-jpg');
-  const env = { ...process.env, BEATS_INBOX_PATH: inbox, DATABASE_URL: '', BLOB_READ_WRITE_TOKEN: '' };
+  const env = { ...process.env, BEATS_INBOX_PATH: inbox, DATABASE_URL: '', BLOB_READ_WRITE_TOKEN: '', R2_ACCOUNT_ID: '', R2_BUCKET: '' };
   // run a scratch copy of the repo layout so the real catalog is untouched
   const scratch = path.join(root, 'repo');
   fs.cpSync(path.resolve('scripts'), path.join(scratch, 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(scratch, 'api', '_lib'), { recursive: true });
+  fs.copyFileSync(path.resolve('api/_lib/r2.js'), path.join(scratch, 'api', '_lib', 'r2.js'));
   fs.mkdirSync(path.join(scratch, 'data'));
   fs.writeFileSync(path.join(scratch, 'data', 'beats.catalog.json'), '[]');
   execFileSync('node', [path.join(scratch, 'scripts/publish-beats.mjs')], { env });

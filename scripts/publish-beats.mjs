@@ -14,8 +14,9 @@
 //   previews/<id>.mp3         web-safe preview   assets/covers/<id>.jpg   cover
 //   data/beats.catalog.json   the catalog the store reads (commit + push it)
 //
-// --sync (or DATABASE_URL + BLOB_READ_WRITE_TOKEN set): also uploads masters to
-// Vercel Blob (or references your Dropbox paths) and upserts the Neon `products`
+// --sync (or DATABASE_URL + R2_*/BLOB token set): also uploads masters to private
+// Cloudflare R2 (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET),
+// else Vercel Blob (or references your Dropbox paths) and upserts the Neon `products`
 // row so checkout can deliver them.
 
 import fs from 'node:fs';
@@ -25,6 +26,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { buildEntry, upsertCatalog, uniqueId } from './lib/catalog.mjs';
 import { parseBeatFilename } from './lib/beat-meta.mjs';
+import { r2Config, r2Put } from '../api/_lib/r2.js';
 
 const run = promisify(execFile);
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
@@ -33,7 +35,7 @@ const PUBLISHED = path.join(ROOT, 'beats-published');
 const CATALOG = path.join(ROOT, 'data', 'beats.catalog.json');
 const PLAYLISTS = path.join(ROOT, 'data', 'genre-playlists.json');
 const DRY = process.argv.includes('--dry-run');
-const SYNC = process.argv.includes('--sync') || !!(process.env.DATABASE_URL && (process.env.BLOB_READ_WRITE_TOKEN || process.env.DROPBOX_ACCESS_TOKEN || process.env.DROPBOX_REFRESH_TOKEN));
+const SYNC = process.argv.includes('--sync') || !!(process.env.DATABASE_URL && (process.env.BLOB_READ_WRITE_TOKEN || r2Config() || process.env.DROPBOX_ACCESS_TOKEN || process.env.DROPBOX_REFRESH_TOKEN));
 
 const LOSSLESS = /\.(wav|aiff?|flac)$/i;
 const readJson = (p, dflt) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return dflt; } };
@@ -120,6 +122,8 @@ async function syncToStore(items) {
   const { neon } = await import('@neondatabase/serverless');
   const sql = neon(process.env.DATABASE_URL);
   const up = async (file, blobPath) => {
+    // private Cloudflare R2 first; the store hands buyers a short-lived link after payment
+    if (r2Config()) return r2Put(blobPath, await fsp.readFile(file));
     if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error(`BLOB_READ_WRITE_TOKEN not set — add a "dropbox" entry to the sidecar or set the token (${blobPath})`);
     const { put } = await import('@vercel/blob');
     return (await put(blobPath, await fsp.readFile(file), { access: 'public', token: process.env.BLOB_READ_WRITE_TOKEN, addRandomSuffix: true })).url;

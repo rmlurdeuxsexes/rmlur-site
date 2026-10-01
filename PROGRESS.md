@@ -28,9 +28,18 @@ Name STEMS.zip       adds a STEMS tier
 - Prices: existing scheme (MP3 24.99 / WAV 34.99 / STEMS 59.99 / EXCLUSIVE 249.99).
 - No HTTP publish endpoint: Vercel functions can't see your local inbox, so the CLI is the publish path.
 
+## Cloudflare R2 — private beat storage (free 10 GB, no download fees)
+Masters/MP3s/stems go to a PRIVATE R2 bucket; the DB stores `r2:<key>`; after payment `/thanks.html` mints a 4-hour presigned link (`api/_lib/r2.js`, no SDK).
+1. Cloudflare dashboard → R2 → Create bucket (e.g. `rmlur-beats`), leave it private.
+2. R2 → Manage API tokens → Create token, permission **Object Read & Write**, scoped to that bucket. Copy the Access Key ID + Secret.
+3. Account ID: R2 overview page (right side).
+4. Vercel env vars: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` (then redeploy). Put the same four in your local `.env.production.local` with `DATABASE_URL`.
+5. `npm run publish-beats -- --sync` (or the `beat-drop-watch.mjs` folder watcher) uploads to R2 whenever the R2 vars are set. Priority per tier: sidecar `dropbox` entry > R2 > Vercel Blob.
+
 ## Env vars to set in Vercel
 | Var | Needed for |
 |---|---|
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | private file storage + paid downloads (see R2 section) |
 | `STRIPE_SECRET_KEY` | checkout (use `sk_test_…` first) |
 | `STRIPE_WEBHOOK_SECRET` | webhook; endpoint `https://rmlur.com/api/stripe-webhook`, event `checkout.session.completed` |
 | `NEXT_PUBLIC_SITE_URL` | optional; defaults to request origin |
