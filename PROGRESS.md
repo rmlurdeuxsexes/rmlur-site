@@ -42,3 +42,11 @@ Name STEMS.zip       adds a STEMS tier
 - Deliverables: tiers without a `deliverableUrl` show "files will be emailed" on `/thanks.html`.
 - Dropbox link delivery (not built).
 - Track B (floppy cabinet) not started.
+
+## Track B — floppy cabinet (lab, not linked from the site)
+- Route: `/lab/floppy/` (noindex). Code: `lab/floppy/{index.html,cabinet.js,cabinet-data.js}`; content config: `data/cabinet.config.json`.
+- 2×3 beige drawer cabinet built procedurally in Three.js (no Blender asset): cream ABS with procedural wear, clear label windows, lock plates, finger slots, red slides, grey dividers in the vault, white diamond key. Drawers slide on real z-travel; camera drops to look into the open bin. Esc closes.
+- Drawers are driven by `data/cabinet.config.json` (genre → drawer; anything unmatched → UNSORTED). Disks show title / genre / bpm·key on a ruled label; selecting one lifts it and opens a panel with Play, license picker and Buy (same `/api/checkout` flow as `/store`).
+- VAULT (locked): holds products flagged `vault:true` (sidecar `{"vault":true}` for publish-beats). Key animates into the lock; right password turns and opens, wrong one jams. **Default password `rmlur` — change `passwordHash` in the config** (command in the config's `_comment`). This is UI gating only: the hash and the vault catalog entries are public files, so don't put anything there that must stay secret.
+- Tests: `npm test` covers drawer assignment and the password check.
+- Not done: Blender/GLB photoreal pass with baked textures, dust/scuff detail maps, mobile polish, `/api/products` does not return `vault` (vault items come from the JSON catalog only), swapping the molded mark text from "rmlur" if you want a different mark.

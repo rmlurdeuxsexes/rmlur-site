@@ -1,0 +1,11 @@
+{
+  "_comment": "Single source of truth for the /lab/floppy cabinet. Drawers are row-major (top row first). genres match the catalog 'genre' field. 'unsorted' catches anything unmatched. A locked drawer holds products flagged vault:true (sidecar {\"vault\":true}); passwordHash is sha256(password) — UI gating only, not security. Default password: rmlur  (change it: node -e \"crypto.subtle.digest('SHA-256',new TextEncoder().encode('NEW')).then(b=>console.log(Buffer.from(b).toString('hex')))\")",
+  "drawers": [
+    { "id": "hiphop", "label": "HIP-HOP / TRAP", "genres": ["Trap / Hip-Hop", "Trap / Boom Bap", "Drill"] },
+    { "id": "soul",   "label": "SOUL / R&B",     "genres": ["Soul / R&B"] },
+    { "id": "jazz",   "label": "JAZZ / NEO-SOUL", "genres": ["Jazz / Neo-Soul"] },
+    { "id": "club",   "label": "CLUB / DANCE",   "genres": ["Jersey Club / Trap", "EDM / Dance", "Dancehall / Afrobeat"] },
+    { "id": "unsorted", "label": "UNSORTED",     "genres": [], "unsorted": true },
+    { "id": "vault",  "label": "VAULT",          "genres": [], "locked": true, "passwordHash": "98ae56a632861ccd08071d2af064521b12553d50bc89eff20ac759aef1874364" }
+  ]
+}

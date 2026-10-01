@@ -37,6 +37,7 @@ export function buildEntry({ filename, sidecar = {}, hasStems = false, hasMaster
   const youtubeUrl = sidecar.youtubeUrl || existing?.youtubeUrl;
   if (youtubeUrl) entry.youtubeUrl = youtubeUrl;
   if (playlists[genre]) entry.playlist = playlists[genre];
+  if (sidecar.vault) entry.vault = true; // shows only in the locked VAULT drawer of /lab/floppy
   return entry;
 }
 
