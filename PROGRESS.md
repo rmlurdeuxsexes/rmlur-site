@@ -36,6 +36,12 @@ Masters/MP3s/stems go to a PRIVATE R2 bucket; the DB stores `r2:<key>`; after pa
 4. Vercel env vars: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` (then redeploy). Put the same four in your local `.env.production.local` with `DATABASE_URL`.
 5. `npm run publish-beats -- --sync` (or the `beat-drop-watch.mjs` folder watcher) uploads to R2 whenever the R2 vars are set. Priority per tier: sidecar `dropbox` entry > R2 > Vercel Blob.
 
+### Add a beat from the browser (no CLI) — `/admin`
+Log in, fill title/genre/BPM, pick the WAV (+ optional MP3, stems zip, cover, preview), Publish. Paid files go browser -> private R2 via a presigned PUT (`/api/admin-r2-presign`); tiers (WAV default, MP3 cheaper, STEMS, EXCLUSIVE) and the product row are written by `/api/admin-upload`.
+One-time bucket setting — R2 -> bucket -> Settings -> CORS policy:
+`[{"AllowedOrigins":["https://rmlur.com","https://www.rmlur.com"],"AllowedMethods":["PUT"],"AllowedHeaders":["*"],"MaxAgeSeconds":3600}]`
+Needs Vercel env: `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `R2_*`, `DATABASE_URL`.
+
 ## Env vars to set in Vercel
 | Var | Needed for |
 |---|---|

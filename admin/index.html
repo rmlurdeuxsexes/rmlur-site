@@ -34,31 +34,49 @@
     <option value="project">Project File</option>
   </select>
 
-  <label for="title">Title</label>
+  <label for="title">Title (shown exactly as typed)</label>
   <input type="text" id="title" required>
 
   <label for="genre">Genre</label>
   <input type="text" id="genre" required>
 
+  <label for="bpm">BPM</label>
+  <input type="number" id="bpm" min="1" max="400">
+
+  <label for="key">Key (optional)</label>
+  <input type="text" id="key">
+
   <label for="info">Description</label>
   <textarea id="info" rows="4"></textarea>
 
-  <label for="price">Price (USD)</label>
-  <input type="number" id="price" step="0.01" min="0" required>
+  <label for="price-wav">WAV price (USD) — the default license</label>
+  <input type="number" id="price-wav" step="0.01" min="0" value="34.99">
 
-  <label for="stripeLink">Stripe Payment Link</label>
-  <input type="text" id="stripeLink" required>
+  <label for="price-mp3">MP3 price (USD) — cheaper, lower quality</label>
+  <input type="number" id="price-mp3" step="0.01" min="0" value="24.99">
 
-  <label for="cover">Cover Art</label>
+  <label for="price-stems">Stems price (USD)</label>
+  <input type="number" id="price-stems" step="0.01" min="0" value="59.99">
+
+  <label for="price-exclusive">Exclusive price (USD) — blank for none</label>
+  <input type="number" id="price-exclusive" step="0.01" min="0" value="249.99">
+
+  <label for="wav">WAV master (paid download, stored privately)</label>
+  <input type="file" id="wav" accept=".wav,.aif,.aiff,.flac,audio/*">
+
+  <label for="mp3">MP3 download (optional — adds the MP3 license)</label>
+  <input type="file" id="mp3" accept=".mp3,audio/mpeg">
+
+  <label for="stems">Stems zip (optional — adds the STEMS license)</label>
+  <input type="file" id="stems" accept=".zip,application/zip">
+
+  <label for="cover">Cover Art (optional)</label>
   <input type="file" id="cover" accept="image/png,image/jpeg,image/webp">
 
-  <label for="preview">Audio Preview (optional)</label>
+  <label for="preview">Audio Preview — the free-to-play clip (optional)</label>
   <input type="file" id="preview" accept="audio/mpeg,audio/wav">
 
-  <label for="deliverable">Deliverable File (the paid download — zip multi-file products before uploading)</label>
-  <input type="file" id="deliverable" accept="audio/*,application/zip,application/octet-stream,.flp,.als,.logicx,.rar,.7z">
-
-  <button type="submit">Upload</button>
+  <button type="submit">Publish</button>
   <div class="status" id="upload-status"></div>
 </form>
 
