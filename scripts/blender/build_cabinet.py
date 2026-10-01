@@ -20,6 +20,7 @@ ap.add_argument('--out', default='assets/cabinet')
 ap.add_argument('--res', type=int, default=2048)
 ap.add_argument('--render', default='')
 ap.add_argument('--no-bake', action='store_true')
+ap.add_argument('--reuse', action='store_true', help='skip baking objects whose PNGs already exist in --out (geometry/UVs must be unchanged)')
 args = ap.parse_args(argv)
 os.makedirs(args.out, exist_ok=True)
 
@@ -188,7 +189,6 @@ def build_drawer():
     boolean(face, cut)
     frame_parts = []
     # frame lip standing in the recess
-    lip = box('lip', 13.6, 4.8, 0.3, (wx, wy, FACE_D / 2 - 0.15), 0.05, 2)
     # lock plate (raised) with keyhole
     lx, ly = 7.4, 4.7
     plate = box('plate', 4.4, 4.4, 0.7, (lx, ly, FACE_D / 2 + 0.2), 0.18)
@@ -200,7 +200,7 @@ def build_drawer():
     rim = box('rim', 14.8, 0.45, 0.55, (0, -2.65, FACE_D / 2 + 0.05), 0.12, 2)
     # molded maker's mark: shallow plate
     mark = box('mark', 3.4, 0.7, 0.1, (5.6, -0.6, FACE_D / 2 + 0.03), 0.02, 1)
-    fa = join('Drawer', [face, lip, plate, rim, mark])
+    fa = join('Drawer', [face, plate, rim, mark])
     # bin
     L, W, H = 28.0, 19.6, 13.0
     zc = -L / 2 - FACE_D / 2
@@ -216,7 +216,7 @@ def build_drawer():
     rl = []
     for s in (-1, 1):
         for dy in (H / 2 - 0.4, H / 2 - 1.2):
-            rl.append(box('slide', 0.5, 0.5, L + 3, (s * (W / 2 + 0.55), dy, zc + 1.5), 0.12, 2))
+            rl.append(box('slide', 0.5, 0.5, L + 1, (s * (W / 2 + 0.55), dy, zc + 0.5), 0.12, 2))   # front end stops inside the face
     slides = join('slides', rl); assign(slides, M_RED)
     n_abs = len(drawer.data.polygons)
     bpy.ops.object.select_all(action='DESELECT'); drawer.select_set(True); slides.select_set(True)
@@ -292,9 +292,16 @@ def finish(o, margin=0.012):
     bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=margin, correct_aspect=True)
     bpy.ops.object.mode_set(mode='OBJECT'); o.select_set(False)
 for o in (cabinet, drawer, disk, dv, key): finish(o)
-for o in (window, label, dl):
-    bpy.context.view_layer.objects.active = o
-    o.select_set(True); bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT'); bpy.ops.uv.unwrap(); bpy.ops.object.mode_set(mode='OBJECT'); o.select_set(False)
+def planar_uv(o):
+    """label planes: u runs left->right and v bottom->top in the page's own (three.js) frame."""
+    me = o.data; xs = [v.co.x for v in me.vertices]; zs = [v.co.z for v in me.vertices]
+    x0, x1, z0, z1 = min(xs), max(xs), min(zs), max(zs)
+    uv = me.uv_layers.active or me.uv_layers.new(name='UVMap')
+    for poly in me.polygons:
+        for li in poly.loop_indices:
+            co = me.vertices[me.loops[li].vertex_index].co
+            uv.data[li].uv = ((co.x - x0) / max(1e-6, x1 - x0), (co.z - z0) / max(1e-6, z1 - z0))
+for o in (window, label, dl): planar_uv(o)
 window.name = 'Drawer_Window'; label.name = 'Drawer_Label'; dl.name = 'Disk_Label'
 
 print('OBJECTS', [(o.name, len(o.data.polygons)) for o in bpy.data.objects if o.type == 'MESH'])
@@ -347,6 +354,9 @@ from PIL import Image
 
 def bake_object(o, res, tag):
     """bake albedo / roughness / normal of o's procedural slot-0 material into PNGs; returns paths."""
+    existing = {k: os.path.join(args.out, f'{tag}_{k}.png') for k in ('albedo', 'rough', 'normal')}
+    if args.reuse and all(os.path.exists(v) for v in existing.values()):
+        print('REUSE', tag, flush=True); return existing
     scene.render.engine = 'CYCLES'; scene.cycles.device = 'CPU'; scene.cycles.samples = 24; scene.cycles.use_denoising = False
     paths = {}
     mats = [s.material for s in o.material_slots]

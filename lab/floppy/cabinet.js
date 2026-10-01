@@ -200,8 +200,8 @@ const SHELLS = [0x2b3b8f, 0x6b2d3a, 0x2d6b4f, 0x5b5b5f, 0x8a6a2a, 0x3b5f8a];
 function buildKitDisk(p, i) {
   const g = new THREE.Group();
   const body = kit.disk.clone();
-  const mats = [].concat(body.material).map((m, k) => { const c = m.clone(); if (k === 0) c.color = new THREE.Color(SHELLS[i % SHELLS.length]).multiplyScalar(1.7); return c; });
-  body.material = Array.isArray(body.material) ? mats : mats[0];
+  // multi-material meshes load as a Group of meshes: tint only the baked-texture shell, keep the steel shutter
+  body.traverse(o => { if (o.isMesh && o.material && o.material.map) { o.material = o.material.clone(); o.material.color = new THREE.Color(SHELLS[i % SHELLS.length]).multiplyScalar(1.7); } });
   g.add(body);
   const lines = [String(p.title || '').toLowerCase(), p.genre || '', [p.bpm ? p.bpm + ' bpm' : '', p.key || ''].filter(Boolean).join(' · ')];
   const lab = kit.diskLabel.clone(); lab.material = new THREE.MeshStandardMaterial({ map: paperTexture(lines, { w: 360, h: 230, size: 34, ruled: true }), roughness: 0.9 });
