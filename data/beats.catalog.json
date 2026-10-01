@@ -1,1 +1,39 @@
-[]
+[
+  {
+    "id": "spiritual-trance",
+    "type": "beat",
+    "source": "spiritual trance 120BPM @jayrewind + @mikewavvs",
+    "title": "SPIRITUAL TRANCE",
+    "subtitle": "trance type beat",
+    "bpm": 120,
+    "key": null,
+    "bars": null,
+    "genre": "Trance / EDM",
+    "cover": null,
+    "preview": null,
+    "tags": [
+      "trance",
+      "spiritual",
+      "collab"
+    ],
+    "info": "Prod. by JayRewind (co-produced with mikewavvs). Untagged, mix-ready audio. Every purchase includes a license; see rmlur.com/licenses.html.",
+    "tiers": [
+      {
+        "id": "mp3",
+        "label": "MP3",
+        "price": 24.99,
+        "stripeLink": "mailto:jayrewindbeatz@gmail.com?subject=Buy%20%22SPIRITUAL%20TRANCE%22%20%E2%80%94%20MP3"
+      },
+      {
+        "id": "wav",
+        "label": "WAV",
+        "price": 34.99,
+        "stripeLink": "mailto:jayrewindbeatz@gmail.com?subject=Buy%20%22SPIRITUAL%20TRANCE%22%20%E2%80%94%20WAV"
+      }
+    ],
+    "exclusive": {
+      "price": 249.99,
+      "stripeLink": "mailto:jayrewindbeatz@gmail.com?subject=Buy%20%22SPIRITUAL%20TRANCE%22%20%E2%80%94%20EXCLUSIVE"
+    }
+  }
+]
