@@ -8,3 +8,5 @@ node_modules/
 skills-lock.json
 beats-inbox/
 beats-published/
+# raw Blender bake intermediates; only assets/cabinet/cabinet.glb is committed
+assets/cabinet/*.png
