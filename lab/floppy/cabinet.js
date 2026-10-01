@@ -9,12 +9,12 @@ const THREE = window.THREE;
 const $ = id => document.getElementById(id);
 
 /* ---------------- procedural textures ---------------- */
-function canvasTex(w, h, draw, srgb = true) {
+function canvasTex(w, h, draw, srgb = true, flipY = true) {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   draw(c.getContext('2d'), w, h);
   const t = new THREE.CanvasTexture(c);
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 8; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.flipY = flipY;
   return t;
 }
 function noise(ctx, w, h, amt, base) {
@@ -41,16 +41,16 @@ function absTexture(seed = 0) {
 function bumpTexture() { return canvasTex(256, 256, (ctx, w, h) => { ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, w, h); noise(ctx, w, h, 60); }, false); }
 
 function paperTexture(lines, opts = {}) {
-  const { w = 512, h = 180, font = '"Nothing You Could Do", "Grape Nuts", cursive', ink = '#243044', size = 38, ruled = false } = opts;
+  const { y0 = 50, flipY = true, w = 512, h = 180, font = '"Nothing You Could Do", "Grape Nuts", cursive', ink = '#243044', size = 38, ruled = false } = opts;
   return canvasTex(w, h, (ctx) => {
     ctx.fillStyle = opts.paper || '#efeadb'; ctx.fillRect(0, 0, w, h);
     noise(ctx, w, h, 16);
     if (ruled) { ctx.strokeStyle = 'rgba(70,130,210,.55)'; ctx.lineWidth = 1.2; for (let y = 52; y < h; y += 36) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); } }
     ctx.fillStyle = ink; ctx.font = `${size}px ${font}`; ctx.textBaseline = 'alphabetic';
-    lines.forEach((t, i) => ctx.fillText(t, 18 + (i % 2) * 2, 50 + i * 36 + (i % 2 ? 1 : 0), w - 36));
+    lines.forEach((t, i) => ctx.fillText(t, 18 + (i % 2) * 2, y0 + i * 36 + (i % 2 ? 1 : 0), w - 36));
     const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(0,0,0,.10)'); g.addColorStop(.15, 'rgba(0,0,0,0)');
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-  });
+  }, true, flipY);
 }
 
 /* ---------------- materials ---------------- */
@@ -175,7 +175,7 @@ function kitFace(cfg) {
   const g = new THREE.Group();
   g.add(kit.drawer.clone());
   const lab = kit.label.clone();
-  lab.material = new THREE.MeshStandardMaterial({ map: paperTexture([cfg.label], { w: 512, h: 144, size: 46 }), roughness: 0.9 });
+  lab.material = new THREE.MeshStandardMaterial({ map: paperTexture([cfg.label], { w: 512, h: 144, size: 46, y0: 92, flipY: false }), roughness: 0.9 });
   g.add(lab);
   const win = kit.window.clone(); win.material = M.clear; win.castShadow = false; g.add(win);
   g.userData.lock = new THREE.Vector3(7.4, 4.7, FACE_D / 2 + 0.5);
@@ -204,7 +204,7 @@ function buildKitDisk(p, i) {
   body.traverse(o => { if (o.isMesh && o.material && o.material.map) { o.material = o.material.clone(); o.material.color = new THREE.Color(SHELLS[i % SHELLS.length]).multiplyScalar(1.7); } });
   g.add(body);
   const lines = [String(p.title || '').toLowerCase(), p.genre || '', [p.bpm ? p.bpm + ' bpm' : '', p.key || ''].filter(Boolean).join(' · ')];
-  const lab = kit.diskLabel.clone(); lab.material = new THREE.MeshStandardMaterial({ map: paperTexture(lines, { w: 360, h: 230, size: 34, ruled: true }), roughness: 0.9 });
+  const lab = kit.diskLabel.clone(); lab.material = new THREE.MeshStandardMaterial({ map: paperTexture(lines, { w: 360, h: 230, size: 34, ruled: true, flipY: false }), roughness: 0.9 });
   g.add(lab);
   g.userData.product = p; g.traverse(o => { o.userData.diskRoot = g; });
   return g;

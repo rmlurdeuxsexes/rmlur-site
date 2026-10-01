@@ -59,3 +59,9 @@ Name STEMS.zip       adds a STEMS tier
 - Per beat, in the `Name.json` sidecar: `{"dropbox": {"mp3": "dropbox:/RMLUR/Beats/Name.mp3", "wav": "dropbox:/RMLUR/Beats/Name.wav", "stems": "dropbox:/RMLUR/Beats/Name STEMS.zip", "exclusive": "dropbox:/RMLUR/Beats/Name STEMS.zip"}}`. With `npm run publish-beats --sync` those tiers point at Dropbox and nothing is uploaded to Blob; any tier without an entry still falls back to Blob.
 - The admin upload's `deliverable` field also accepts `dropbox:/...`.
 - Not built: uploading masters *to* Dropbox from the CLI (you keep the files there yourself).
+
+## Track B — Blender pass
+- `scripts/blender/build_cabinet.py` (headless Blender via `pip install bpy numpy pillow`) builds the cabinet kit with real bevels and boolean-cut recesses, a procedural cream-ABS material (edge wear, crevice dust, scuffs, grain), bakes albedo / roughness / normal (2048 for cabinet and drawer) and exports `assets/cabinet/cabinet.glb` (~1.8 MB). Run: `python scripts/blender/build_cabinet.py --out assets/cabinet --res 2048` (the bake takes ~25 min on CPU); `--reuse` skips objects whose PNGs already exist in `--out` (the PNGs are gitignored build intermediates); `--render x.png` writes a showcase render.
+- `/lab/floppy/` loads the GLB (shell, drawer with window and label quads, disk, divider, key) and falls back to the procedural cabinet if the file is missing or fails.
+- Glyphs on label quads use `flipY: false` because glTF UVs are top-down; disk tints multiply a grey baked shell.
+- Still open: compare against the photos on a real GPU, soften the cream tone/AO blotching, a bake for the window frame/lip detail, mobile polish.
