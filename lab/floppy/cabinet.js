@@ -112,16 +112,16 @@ const canvas = $('stage');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.25;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0xffffff);
 const camera = new THREE.PerspectiveCamera(28, 1, 1, 600);
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0xf0ebdd, 1.25));
-const key = new THREE.DirectionalLight(0xfff6e8, 1.5); key.position.set(-60, 110, 90); key.castShadow = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd9d3c4, 0.85));
+const key = new THREE.DirectionalLight(0xfff3e0, 2.1); key.position.set(-60, 110, 90); key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -90, right: 90, top: 90, bottom: -60, near: 10, far: 400 }); key.shadow.bias = -0.0004; key.shadow.radius = 5;
 scene.add(key);
-const fill = new THREE.DirectionalLight(0xe6eeff, 0.35); fill.position.set(80, 30, 60); scene.add(fill);
+const fill = new THREE.DirectionalLight(0xe6eeff, 0.25); fill.position.set(80, 30, 60); scene.add(fill);
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 400), new THREE.ShadowMaterial({ opacity: 0.16 }));
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
 

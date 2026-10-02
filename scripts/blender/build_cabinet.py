@@ -74,7 +74,7 @@ def new_mat(name):
     m = bpy.data.materials.new(name); m.use_nodes = True
     return m
 
-def abs_material(name, tint=(0.80, 0.755, 0.64), seed=0.0):
+def abs_material(name, tint=(0.62, 0.595, 0.515), seed=0.0, dust_amt=0.30, wear_amt=0.07):
     """procedural cream ABS: yellowing, edge wear, crevice dust, scuffs, fine grain."""
     m = new_mat(name); nt = m.node_tree; nt.nodes.clear()
     N = lambda t, **k: nt.nodes.new(t)
@@ -88,32 +88,35 @@ def abs_material(name, tint=(0.80, 0.755, 0.64), seed=0.0):
     scuff = N('ShaderNodeTexNoise'); scuff.inputs['Scale'].default_value = 1.4; scuff.inputs['Detail'].default_value = 8
     scuff_mapn = N('ShaderNodeMapping'); scuff_mapn.inputs['Scale'].default_value = (1, 12, 1)   # streaky
     nt.links.new(texco.outputs['Object'], scuff_mapn.inputs['Vector']); nt.links.new(scuff_mapn.outputs['Vector'], scuff.inputs['Vector'])
-    scuff_ramp = N('ShaderNodeMapRange'); scuff_ramp.inputs['From Min'].default_value = 0.62; scuff_ramp.inputs['From Max'].default_value = 0.70
+    scuff_ramp = N('ShaderNodeMapRange'); scuff_ramp.inputs['From Min'].default_value = 0.70; scuff_ramp.inputs['From Max'].default_value = 0.76
     nt.links.new(scuff.outputs['Fac'], scuff_ramp.inputs['Value'])
     # edge wear: AO node inside=True lights convex edges
     edge = N('ShaderNodeAmbientOcclusion'); edge.inside = True; edge.inputs['Distance'].default_value = 0.35; edge.samples = 16
     edge_r = N('ShaderNodeMapRange'); edge_r.inputs['From Min'].default_value = 0.55; edge_r.inputs['From Max'].default_value = 1.0
     nt.links.new(edge.outputs['AO'], edge_r.inputs['Value'])
     # crevice dust: ordinary AO
-    dust = N('ShaderNodeAmbientOcclusion'); dust.inputs['Distance'].default_value = 3.0; dust.samples = 24
-    dust_r = N('ShaderNodeMapRange'); dust_r.inputs['From Min'].default_value = 0.35; dust_r.inputs['From Max'].default_value = 1.0
+    dust = N('ShaderNodeAmbientOcclusion'); dust.inputs['Distance'].default_value = 1.4; dust.samples = 32
+    dust_r = N('ShaderNodeMapRange'); dust_r.inputs['From Min'].default_value = 0.45; dust_r.inputs['From Max'].default_value = 1.0
     nt.links.new(dust.outputs['AO'], dust_r.inputs['Value'])
     # colour mix
     base = N('ShaderNodeRGB'); base.outputs[0].default_value = (*tint, 1)
-    yellow = N('ShaderNodeRGB'); yellow.outputs[0].default_value = (0.74, 0.64, 0.42, 1)
+    yellow = N('ShaderNodeRGB'); yellow.outputs[0].default_value = (0.58, 0.53, 0.42, 1)
     mix1 = N('ShaderNodeMixRGB'); nt.links.new(big.outputs['Fac'], mix1.inputs['Fac']); mix1.inputs['Fac'].default_value = 0.0
-    nt.links.new(big.outputs['Fac'], mix1.inputs[0]); nt.links.new(base.outputs[0], mix1.inputs[1]); nt.links.new(yellow.outputs[0], mix1.inputs[2])
+    bigm = N('ShaderNodeMath'); bigm.operation = 'MULTIPLY'; bigm.inputs[1].default_value = 0.12
+    nt.links.new(big.outputs['Fac'], bigm.inputs[0]); nt.links.new(bigm.outputs[0], mix1.inputs[0]); nt.links.new(base.outputs[0], mix1.inputs[1]); nt.links.new(yellow.outputs[0], mix1.inputs[2])
     grain = N('ShaderNodeMixRGB'); grain.blend_type = 'MULTIPLY'; grain.inputs[0].default_value = 0.18
     nt.links.new(mix1.outputs[0], grain.inputs[1]); nt.links.new(fine.outputs['Color'], grain.inputs[2])
-    wear = N('ShaderNodeMixRGB'); wear.inputs[2].default_value = (0.93, 0.91, 0.84, 1)
-    nt.links.new(edge_r.outputs[0], wear.inputs[0]); nt.links.new(grain.outputs[0], wear.inputs[1])
-    dirt = N('ShaderNodeMixRGB'); dirt.inputs[2].default_value = (0.36, 0.30, 0.20, 1)
+    wear_c = N('ShaderNodeRGB'); wear_c.outputs[0].default_value = (0.70, 0.68, 0.60, 1)
+    wear = N('ShaderNodeMixRGB'); nt.links.new(wear_c.outputs[0], wear.inputs[2])
+    wear_f = N('ShaderNodeMath'); wear_f.operation = 'MULTIPLY'; wear_f.inputs[1].default_value = wear_amt
+    nt.links.new(edge_r.outputs[0], wear_f.inputs[0]); nt.links.new(wear_f.outputs[0], wear.inputs[0]); nt.links.new(grain.outputs[0], wear.inputs[1])
+    dirt = N('ShaderNodeMixRGB'); dirt.inputs[2].default_value = (0.30, 0.27, 0.20, 1)
     inv = N('ShaderNodeMath'); inv.operation = 'SUBTRACT'; inv.inputs[0].default_value = 1.0
-    nt.links.new(dust_r.outputs[0], inv.inputs[1]); mulf = N('ShaderNodeMath'); mulf.operation = 'MULTIPLY'; mulf.inputs[1].default_value = 0.55
+    nt.links.new(dust_r.outputs[0], inv.inputs[1]); mulf = N('ShaderNodeMath'); mulf.operation = 'MULTIPLY'; mulf.inputs[1].default_value = dust_amt
     nt.links.new(inv.outputs[0], mulf.inputs[0])
     nt.links.new(mulf.outputs[0], dirt.inputs[0]); nt.links.new(wear.outputs[0], dirt.inputs[1])
     scf = N('ShaderNodeMixRGB'); scf.inputs[2].default_value = (0.55, 0.50, 0.40, 1)
-    sm = N('ShaderNodeMath'); sm.operation = 'MULTIPLY'; sm.inputs[1].default_value = 0.35
+    sm = N('ShaderNodeMath'); sm.operation = 'MULTIPLY'; sm.inputs[1].default_value = 0.22
     nt.links.new(scuff_ramp.outputs[0], sm.inputs[0]); nt.links.new(sm.outputs[0], scf.inputs[0]); nt.links.new(dirt.outputs[0], scf.inputs[1])
     nt.links.new(scf.outputs[0], bsdf.inputs['Base Color'])
     # roughness: satin plastic, rougher in dust, glossier where handled (edges)
@@ -136,7 +139,7 @@ def flat_mat(name, color, rough=0.5, metal=0.0, **extra):
     return m
 
 M_ABS = abs_material('ABS_cream', seed=1.7)
-M_ABS_DISK = abs_material('ABS_disk', tint=(0.62, 0.62, 0.62), seed=5.1)   # grey: page tints per genre
+M_ABS_DISK = abs_material('ABS_disk', tint=(0.55, 0.55, 0.55), seed=5.1, dust_amt=0.2, wear_amt=0.05)   # grey: page tints per genre
 M_RED = flat_mat('RedSteel', (0.42, 0.035, 0.045), 0.32, 0.45)
 M_STEEL = flat_mat('Steel', (0.72, 0.74, 0.77), 0.28, 1.0)
 M_CLEAR = flat_mat('ClearPlastic', (0.88, 0.92, 0.98), 0.08, 0.0, Transmission_Weight=0.9, Alpha=0.35, IOR=1.49)
