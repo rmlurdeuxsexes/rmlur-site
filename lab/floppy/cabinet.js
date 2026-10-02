@@ -9,12 +9,12 @@ const THREE = window.THREE;
 const $ = id => document.getElementById(id);
 
 /* ---------------- procedural textures ---------------- */
-function canvasTex(w, h, draw, srgb = true) {
+function canvasTex(w, h, draw, srgb = true, flipY = true) {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   draw(c.getContext('2d'), w, h);
   const t = new THREE.CanvasTexture(c);
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 8; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.flipY = flipY;
   return t;
 }
 function noise(ctx, w, h, amt, base) {
@@ -41,16 +41,16 @@ function absTexture(seed = 0) {
 function bumpTexture() { return canvasTex(256, 256, (ctx, w, h) => { ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, w, h); noise(ctx, w, h, 60); }, false); }
 
 function paperTexture(lines, opts = {}) {
-  const { w = 512, h = 180, font = '"Nothing You Could Do", "Grape Nuts", cursive', ink = '#243044', size = 38, ruled = false } = opts;
+  const { y0 = 50, flipY = true, w = 512, h = 180, font = '"Nothing You Could Do", "Grape Nuts", cursive', ink = '#243044', size = 38, ruled = false } = opts;
   return canvasTex(w, h, (ctx) => {
     ctx.fillStyle = opts.paper || '#efeadb'; ctx.fillRect(0, 0, w, h);
     noise(ctx, w, h, 16);
     if (ruled) { ctx.strokeStyle = 'rgba(70,130,210,.55)'; ctx.lineWidth = 1.2; for (let y = 52; y < h; y += 36) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); } }
     ctx.fillStyle = ink; ctx.font = `${size}px ${font}`; ctx.textBaseline = 'alphabetic';
-    lines.forEach((t, i) => ctx.fillText(t, 18 + (i % 2) * 2, 50 + i * 36 + (i % 2 ? 1 : 0), w - 36));
+    lines.forEach((t, i) => ctx.fillText(t, 18 + (i % 2) * 2, y0 + i * 36 + (i % 2 ? 1 : 0), w - 36));
     const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(0,0,0,.10)'); g.addColorStop(.15, 'rgba(0,0,0,0)');
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-  });
+  }, true, flipY);
 }
 
 /* ---------------- materials ---------------- */
@@ -90,6 +90,23 @@ const CAB_W = COLS * CELL_W + 2, CAB_H = ROWS * CELL_H + 2;
 const TRAVEL = 26;
 const FACE_W = CELL_W - 0.8, FACE_H = CELL_H - 0.8, FACE_D = 3;
 
+/* ---------------- Blender kit (assets/cabinet/cabinet.glb) ----------------
+   Built by scripts/blender/build_cabinet.py. If it fails to load the procedural
+   cabinet below is used instead, so the page never breaks. */
+async function loadKit() {
+  if (!THREE.GLTFLoader) return null;
+  try {
+    const gltf = await new Promise((res, rej) => new THREE.GLTFLoader().load('/assets/cabinet/cabinet.glb', res, undefined, rej));
+    const by = n => gltf.scene.getObjectByName(n);
+    const kit = { cabinet: by('Cabinet'), drawer: by('Drawer'), window: by('Drawer_Window'), label: by('Drawer_Label'), disk: by('Disk'), diskLabel: by('Disk_Label'), divider: by('Divider'), key: by('Key') };
+    if (Object.values(kit).some(v => !v)) throw new Error('kit is missing objects');
+    gltf.scene.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; for (const m of [].concat(o.material)) for (const k of ['map', 'normalMap', 'roughnessMap']) if (m[k]) m[k].anisotropy = 8; } });
+    return kit;
+  } catch (e) { console.warn('[cabinet] using procedural fallback:', e.message || e); return null; }
+}
+
+const kit = await loadKit();
+
 /* ---------------- scene ---------------- */
 const canvas = $('stage');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -110,18 +127,23 @@ ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground)
 
 /* cabinet shell */
 const cab = new THREE.Group(); scene.add(cab);
+function buildProceduralShell() {
 cab.add(box(CAB_W + 1.2, 1.4, DEPTH + 1.5, M.abs, 0, CAB_H + 0.7, 0.4));          // lid, slight front overhang
-cab.add(box(CAB_W, 1.2, DEPTH, M.abs, 0, 0.6, 0));                                   // base
-cab.add(box(1.2, CAB_H, DEPTH, M.abs, -CAB_W / 2 + 0.6, CAB_H / 2, 0));              // sides
-cab.add(box(1.2, CAB_H, DEPTH, M.abs, CAB_W / 2 - 0.6, CAB_H / 2, 0));
-cab.add(box(CAB_W, CAB_H, 1, M.inner, 0, CAB_H / 2, -DEPTH / 2 + 0.5));              // back
-cab.add(box(CAB_W, 1, DEPTH, M.abs, 0, 1 + CELL_H, 0));                              // mid shelf
-for (const x of [-CELL_W / 2, CELL_W / 2]) cab.add(box(0.8, CAB_H, DEPTH - 2, M.abs, x, CAB_H / 2, -1));
-// fixed red slide rails inside each cell
-for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-  const cx = (c - 1) * CELL_W, cy = 1.2 + r * (CELL_H + 0.0) + 2;
-  for (const s of [-1, 1]) cab.add(box(0.35, 0.35, DEPTH - 6, M.steel, cx + s * 10.0, cy + 6.6, -2));
+  cab.add(box(CAB_W, 1.2, DEPTH, M.abs, 0, 0.6, 0));                                   // base
+  cab.add(box(1.2, CAB_H, DEPTH, M.abs, -CAB_W / 2 + 0.6, CAB_H / 2, 0));              // sides
+  cab.add(box(1.2, CAB_H, DEPTH, M.abs, CAB_W / 2 - 0.6, CAB_H / 2, 0));
+  cab.add(box(CAB_W, CAB_H, 1, M.inner, 0, CAB_H / 2, -DEPTH / 2 + 0.5));              // back
+  cab.add(box(CAB_W, 1, DEPTH, M.abs, 0, 1 + CELL_H, 0));                              // mid shelf
+  for (const x of [-CELL_W / 2, CELL_W / 2]) cab.add(box(0.8, CAB_H, DEPTH - 2, M.abs, x, CAB_H / 2, -1));
+  // fixed red slide rails inside each cell
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const cx = (c - 1) * CELL_W, cy = 1.2 + r * (CELL_H + 0.0) + 2;
+    for (const s of [-1, 1]) cab.add(box(0.35, 0.35, DEPTH - 6, M.steel, cx + s * 10.0, cy + 6.6, -2));
+  }
+  
+  
 }
+if (kit) cab.add(kit.cabinet.clone()); else buildProceduralShell();
 
 /* ---------------- drawers ---------------- */
 const drawerObjs = [];   // {group, face, cfg, open, target, cx, cy, items:[disk groups], lock:Vector3}
@@ -149,6 +171,16 @@ function buildFace(cfg) {
   g.userData.lock = new THREE.Vector3(lx, ly, front + 0.5);
   return g;
 }
+function kitFace(cfg) {
+  const g = new THREE.Group();
+  g.add(kit.drawer.clone());
+  const lab = kit.label.clone();
+  lab.material = new THREE.MeshStandardMaterial({ map: paperTexture([cfg.label], { w: 512, h: 144, size: 46, y0: 92, flipY: false }), roughness: 0.9 });
+  g.add(lab);
+  const win = kit.window.clone(); win.material = M.clear; win.castShadow = false; g.add(win);
+  g.userData.lock = new THREE.Vector3(7.4, 4.7, FACE_D / 2 + 0.5);
+  return g;
+}
 function buildBody() {
   const g = new THREE.Group(), L = 28, W = 19.6, H = 13;
   g.add(box(W, 0.6, L, M.inner, 0, -H / 2, -L / 2 - FACE_D / 2));
@@ -165,7 +197,20 @@ function buildBody() {
 
 /* disks */
 const SHELLS = [0x2b3b8f, 0x6b2d3a, 0x2d6b4f, 0x5b5b5f, 0x8a6a2a, 0x3b5f8a];
+function buildKitDisk(p, i) {
+  const g = new THREE.Group();
+  const body = kit.disk.clone();
+  // multi-material meshes load as a Group of meshes: tint only the baked-texture shell, keep the steel shutter
+  body.traverse(o => { if (o.isMesh && o.material && o.material.map) { o.material = o.material.clone(); o.material.color = new THREE.Color(SHELLS[i % SHELLS.length]).multiplyScalar(1.7); } });
+  g.add(body);
+  const lines = [String(p.title || '').toLowerCase(), p.genre || '', [p.bpm ? p.bpm + ' bpm' : '', p.key || ''].filter(Boolean).join(' · ')];
+  const lab = kit.diskLabel.clone(); lab.material = new THREE.MeshStandardMaterial({ map: paperTexture(lines, { w: 360, h: 230, size: 34, ruled: true, flipY: false }), roughness: 0.9 });
+  g.add(lab);
+  g.userData.product = p; g.traverse(o => { o.userData.diskRoot = g; });
+  return g;
+}
 function buildDisk(p, i) {
+  if (kit) return buildKitDisk(p, i);
   const g = new THREE.Group();
   const shellColor = SHELLS[i % SHELLS.length];
   const shell = new THREE.MeshStandardMaterial({ color: shellColor, roughness: 0.55 });
@@ -186,7 +231,7 @@ drawers.forEach((cfg, idx) => {
   const r = Math.floor(idx / COLS), c = idx % COLS;
   const cx = (c - 1) * CELL_W, cy = 1.2 + (ROWS - 1 - r) * (CELL_H + 0) + CELL_H / 2 - 0.4;
   const group = new THREE.Group(); group.position.set(cx, cy, DEPTH / 2 - FACE_D / 2);
-  const face = buildFace(cfg); group.add(face); group.add(buildBody());
+  const face = kit ? kitFace(cfg) : buildFace(cfg); group.add(face); if (!kit) group.add(buildBody());
   const disks = cfg.items.slice(0, 36).map((p, i) => {
     const d = buildDisk(p, i);
     const col = i % 2, row = Math.floor(i / 2);
@@ -196,7 +241,7 @@ drawers.forEach((cfg, idx) => {
     group.add(d); return d;
   });
   if (cfg.locked) { // dark divider tabs like the reference's grey plastic dividers
-    for (let i = 0; i < 3; i++) group.add(box(18, 8, 0.5, M.divider, 0, -1, -FACE_D / 2 - 5 - i * 6));
+    for (let i = 0; i < 3; i++) { const dv = kit ? kit.divider.clone() : box(18, 8, 0.5, M.divider, 0, 0, 0); dv.position.set(0, -1, -FACE_D / 2 - 5 - i * 6); group.add(dv); }
   }
   cab.add(group);
   drawerObjs.push({ group, face, cfg, cx, cy, open: 0, target: 0, disks, hover: 0, row: r, locked: !!cfg.locked, unlocked: !cfg.locked });
@@ -204,7 +249,7 @@ drawers.forEach((cfg, idx) => {
 
 /* key */
 const keyGroup = new THREE.Group();
-{
+if (kit) { keyGroup.add(kit.key.clone()); keyGroup.visible = false; scene.add(keyGroup); } else {
   const s = new THREE.Shape(); s.moveTo(0, 2.6); s.lineTo(2.6, 0); s.lineTo(0, -2.6); s.lineTo(-2.6, 0); s.lineTo(0, 2.6);
   const hole = new THREE.Path(); hole.absarc(0, -1.2, 0.5, 0, Math.PI * 2, true); s.holes.push(hole);
   const body = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 0.35, bevelEnabled: true, bevelSize: 0.2, bevelThickness: 0.15, bevelSegments: 2 }), M.key);
