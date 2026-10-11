@@ -1,5 +1,5 @@
 import { sql } from './_lib/db.js';
-import { siteUrl, isTestKey, findTier, createCheckoutSession } from './_lib/checkout.js';
+import { siteUrl, isTestKey, findTier, deliverableFor, createCheckoutSession } from './_lib/checkout.js';
 
 export default {
   async fetch(request) {
@@ -25,6 +25,8 @@ export default {
       const product = rows[0];
       const tier = findTier(product, tierId);
       if (!tier) return Response.json({ error: 'unknown license' }, { status: 404 });
+      // Never take money for a file we can't hand over — the store falls back to contact.
+      if (!deliverableFor(product, tier)) return Response.json({ error: 'not available yet' }, { status: 409 });
       const session = await createCheckoutSession({ product, tier, origin: siteUrl(request), secretKey });
       return Response.json({ url: session.url });
     } catch (err) {

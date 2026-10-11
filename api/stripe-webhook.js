@@ -1,5 +1,7 @@
 import { sql } from './_lib/db.js';
-import { siteUrl, verifyStripeSignature } from './_lib/checkout.js';
+import { siteUrl, verifyStripeSignature, findTier, deliverableFor, manualFulfilmentEmail } from './_lib/checkout.js';
+
+const PRODUCER_EMAIL = () => process.env.ORDERS_NOTIFY_EMAIL || 'jayrewindbeatz@gmail.com';
 
 async function recordOrder(session) {
   await sql`CREATE TABLE IF NOT EXISTS orders (
@@ -13,21 +15,34 @@ async function recordOrder(session) {
     ON CONFLICT (session_id) DO UPDATE SET status = 'paid'`;
 }
 
-// Optional: email the download page link if a Resend key is configured.
-async function emailDownloadLink(session, origin) {
+async function sendMail({ to, subject, text }) {
   const key = process.env.RESEND_API_KEY;
-  const to = session.customer_details?.email;
   if (!key || !to) return;
-  const link = `${origin}/thanks.html?session_id=${session.id}`;
   await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: process.env.MAIL_FROM || 'RMLUR <orders@rmlur.com>',
-      to, subject: 'Your RMLUR beat download',
-      text: `Thanks for your order. Your files and license PDF: ${link}\n\nProd. by JayRewind`,
-    }),
+    body: JSON.stringify({ from: process.env.MAIL_FROM || 'RMLUR <orders@rmlur.com>', to, subject, text }),
   });
+}
+
+// Optional: email the download page link if a Resend key is configured.
+async function emailDownloadLink(session, origin) {
+  const link = `${origin}/thanks.html?session_id=${session.id}`;
+  await sendMail({
+    to: session.customer_details?.email,
+    subject: 'Your RMLUR beat download',
+    text: `Thanks for your order. Your files and license PDF: ${link}\n\nProd. by JayRewind`,
+  });
+}
+
+// Checkout refuses tiers with no file, but an order can still slip through
+// (file removed after checkout started, older sessions) — tell the producer.
+async function alertIfNoFile(session) {
+  const rows = await sql`SELECT * FROM products WHERE id = ${session.metadata?.product_id}`;
+  const product = rows[0] || null;
+  const tier = product ? findTier(product, session.metadata?.tier_id) : null;
+  if (product && tier && deliverableFor(product, tier)) return;
+  await sendMail({ to: PRODUCER_EMAIL(), ...manualFulfilmentEmail({ session, product, tier }) });
 }
 
 export default {
@@ -42,6 +57,7 @@ export default {
       try {
         await recordOrder(event.data.object);
         await emailDownloadLink(event.data.object, siteUrl(request)).catch(e => console.error('[mail]', e));
+        await alertIfNoFile(event.data.object).catch(e => console.error('[mail:producer]', e));
       } catch (err) {
         console.error('[stripe-webhook]', err);
         return new Response('error', { status: 500 }); // Stripe retries

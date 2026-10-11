@@ -20,6 +20,48 @@ export function deliverableFor(product, tier) {
   return tier.deliverableUrl || product.deliverable_url || null;
 }
 
+// Standard license prices for beats (USD). Matches the JayRewind Studio app.
+// Used by /admin's defaults and the admin "apply standard prices" action.
+export const STANDARD_PRICES = { mp3: 29.99, wav: 64.99, stems: 99.99, exclusive: 1000 };
+
+// Public view of a tier/exclusive: never leak the private file reference,
+// but say whether there is one, so the store knows if Buy can actually deliver.
+export function publicTier(t, product) {
+  if (!t) return t;
+  const { deliverableUrl, ...rest } = t;
+  return { ...rest, buyable: !!(deliverableUrl || product?.deliverable_url) };
+}
+
+// Returns new { tiers, exclusive } with STANDARD_PRICES applied by tier id.
+// Tiers with other ids keep their price; a missing exclusive stays missing.
+export function repriceProduct(product, prices = STANDARD_PRICES) {
+  const tiers = (Array.isArray(product.tiers) ? product.tiers : [])
+    .map(t => (prices[t.id] != null ? { ...t, price: prices[t.id] } : t));
+  const exclusive = product.exclusive && prices.exclusive != null
+    ? { ...product.exclusive, price: prices.exclusive }
+    : product.exclusive || null;
+  return { tiers, exclusive };
+}
+
+// Email to the producer when a paid order has no downloadable file attached.
+export function manualFulfilmentEmail({ session, product, tier }) {
+  const buyer = session.customer_details?.email || 'unknown email';
+  return {
+    subject: `ACTION NEEDED: send files for "${product?.title || session.metadata?.product_id}" (${tier?.label || session.metadata?.tier_id})`,
+    text: [
+      'A buyer paid but this beat has no download file attached, so nothing was delivered automatically.',
+      '',
+      `Beat: ${product?.title || session.metadata?.product_id}`,
+      `License: ${tier?.label || session.metadata?.tier_id}`,
+      `Buyer: ${session.customer_details?.name || ''} <${buyer}>`,
+      `Amount: $${((session.amount_total || 0) / 100).toFixed(2)}`,
+      `Stripe session: ${session.id}`,
+      '',
+      'Upload the file in rmlur.com/admin (or email it to the buyer) and reply to them.',
+    ].join('\n'),
+  };
+}
+
 async function stripe(path, { method = 'GET', params, secretKey, fetchImpl = fetch }) {
   const res = await fetchImpl(`https://api.stripe.com/v1/${path}`, {
     method,

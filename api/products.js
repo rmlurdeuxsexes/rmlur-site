@@ -1,11 +1,8 @@
 import { sql } from './_lib/db.js';
+import { publicTier } from './_lib/checkout.js';
 
-// tiers/exclusive carry deliverableUrl (paid files) — never expose it publicly.
-function publicTier(t) {
-  if (!t) return t;
-  const { deliverableUrl, ...rest } = t;
-  return rest;
-}
+// tiers/exclusive carry deliverableUrl (paid files) — never expose it publicly;
+// publicTier() swaps it for a buyable flag.
 
 function toProduct(row) {
   return {
@@ -21,8 +18,8 @@ function toProduct(row) {
     preview: row.preview_url,
     tags: row.tags,
     info: row.info,
-    tiers: Array.isArray(row.tiers) ? row.tiers.map(publicTier) : row.tiers,
-    exclusive: publicTier(row.exclusive),
+    tiers: Array.isArray(row.tiers) ? row.tiers.map(t => publicTier(t, row)) : row.tiers,
+    exclusive: publicTier(row.exclusive, row),
   };
 }
 

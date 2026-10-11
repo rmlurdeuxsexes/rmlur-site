@@ -35,7 +35,7 @@
 
   function options(p) {
     var o = (p.tiers || []).slice().sort(function (a, b) { return a.price - b.price; });
-    if (p.exclusive) o.push({ id: 'exclusive', label: 'EXCLUSIVE', price: p.exclusive.price, stripeLink: p.exclusive.stripeLink });
+    if (p.exclusive) o.push({ id: 'exclusive', label: 'EXCLUSIVE', price: p.exclusive.price, stripeLink: p.exclusive.stripeLink, buyable: p.exclusive.buyable });
     return o;
   }
 
@@ -44,12 +44,13 @@
     function fallback() {
       location.href = tier.stripeLink || 'mailto:jayrewindbeatz@gmail.com?subject=' + encodeURIComponent('Buy "' + p.title + '" — ' + tier.label);
     }
-    if (!checkoutLive) return fallback();
+    // buyable === false: no download file yet, so ask instead of taking payment
+    if (!checkoutLive || tier.buyable === false) return fallback();
     btn.textContent = '…';
     fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: p.id, tierId: tier.id }) })
       .then(function (r) { return r.json(); })
       .then(function (j) { if (j.url) location.href = j.url; else throw new Error(j.error); })
-      .catch(function () { btn.textContent = 'Buy'; fallback(); });
+      .catch(function () { btn.textContent = tier.buyable === false ? 'Ask' : 'Buy'; fallback(); });
   }
 
   function card(p) {
@@ -58,6 +59,7 @@
     var defIdx = Math.max(0, opts.findIndex(function (t) { return t.id === 'wav'; }));
     var tier = opts[defIdx] || null;
     var c = el('article', 'card');
+    c.id = 'beat-' + p.id; // deep link: store.html#beat-<id> (used by the JayRewind app + YouTube descriptions)
     var disk = el('div', 'disk');
     var img = el('img');
     img.alt = '3.5 inch floppy disk labelled ' + p.title;
@@ -85,14 +87,25 @@
       sel.setAttribute('aria-label', 'License');
       opts.forEach(function (t, i) { var op = el('option', null, t.label + ' ' + money(t.price)); op.value = i; sel.appendChild(op); });
       sel.value = defIdx;
-      sel.addEventListener('change', function () { tier = opts[sel.value]; setPrice(); });
+      sel.addEventListener('change', function () { tier = opts[sel.value]; setPrice(); setBuyLabel(); });
       ctl.appendChild(sel);
     }
     var buyBtn = el('button', 'btn buy', 'Buy');
+    function setBuyLabel() { buyBtn.textContent = tier && tier.buyable === false ? 'Ask' : 'Buy'; }
+    setBuyLabel();
     buyBtn.addEventListener('click', function () { if (tier) buy(p, tier, buyBtn); });
     ctl.appendChild(buyBtn);
     c.appendChild(ctl);
     return c;
+  }
+
+  // store.html#beat-<id> scrolls to and highlights that beat
+  function focusLinkedBeat() {
+    var m = /^#beat-([a-z0-9-]+)$/.exec(location.hash || '');
+    var target = m && document.getElementById('beat-' + m[1]);
+    if (!target) return;
+    target.classList.add('linked');
+    target.scrollIntoView({ block: 'center' });
   }
 
   function reset() { if (playingBtn) { playingBtn.textContent = 'Play'; playingBtn.setAttribute('aria-pressed', 'false'); playingBtn = null; } }
@@ -116,5 +129,6 @@
     list = list || [];
     if (!list.length) { empty.hidden = false; return; }
     list.forEach(function (p) { grid.appendChild(card(p)); });
+    focusLinkedBeat();
   });
 })();

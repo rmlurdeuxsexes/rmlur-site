@@ -50,16 +50,16 @@
   <textarea id="info" rows="4"></textarea>
 
   <label for="price-wav">WAV price (USD) — the default license</label>
-  <input type="number" id="price-wav" step="0.01" min="0" value="34.99">
+  <input type="number" id="price-wav" step="0.01" min="0" value="64.99">
 
   <label for="price-mp3">MP3 price (USD) — cheaper, lower quality</label>
-  <input type="number" id="price-mp3" step="0.01" min="0" value="24.99">
+  <input type="number" id="price-mp3" step="0.01" min="0" value="29.99">
 
   <label for="price-stems">Stems price (USD)</label>
-  <input type="number" id="price-stems" step="0.01" min="0" value="59.99">
+  <input type="number" id="price-stems" step="0.01" min="0" value="99.99">
 
   <label for="price-exclusive">Exclusive price (USD) — blank for none</label>
-  <input type="number" id="price-exclusive" step="0.01" min="0" value="249.99">
+  <input type="number" id="price-exclusive" step="0.01" min="0" value="1000">
 
   <label for="wav">WAV master (paid download, stored privately)</label>
   <input type="file" id="wav" accept=".wav,.aif,.aiff,.flac,audio/*">
@@ -79,6 +79,14 @@
   <button type="submit">Publish</button>
   <div class="status" id="upload-status"></div>
 </form>
+
+<section id="prices-panel">
+  <h1>Prices</h1>
+  <p class="hint">Sets every beat to MP3 $29.99 · WAV $64.99 · Stems $99.99 · Exclusive $1,000 (kits keep their own prices). Also lists any beat with no download file — those show "Ask" instead of "Buy" in the store until you upload the file.</p>
+  <button type="button" id="reprice-btn">Apply standard prices to all beats</button>
+  <div class="status" id="reprice-status"></div>
+  <ul id="reprice-report"></ul>
+</section>
 
 <script type="module" src="/admin/admin.js"></script>
 </body>

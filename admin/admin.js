@@ -20,6 +20,7 @@ document.getElementById('login-btn').addEventListener('click', async () => {
   if (res.ok) {
     loginForm.style.display = 'none';
     uploadForm.style.display = 'block';
+    document.getElementById('prices-panel').style.display = 'block';
   } else {
     const data = await res.json().catch(() => ({}));
     loginStatus.textContent = data.error || 'login failed';
@@ -134,5 +135,36 @@ uploadForm.addEventListener('submit', async (event) => {
     uploadStatus.textContent = 'Error: ' + err.message;
   } finally {
     submitBtn.disabled = false;
+  }
+});
+
+// Apply the standard price list to every beat, then show which beats can't deliver yet.
+document.getElementById('reprice-btn').addEventListener('click', async (event) => {
+  const btn = event.currentTarget;
+  const status = document.getElementById('reprice-status');
+  const report = document.getElementById('reprice-report');
+  if (!confirm('Set every beat to the standard prices?')) return;
+  btn.disabled = true;
+  status.classList.remove('ok');
+  status.textContent = 'updating…';
+  report.textContent = '';
+  try {
+    const res = await fetch('/api/admin-reprice', { method: 'POST', credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `failed (${res.status})`);
+    const missing = data.beats.filter(b => !b.tiers.some(t => t.buyable));
+    status.textContent = `Updated ${data.updated} beats. ${missing.length ? missing.length + ' have no download file yet (listed in red).' : 'All of them have a download file.'}`;
+    status.classList.add('ok');
+    for (const b of data.beats) {
+      const li = document.createElement('li');
+      const ok = b.tiers.some(t => t.buyable);
+      li.className = ok ? '' : 'nofile';
+      li.textContent = `${b.title} — ${b.tiers.map(t => `${t.id} $${t.price}${t.buyable ? '' : ' (no file)'}`).join(' · ')}`;
+      report.appendChild(li);
+    }
+  } catch (err) {
+    status.textContent = 'Error: ' + err.message;
+  } finally {
+    btn.disabled = false;
   }
 });

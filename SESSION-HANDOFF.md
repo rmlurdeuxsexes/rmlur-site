@@ -20,6 +20,16 @@ Sell beats from rmlur.com with no BeatStars: buyer pays via Stripe, gets a downl
 - **Publishing paths**: `npm run publish-beats -- --sync` and `scripts/beat-drop-watch.mjs` both upload deliverables to R2 when `R2_*` env vars exist (priority: sidecar `dropbox` entry > R2 > Vercel Blob).
 - **Browser admin** (`/admin`, `admin/index.html`, `admin/admin.js`, `api/admin-r2-presign.js`, `api/admin-upload.js`): log in, fill title/genre/BPM, choose WAV (+ optional MP3, stems zip, cover, preview), Publish. Browser PUTs files straight to R2 via presigned URL; writes product row with tiers WAV/MP3/STEMS + EXCLUSIVE ($34.99 / $24.99 / $59.99 / $249.99 defaults). Tier only appears if its file was added. Last fix: asset paths made absolute so `/admin` works without a trailing slash (before that the page was unstyled and Log In did nothing).
 
+## Checkout safety + standard prices (2026-10-11, branch `claude/friendly-hypatia-3fmmrn`)
+- **No more paying for files that don't exist.** `/api/checkout` returns 409 `not available yet` when the tier has no deliverable. `/api/products` now gives each tier and the exclusive a `buyable` flag (the file reference stays hidden). The store shows **Ask** (mailto) instead of **Buy** for those tiers.
+- **Producer alert.** If a paid order still has no file, the webhook emails `jayrewindbeatz@gmail.com` (override with `ORDERS_NOTIFY_EMAIL`) through Resend. It needs `RESEND_API_KEY`.
+- **Standard prices** (user decision, matching the JayRewind app): MP3 $29.99 · WAV $64.99 · Stems $99.99 · Exclusive $1,000.
+  - The constant is `STANDARD_PRICES` in `api/_lib/checkout.js`.
+  - The `/admin` defaults use these prices.
+  - New admin-only `POST /api/admin-reprice` and the "Apply standard prices to all beats" button on `/admin` reprice every `type='beat'` row. Kits keep their own prices. The button also lists any beat with no download file.
+- **Deep link.** `store.html#beat-<id>` scrolls to and outlines that beat. The app's LEASE/EXCL buttons and YouTube descriptions use it.
+- Tests: 27 passing (`npm test`).
+
 ## Where we stopped (unverified — check first)
 1. User set `ADMIN_PASSWORD` (and was told to set `ADMIN_SESSION_SECRET`) in Vercel and redeployed, but had **not yet confirmed a successful login** after the `/admin` path fix. Ask what the page shows.
 2. **SPIRETRUAL TRANCE is NOT in the live store yet.** Last check: `/api/products` had 24 beats, none of them this one. The entry in `data/beats.catalog.json` is only a fallback and the store never reads it while the DB works. It goes live only when published via `/admin` (or `publish-beats --sync`) — needs the user's WAV, which is only on their computer.
