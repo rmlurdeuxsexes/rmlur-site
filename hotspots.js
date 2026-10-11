@@ -133,3 +133,26 @@ window.DRIVES = [
 window.LCD = {
   idleVideo: "assets/lcd-loop.mp4"
 };
+
+/* ---------- HOMEPAGE (flat Readymag photo) — what each pad does ----------
+   index.html + home.js. Hardware numbering: PAD 1 is bottom-left, PAD 16
+   top-right. `url` → navigate (http(s) opens a new tab); `sound` → play a
+   one-shot. Exact pad boxes come from data/hero-map.json, never from here. */
+window.HOME_PADS = {
+  1:  { label: "Home",      url: "index.html" },
+  2:  { label: "Beats",     url: "store.html" },
+  3:  { label: "YouTube",   url: "https://www.youtube.com/" },
+  4:  { label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
+  5:  { label: "TikTok",    url: "https://www.tiktok.com/@jayrewindbeatz" },
+  6:  { label: "Contact",   url: "mailto:jayrewindbeatz@gmail.com" },
+  7:  { label: "Blog",      url: "blog.html" },
+  8:  { label: "Gallery",   url: "gallery.html" },
+  9:  { label: "Museum",    url: "museum.html" },
+  10: { label: "About",     url: "about.html" },
+  11: { label: "Kick",      sound: "assets/beats/kick-1.mp3" },
+  12: { label: "Snare",     sound: "assets/beats/snare-1.mp3" },
+  13: { label: "Clap",      sound: "assets/beats/snare-clap-1.mp3" },
+  14: { label: "808",       sound: "assets/beats/eight-oh-eight-1.mp3" },
+  15: { label: "Bass",      sound: "assets/beats/bass-1.mp3" },
+  16: { label: "Kick 2",    sound: "assets/beats/kick-2.mp3" }
+};
