@@ -1,5 +1,5 @@
 {
-  "_comment": "Placements museum (museum.html). One entry per plaque. Edit freely — no code changes needed. type: 'plaque' (record award) | 'billboard' (chart/accomplishment). cert: 'gold' | 'platinum' | 'multi-platinum:N' | 'diamond' | 'none'. wall: 'back' | 'left' | 'right'. cover: path or URL to album art (square), null = generated placeholder. verified:false shows 'details pending' on the card — flip to true once the facts are confirmed. Never put a certification here that isn't real.",
+  "_comment": "Placements museum (museum.html). One entry per plaque. Edit freely — no code changes needed. type: 'plaque' (record award) | 'billboard' (chart/accomplishment). cert: 'gold' | 'platinum' | 'multi-platinum:N' | 'diamond' | 'none'. wall: 'back' | 'left' | 'right'. cover: path or URL to album art (square), null = generated placeholder. format: 'album' (default; plaque reads 'copies of the long playing record album') | 'single' (reads 'units of the single'). labelColor: optional paper colour for the record label, e.g. '#f3f6f8'. verified:false shows 'details pending' on the card — flip to true once the facts are confirmed. Never put a certification here that isn't real.",
   "presentedTo": "JayRewind",
   "placements": [
     {

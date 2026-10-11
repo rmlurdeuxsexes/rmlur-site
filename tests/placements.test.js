@@ -13,6 +13,7 @@ test('placements.json: every entry is hangable', () => {
     if (p.type === 'plaque') {
       assert.ok(p.artist, `${p.id} artist`);
       assert.match(p.cert, /^(gold|platinum|diamond|none|multi-platinum:\d+)$/, `${p.id} cert`);
+      if (p.format != null) assert.ok(['album', 'single'].includes(p.format), `${p.id} format`);
     }
   }
 });

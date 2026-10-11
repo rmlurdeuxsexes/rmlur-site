@@ -127,16 +127,91 @@
     return CERT[cert] || null;
   }
 
+  // Height map for a real record face: fine grooves, smooth gaps between tracks,
+  // a flat run-out ring by the label and a raised lip at the edge. The disc
+  // geometry is a CircleGeometry whose UVs map 0..1 across the diameter.
   function grooveTex() {
-    return canvasTex(1024, 1024, function (ctx, w, h) {
+    return canvasTex(2048, 2048, function (ctx, w, h) {
+      var cx = w / 2, cy = h / 2, R = w / 2;
       ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, w, h);
-      for (var r = 140; r < 505; r += 3) {
-        ctx.strokeStyle = 'rgba(' + (r % 9 < 3 ? '40,40,40' : '200,200,200') + ',.35)';
-        ctx.beginPath(); ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2); ctx.stroke();
+      var gaps = [0.52, 0.64, 0.75, 0.87];          // track breaks (fraction of radius)
+      ctx.lineWidth = 1.3;
+      for (var r = 0.40 * R; r < 0.965 * R; r += 2.6) {
+        var f = r / R;
+        if (gaps.some(function (g) { return Math.abs(f - g) < 0.009; })) continue;
+        ctx.strokeStyle = (Math.round(r / 2.6) % 2) ? 'rgba(60,60,60,.55)' : 'rgba(205,205,205,.55)';
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
       }
+      // raised outer lip
+      ctx.lineWidth = 0.022 * R; ctx.strokeStyle = '#b8b8b8';
+      ctx.beginPath(); ctx.arc(cx, cy, 0.985 * R, 0, Math.PI * 2); ctx.stroke();
     }, false);
   }
   var GROOVES = grooveTex();
+
+  // Colour map for the record face: the radial "pie-wedge" sheen real gold
+  // records show (light catching the grooves), plus visible groove rings and
+  // track gaps. Baked in so it reads the same under any lighting.
+  function discFaceTex(base) {
+    return canvasTex(2048, 2048, function (ctx, w, h) {
+      var cx = w / 2, cy = h / 2, R = w / 2;
+      var light = base.light, mid = base.mid, dark = base.dark;
+      var cg = ctx.createConicGradient(-Math.PI / 2 + 0.35, cx, cy);
+      [[0, mid], [0.06, light], [0.13, mid], [0.25, dark], [0.36, mid], [0.44, light], [0.5, mid],
+       [0.56, light], [0.63, mid], [0.75, dark], [0.86, mid], [0.94, light], [1, mid]]
+        .forEach(function (st) { cg.addColorStop(st[0], st[1]); });
+      ctx.fillStyle = cg; ctx.fillRect(0, 0, w, h);
+      // soft overall falloff toward the rim
+      var rg = ctx.createRadialGradient(cx, cy, R * 0.3, cx, cy, R);
+      rg.addColorStop(0, 'rgba(255,255,255,0.10)'); rg.addColorStop(1, 'rgba(0,0,0,0.10)');
+      ctx.fillStyle = rg; ctx.fillRect(0, 0, w, h);
+      var gaps = [0.52, 0.64, 0.75, 0.87];
+      for (var r = 0.40 * R; r < 0.965 * R; r += 3.2) {
+        var f = r / R, isGap = gaps.some(function (g) { return Math.abs(f - g) < 0.009; });
+        if (isGap) continue;
+        ctx.strokeStyle = base.groove; ctx.lineWidth = 0.9;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+      }
+      gaps.forEach(function (g0) {      // track gaps catch the light as bright rings
+        ctx.strokeStyle = base.gap; ctx.lineWidth = 0.006 * R;
+        ctx.beginPath(); ctx.arc(cx, cy, g0 * R, 0, Math.PI * 2); ctx.stroke();
+      });
+      ctx.strokeStyle = base.gap; ctx.lineWidth = 0.028 * R;                 // dead wax ring by the label
+      ctx.beginPath(); ctx.arc(cx, cy, 0.385 * R, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = base.dark; ctx.lineWidth = 0.02 * R;                 // outer lip
+      ctx.beginPath(); ctx.arc(cx, cy, 0.985 * R, 0, Math.PI * 2); ctx.stroke();
+    });
+  }
+  var DISC_FACES = {};
+  function discFace(kind) {
+    var tones = {
+      gold:     { light: '#fff4cf', mid: '#d9bf7a', dark: '#8f763c', groove: 'rgba(90,70,30,.22)', gap: 'rgba(255,248,220,.28)' },
+      platinum: { light: '#ffffff', mid: '#d4d6d9', dark: '#8a8d92', groove: 'rgba(60,60,70,.2)', gap: 'rgba(255,255,255,.3)' },
+      vinyl:    { light: '#5a5a5c', mid: '#1c1c1d', dark: '#070707', groove: 'rgba(0,0,0,.35)', gap: 'rgba(120,120,125,.35)' }
+    };
+    return DISC_FACES[kind] || (DISC_FACES[kind] = discFaceTex(tones[kind]));
+  }
+
+  // Fine linen weave for the charcoal mat
+  var LINEN = canvasTex(512, 512, function (ctx, w, h) {
+    ctx.fillStyle = '#2f2f31'; ctx.fillRect(0, 0, w, h);
+    for (var i = 0; i < w; i += 2) {
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.025 + Math.random() * 0.03) + ')'; ctx.fillRect(i, 0, 1, h);
+      ctx.fillStyle = 'rgba(0,0,0,' + (0.04 + Math.random() * 0.05) + ')'; ctx.fillRect(0, i, w, 1);
+    }
+    grain(ctx, w, h, 10);
+  });
+  LINEN.wrapS = LINEN.wrapT = THREE.RepeatWrapping; LINEN.repeat.set(3, 4);
+
+  // Brushed, slightly worn finish for the gilt frame moulding
+  var GILT_BUMP = canvasTex(512, 64, function (ctx, w, h) {
+    ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, w, h);
+    for (var i = 0; i < 260; i++) {
+      ctx.strokeStyle = 'rgba(' + (Math.random() < 0.5 ? '40,40,40' : '220,220,220') + ',' + (0.1 + Math.random() * 0.25) + ')';
+      var y = Math.random() * h; ctx.beginPath(); ctx.moveTo(Math.random() * w, y); ctx.lineTo(Math.random() * w, y + (Math.random() - 0.5) * 2); ctx.stroke();
+    }
+  }, false);
+  GILT_BUMP.wrapS = GILT_BUMP.wrapT = THREE.RepeatWrapping;
 
   function placeholderCover(p) {
     return canvasTex(512, 512, function (ctx, w, h) {
@@ -158,22 +233,109 @@
     return t;
   }
 
-  // engraved brass plate text (RIAA-style when certified, plain placement otherwise)
+  var SERIF = 'Georgia, "Times New Roman", serif';
+  var PLATE_FONT = '"Arial Narrow", "Helvetica Neue", Arial, sans-serif';
+  var CERT_UNITS = { gold: '500,000', platinum: '1,000,000', diamond: '10,000,000' };
+  function certUnits(cert) {
+    var m = /^multi-platinum:(\d+)$/.exec(cert || '');
+    return m ? Number(m[1]).toLocaleString('en-US') + ',000,000' : CERT_UNITS[cert];
+  }
+
+  // Printed paper record label for the centre of the disc
+  function recordLabelTex(p) {
+    return canvasTex(1024, 1024, function (ctx, w, h) {
+      var cx = w / 2, cy = h / 2, R = w / 2;
+      ctx.clearRect(0, 0, w, h);
+      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
+      var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+      g.addColorStop(0, p.labelColor || '#f3f6f8'); g.addColorStop(1, '#dfe6ea');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); grain(ctx, w, h, 6);
+      ctx.fillStyle = '#2c3d52'; ctx.textAlign = 'center';
+      // label name as a simple wordmark (text only — never a real label's logo)
+      fitText(ctx, (p.label || 'RMLUR').split('/').pop().trim().toUpperCase(), cx, 250, 600, 64, '600', SERIF);
+      ctx.fillStyle = '#1d1d1d';
+      ctx.font = '600 34px ' + SERIF; ctx.textAlign = 'right'; ctx.fillText('SIDE 1', cx + 330, 360);
+      ctx.fillText(p.format === 'single' ? '45 RPM' : '33⅓ RPM', cx + 330, 395);
+      ctx.textAlign = 'left'; ctx.fillText('STEREO', cx - 330, 380);
+      ctx.textAlign = 'center';
+      fitText(ctx, ((p.artist || '') + ' / ' + (p.album || '')).toUpperCase(), cx, 640, 720, 40, '700', SERIF);
+      ctx.font = '400 22px ' + SERIF; ctx.textAlign = 'left';
+      ['1. ' + (p.song || ''), 'Produced by JayRewind'].forEach(function (t, i) {
+        fitText(ctx, t, cx - 300, 700 + i * 40, 600, 30, '400', SERIF);
+      });
+      ctx.textAlign = 'center'; ctx.font = '400 15px ' + SERIF; ctx.fillStyle = '#555';
+      ctx.fillText('℗ ' + (p.released ? p.released.slice(0, 4) : '') + ' ' + (p.label || '') + ' • All rights reserved', cx, 800);
+      ctx.restore();
+      // spindle hole
+      ctx.fillStyle = '#0a0a0a'; ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+
+  // Engraved brass plate: award wording on the left, round seal on the right.
   function plateTex(p, presentedTo) {
     var c = certInfo(p.cert);
-    return canvasTex(1024, 360, function (ctx, w, h) {
-      var g = ctx.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#c9b37a'); g.addColorStop(.5, '#e4d29c'); g.addColorStop(1, '#b89e5f');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); grain(ctx, w, h, 8);
-      ctx.fillStyle = '#2c2416'; ctx.textAlign = 'center';
-      var serif = 'Georgia, "Times New Roman", serif', y = 62;
+    return canvasTex(1400, 560, function (ctx, w, h) {
+      var g = ctx.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, '#c7a85a'); g.addColorStop(.45, '#ead48e'); g.addColorStop(.7, '#d6b867'); g.addColorStop(1, '#b8954a');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      for (var i = 0; i < h; i += 2) { ctx.fillStyle = 'rgba(255,255,255,' + Math.random() * 0.05 + ')'; ctx.fillRect(0, i, w, 1); }
+      grain(ctx, w, h, 6);
+      ctx.strokeStyle = 'rgba(90,65,20,.45)'; ctx.lineWidth = 4; ctx.strokeRect(14, 14, w - 28, h - 28);
+
+      var textCx = w * 0.36, maxW = w * 0.64;
+      ctx.fillStyle = '#3a2c12'; ctx.textAlign = 'center';
+      var single = p.format === 'single';
+      var awarded = (single ? (p.song || p.album) : (p.album || p.song)) || '';
       var lines = c
-        ? [['PRESENTED TO', 22, '400'], [presentedTo.toUpperCase(), 40, '700'],
-           ['TO COMMEMORATE THE ' + (p.certBody || 'RIAA') + ' ' + c.label + ' CERTIFICATION OF', 20, '400'],
-           ['“' + (p.album || p.song || '') + '”', 34, '700'], [(p.artist || '') + (p.label ? '  •  ' + p.label : ''), 20, '400']]
-        : [['PLACEMENT', 22, '400'], ['“' + (p.song || '') + '”', 34, '700'],
-           [(p.artist || '') + (p.album ? '  —  ' + p.album : ''), 22, '400'],
-           [(p.role || 'Produced') + ' — ' + presentedTo, 22, '400']];
-      lines.forEach(function (l) { fitText(ctx, l[0], w / 2, y, w - 80, l[1], l[2], serif); y += l[1] + 22; });
+        ? [['PRESENTED TO', 30], [presentedTo.toUpperCase(), 46],
+           ['TO COMMEMORATE THE SALE OF MORE THAN', 34],
+           [certUnits(p.cert) + (single ? ' UNITS OF THE' : ' COPIES OF THE'), 34],
+           [((p.label || '').split('/').pop() || '').trim().toUpperCase(), 46],
+           [single ? 'SINGLE' : 'LONG PLAYING RECORD ALBUM', 30],
+           ['“' + awarded.toUpperCase() + '”', 42]]
+        : [['PRESENTED TO', 30], [presentedTo.toUpperCase(), 46],
+           ['IN RECOGNITION OF PRODUCTION ON', 34],
+           ['“' + (p.song || '').toUpperCase() + '”', 42],
+           [(p.artist || '').toUpperCase(), 40],
+           [(p.album || '').toUpperCase(), 30]];
+      // condensed engraved caps, vertically centred like the reference plate
+      var total = lines.reduce(function (a, l) { return a + l[1] + 18; }, -18);
+      var y = (h - total) / 2 + lines[0][1] * 0.8;
+      lines.forEach(function (l) { fitText(ctx, l[0], textCx, y, maxW, l[1], '600', PLATE_FONT); y += l[1] + 18; });
+
+      // seal: engraved ring with lettering around the edge
+      var sx = w * 0.825, sy = h / 2, sr = h * 0.37;
+      ctx.strokeStyle = '#3a2c12'; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(sx, sy, sr * 0.66, 0, Math.PI * 2); ctx.stroke();
+      // scalloped edge like a stamped seal
+      for (var k = 0; k < 64; k++) {
+        var a = k / 64 * Math.PI * 2;
+        ctx.beginPath(); ctx.arc(sx + Math.cos(a) * (sr + 9), sy + Math.sin(a) * (sr + 9), 5, 0, Math.PI * 2); ctx.fillStyle = '#3a2c12'; ctx.fill();
+      }
+      function ringText(text, radius, start, end, size, flip) {
+        ctx.save(); ctx.translate(sx, sy); ctx.font = '700 ' + size + 'px ' + SERIF; ctx.fillStyle = '#3a2c12';
+        var chars = text.split(''), step = (end - start) / Math.max(1, chars.length - 1);
+        chars.forEach(function (ch, i) {
+          var a = start + step * i;
+          // bottom arc: letters stay upright (tops toward the centre) and read left→right
+          ctx.save(); ctx.rotate(a); ctx.translate(0, flip ? radius : -radius);
+          ctx.textAlign = 'center'; ctx.fillText(ch, 0, size * 0.35); ctx.restore();
+        });
+        ctx.restore();
+      }
+      if (c) {
+        ringText('CERTIFIED', sr * 0.82, -0.95, 0.95, 34, false);
+        ringText('SALES AWARD', sr * 0.82, 1.1, -1.1, 32, true);
+        ctx.fillStyle = '#3a2c12'; ctx.textAlign = 'center';
+        fitText(ctx, (p.certBody || 'RIAA').toUpperCase(), sx, sy + 30, sr * 1.18, 96, '700', SERIF);
+        ctx.beginPath(); ctx.moveTo(sx - 18, sy + 44); ctx.lineTo(sx + 18, sy + 44); ctx.lineTo(sx, sy + 66); ctx.closePath(); ctx.fill();
+      } else {
+        ringText('RMLUR', sr * 0.83, -0.7, 0.7, 30, false);
+        ringText('DEUX SEXES', sr * 0.83, 1.0, -1.0, 28, true);
+        ctx.fillStyle = '#3a2c12'; ctx.textAlign = 'center';
+        fitText(ctx, 'PROD.', sx, sy + 16, sr * 1.1, 46, '700', SERIF);
+      }
     });
   }
 
@@ -191,43 +353,79 @@
   }
 
   var plaques = []; // { group, data, focus:Vector3, look:Vector3 }
-  var lacquer = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.28, metalness: 0.1 });
-  var whiteFrame = new THREE.MeshStandardMaterial({ color: 0xf6f5f2, roughness: 0.4 });
+  var gilt = new THREE.MeshStandardMaterial({ color: 0x8f7638, metalness: 1, roughness: 0.5, bumpMap: GILT_BUMP, bumpScale: 0.35 });
+  var liner = new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.85 });
+  var backing = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 });
+
+  // Thin gilt moulding: a rounded-profile frame (outer rect minus inner opening)
+  // with a bevel, like the reference's narrow gold frame.
+  function giltFrame(W, H, band, depth) {
+    var shape = roundedRect(W, H, 0.004), hole = roundedRect(W - 2 * band, H - 2 * band, 0.002);
+    shape.holes.push(hole);
+    var geo = new THREE.ExtrudeGeometry(shape, { depth: depth, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.007, bevelSegments: 4, curveSegments: 4 });
+    var m = new THREE.Mesh(geo, gilt); m.castShadow = true; m.receiveShadow = true; return m;
+  }
+  function roundedRect(w, h, r) {
+    var s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+    s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+    s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+    s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s;
+  }
 
   function buildPlaque(p, presentedTo) {
     var g = new THREE.Group();
-    var W = 0.96, H = 1.22, D = 0.06;
+    // Proportions measured off the reference award (outer frame 0.82 : 1.02)
+    var W = 0.86, H = 1.07, BAND = 0.03, D = 0.045;
     var isBoard = p.type === 'billboard';
-    var frame = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), isBoard ? whiteFrame : lacquer);
-    frame.castShadow = true; g.add(frame);
+
+    var back = new THREE.Mesh(new THREE.BoxGeometry(W - 0.01, H - 0.01, 0.02), backing);
+    back.position.z = 0.01; back.castShadow = true; g.add(back);
+    var frame = giltFrame(W, H, BAND, D - 0.016); frame.position.z = 0.0; g.add(frame);
+
+    // black liner step just inside the gilt, then the recessed face
+    var innerW = W - 2 * BAND, innerH = H - 2 * BAND, LINER = 0.022;
+    var linerShape = roundedRect(innerW, innerH, 0.001); linerShape.holes.push(roundedRect(innerW - 2 * LINER, innerH - 2 * LINER, 0.001));
+    var linerMesh = new THREE.Mesh(new THREE.ExtrudeGeometry(linerShape, { depth: 0.012, bevelEnabled: false }), liner);
+    linerMesh.position.z = 0.02; linerMesh.receiveShadow = true; g.add(linerMesh);
+    var FACE_Z = 0.021, faceW = innerW - 2 * LINER, faceH = innerH - 2 * LINER;
 
     if (isBoard) {
-      var face = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.12, H - 0.12), new THREE.MeshStandardMaterial({ map: billboardTex(p), roughness: 0.7 }));
-      face.position.z = D / 2 + 0.001; g.add(face);
+      var face = new THREE.Mesh(new THREE.PlaneGeometry(faceW, faceH), new THREE.MeshStandardMaterial({ map: billboardTex(p), roughness: 0.7 }));
+      face.position.z = FACE_Z; face.receiveShadow = true; g.add(face);
       return g;
     }
 
-    var c = certInfo(p.cert);
-    // matte: black velvet behind a certified disc, warm white for a placement
-    var matte = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.1, H - 0.1),
-      new THREE.MeshStandardMaterial({ color: c ? 0x0e0e0f : 0xf3f1ea, roughness: 0.95 }));
-    matte.position.z = D / 2 + 0.001; g.add(matte);
+    var mat = new THREE.Mesh(new THREE.PlaneGeometry(faceW, faceH), new THREE.MeshStandardMaterial({ map: LINEN, roughness: 1 }));
+    mat.position.z = FACE_Z; mat.receiveShadow = true; g.add(mat);
 
-    var discMat = c
-      ? new THREE.MeshStandardMaterial({ color: c.color, metalness: 1, roughness: 0.2, bumpMap: GROOVES, bumpScale: 0.6 })
-      : new THREE.MeshStandardMaterial({ color: 0x101010, metalness: 0.2, roughness: 0.32, bumpMap: GROOVES, bumpScale: 0.6 });
-    var disc = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.006, 96), discMat);
-    disc.rotation.x = Math.PI / 2; disc.position.set(0, 0.2, D / 2 + 0.012); disc.castShadow = true; g.add(disc);
-    var label = new THREE.Mesh(new THREE.CircleGeometry(0.09, 64), new THREE.MeshStandardMaterial({ map: coverTex(p), roughness: 0.6 }));
-    label.position.set(0, 0.2, D / 2 + 0.0155); g.add(label);
+    // Record: mirror gold/platinum for an award, glossy black vinyl for a placement
+    var c = certInfo(p.cert), DISC_R = faceW * 0.35, DISC_Y = faceH * 0.16;
+    var kind = !c ? 'vinyl' : (c.color === CERT.gold.color ? 'gold' : 'platinum');
+    var discMat = new THREE.MeshPhysicalMaterial({ map: discFace(kind), metalness: c ? 0.55 : 0, roughness: c ? 0.28 : 0.3,
+      clearcoat: c ? 0.6 : 1, clearcoatRoughness: 0.12, bumpMap: GROOVES, bumpScale: 0.25, envMapIntensity: c ? 0.7 : 1 });
+    var disc = new THREE.Mesh(new THREE.CircleGeometry(DISC_R, 128), discMat);
+    disc.position.set(0, DISC_Y, FACE_Z + 0.004); disc.castShadow = true; g.add(disc);
+    var discEdge = new THREE.Mesh(new THREE.CylinderGeometry(DISC_R, DISC_R, 0.003, 128, 1, true), discMat);
+    discEdge.rotation.x = Math.PI / 2; discEdge.position.set(0, DISC_Y, FACE_Z + 0.0025); g.add(discEdge);
+    var label = new THREE.Mesh(new THREE.CircleGeometry(DISC_R * 0.36, 96),
+      new THREE.MeshStandardMaterial({ map: recordLabelTex(p), roughness: 0.75, transparent: true }));
+    label.position.set(0, DISC_Y, FACE_Z + 0.0045); g.add(label);
 
-    var cover = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2), new THREE.MeshStandardMaterial({ map: coverTex(p), roughness: 0.6 }));
-    cover.position.set(-W / 2 + 0.2, -0.35, D / 2 + 0.006); g.add(cover);
+    // bottom row: album cover with a white border (left), brass plate with seal (right)
+    var ROW_Y = -faceH * 0.335;
+    var coverS = faceW * 0.22;
+    var border = new THREE.Mesh(new THREE.BoxGeometry(coverS + 0.012, coverS + 0.012, 0.003), new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.7 }));
+    border.position.set(-faceW * 0.29, ROW_Y, FACE_Z + 0.0015); border.castShadow = true; g.add(border);
+    var cover = new THREE.Mesh(new THREE.PlaneGeometry(coverS, coverS), new THREE.MeshStandardMaterial({ map: coverTex(p), roughness: 0.6 }));
+    cover.position.set(-faceW * 0.29, ROW_Y, FACE_Z + 0.0032); g.add(cover);
 
-    var plate = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.2, 0.006),
-      [null, null, null, null, new THREE.MeshStandardMaterial({ map: plateTex(p, presentedTo), metalness: 0.55, roughness: 0.35 }), null]
-        .map(function (m) { return m || new THREE.MeshStandardMaterial({ color: 0xb89e5f, metalness: 0.6, roughness: 0.4 }); }));
-    plate.position.set(0.12, -0.35, D / 2 + 0.006); g.add(plate);
+    var plateW = faceW * 0.46, plateH = plateW * 0.4;
+    var brassSide = new THREE.MeshStandardMaterial({ color: 0xc9a85c, metalness: 1, roughness: 0.3 });
+    var plate = new THREE.Mesh(new THREE.BoxGeometry(plateW, plateH, 0.003),
+      [brassSide, brassSide, brassSide, brassSide,
+       new THREE.MeshStandardMaterial({ map: plateTex(p, presentedTo), metalness: 0.75, roughness: 0.3, envMapIntensity: 0.8 }), brassSide]);
+    plate.position.set(faceW * 0.17, ROW_Y, FACE_Z + 0.0015); plate.castShadow = true; g.add(plate);
     return g;
   }
 
@@ -241,7 +439,7 @@
         var span = Math.min(W.len - 2, items.length * 2.2);
         var x = items.length === 1 ? 0 : -span / 2 + span * (i / (items.length - 1));
         g.position.copy(W.pos); g.position.y = EYE + 0.05; g.rotation.y = W.rot;
-        g.translateX(x); g.translateZ(0.035);
+        g.translateX(x); g.translateZ(0.004);
         scene.add(g);
         // gallery spot from the ceiling
         var spot = new THREE.SpotLight(0xfff6e8, 22, 7, 0.32, 0.65, 1.6);
