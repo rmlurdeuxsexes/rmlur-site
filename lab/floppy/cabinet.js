@@ -570,7 +570,7 @@ let viewerDrawer = null;
 viewer = createCaseViewer({
   THREE, renderer, canvas, makeDisk: buildDisk, insets,
   onLid: (open, p) => { if (open && p) playPreview(p); else { audio.pause(); if (dockItem) refreshPlay(); } },
-  onIndex: (i, p) => { const n = viewerDrawer ? viewerDrawer.disks.length : 1; fillDock(p, i, n, 'case'); ctxEl.textContent = `${viewerDrawer ? viewerDrawer.cfg.label : ''} · ${i + 1} / ${n}`; },
+  onIndex: (i, p) => { const n = viewerDrawer ? viewerDrawer.cfg.items.length : 1; /* the case pages the whole drawer */ fillDock(p, i, n, 'case'); ctxEl.textContent = `${viewerDrawer ? viewerDrawer.cfg.label : ''} · ${i + 1} / ${n}`; },
   onClose: () => {
     document.body.classList.remove('viewing');
     if (viewerDrawer && openDrawer === viewerDrawer) setCurrent(viewerDrawer, viewer.index);
@@ -582,7 +582,7 @@ function whiteFade() { const f = $('fade'); f.classList.add('on'); requestAnimat
 function openCase() {
   const d = openDrawer; if (!d || !d.disks.length) return;
   viewerDrawer = d; whiteFade(); document.body.classList.add('viewing');
-  viewer.open(d.disks.map(k => k.userData.product), d.cur);
+  viewer.open(d.cfg.items, d.cur);
 }
 function selectDisk(disk) {   // kept for tests/console: open a specific disk in its case
   const d = drawerObjs.find(x => x.disks.includes(disk)); if (!d) return;
