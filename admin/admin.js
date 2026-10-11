@@ -21,6 +21,8 @@ document.getElementById('login-btn').addEventListener('click', async () => {
     loginForm.style.display = 'none';
     uploadForm.style.display = 'block';
     document.getElementById('prices-panel').style.display = 'block';
+    document.getElementById('post-panel').style.display = 'block';
+    loadMyPosts();
   } else {
     const data = await res.json().catch(() => ({}));
     loginStatus.textContent = data.error || 'login failed';
@@ -164,6 +166,70 @@ document.getElementById('reprice-btn').addEventListener('click', async (event) =
     }
   } catch (err) {
     status.textContent = 'Error: ' + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ── Post box: blog rants + gallery art, Twitter-style ──
+const postBody = document.getElementById('post-body');
+const postCount = document.getElementById('post-count');
+const postStatus = document.getElementById('post-status');
+const postList = document.getElementById('post-list');
+postBody.addEventListener('input', () => { postCount.textContent = `${postBody.value.length} / 5000`; });
+
+async function loadMyPosts() {
+  postList.textContent = '';
+  for (const kind of ['rant', 'art']) {
+    const res = await fetch(`/api/posts?kind=${kind}`).catch(() => null);
+    const posts = res && res.ok ? await res.json() : [];
+    for (const p of posts.slice(0, 20)) {
+      const li = document.createElement('li');
+      if (p.image) { const im = document.createElement('img'); im.src = p.image; im.alt = ''; li.appendChild(im); }
+      const span = document.createElement('span');
+      span.textContent = `[${kind === 'art' ? 'gallery' : 'blog'}] ${new Date(p.createdAt).toLocaleString()} — ${p.title ? p.title + ': ' : ''}${(p.body || '').slice(0, 140)}`;
+      li.appendChild(span);
+      const del = document.createElement('button');
+      del.type = 'button'; del.textContent = 'Delete';
+      del.addEventListener('click', async () => {
+        if (!confirm('Delete this post?')) return;
+        const r = await fetch(`/api/posts?id=${p.id}`, { method: 'DELETE', credentials: 'include' });
+        if (r.ok) li.remove(); else alert('could not delete');
+      });
+      li.appendChild(del);
+      postList.appendChild(li);
+    }
+  }
+}
+
+document.getElementById('post-btn').addEventListener('click', async (event) => {
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  postStatus.classList.remove('ok');
+  try {
+    const kind = document.querySelector('input[name="post-kind"]:checked').value;
+    postStatus.textContent = 'posting…';
+    const image = await uploadFileIfPresent('post-image');
+    const res = await fetch('/api/posts', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind, image,
+        body: postBody.value,
+        title: document.getElementById('post-title').value,
+        category: document.getElementById('post-category').value || null,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `failed (${res.status})`);
+    postStatus.textContent = kind === 'art' ? 'Posted to the gallery.' : 'Posted to the blog.';
+    postStatus.classList.add('ok');
+    postBody.value = ''; postCount.textContent = '0 / 5000';
+    document.getElementById('post-title').value = '';
+    document.getElementById('post-image').value = '';
+    loadMyPosts();
+  } catch (err) {
+    postStatus.textContent = 'Error: ' + err.message;
   } finally {
     btn.disabled = false;
   }

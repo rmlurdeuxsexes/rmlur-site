@@ -19,6 +19,31 @@
   <div class="status" id="login-status"></div>
 </div>
 
+<section id="post-panel">
+  <h1>Post</h1>
+  <div class="post-kind" role="radiogroup" aria-label="Post type">
+    <label><input type="radio" name="post-kind" value="rant" checked> Blog (rant)</label>
+    <label><input type="radio" name="post-kind" value="art"> Gallery (art)</label>
+  </div>
+  <textarea id="post-body" rows="7" placeholder="type or paste from your notes…"></textarea>
+  <div class="post-row">
+    <input type="text" id="post-title" placeholder="title (optional)">
+    <select id="post-category" aria-label="Blog category">
+      <option value="">no category</option>
+      <option value="art">Art</option>
+      <option value="fashion">Fashion</option>
+      <option value="library">Library</option>
+      <option value="music">Music</option>
+    </select>
+  </div>
+  <label for="post-image">Image (optional for blog, required for gallery)</label>
+  <input type="file" id="post-image" accept="image/png,image/jpeg,image/webp,image/gif">
+  <button type="button" id="post-btn">Post</button>
+  <span class="post-count" id="post-count">0 / 5000</span>
+  <div class="status" id="post-status"></div>
+  <ul id="post-list"></ul>
+</section>
+
 <form id="upload-form">
   <h1>Add Product</h1>
 

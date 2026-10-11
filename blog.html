@@ -25,13 +25,15 @@
   <div class="page-title">Blog</div>
 
   <nav class="blog-cats" aria-label="Blog categories">
+    <a href="#all">All</a>
     <a href="#art">Art</a>
     <a href="#fashion">Fashion</a>
     <a href="#library">Library</a>
     <a href="#music">Music</a>
   </nav>
 
-  <p class="coming-soon">No posts yet — drop new entries into this page and they'll show up here.</p>
+  <div class="feed" id="feed" aria-live="polite"></div>
+  <p class="coming-soon" id="feed-empty" hidden>No posts yet.</p>
 </main>
 
 <footer class="site-footer">
@@ -40,5 +42,6 @@
 </footer>
 
 <script src="radio-player.js"></script>
+<script src="blog.js"></script>
 </body>
 </html>

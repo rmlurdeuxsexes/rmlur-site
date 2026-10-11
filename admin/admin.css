@@ -9,7 +9,19 @@ button{margin-top:24px;padding:10px 16px;border:1px solid var(--ink);border-radi
 button:hover{background:var(--ink);color:var(--paper)}
 .status{margin-top:14px;font-size:12px;color:var(--rec-red)}
 .status.ok{color:var(--teal)}
-#upload-form,#prices-panel{display:none}
+#upload-form,#prices-panel,#post-panel{display:none}
+#post-panel{margin-bottom:64px;padding-bottom:32px;border-bottom:1px solid var(--line)}
+#post-body{min-height:140px;resize:vertical;line-height:1.55}
+.post-kind{display:flex;gap:22px;margin-bottom:12px}
+.post-kind label{display:flex;align-items:center;gap:6px;margin:0;font-size:11px;color:var(--ink)}
+.post-row{display:flex;gap:10px;margin-top:10px}
+.post-row input{flex:1}.post-row select{width:auto}
+.post-count{margin-left:12px;font-size:11px;color:var(--ink-soft)}
+#post-list{list-style:none;margin-top:22px;font-size:12px}
+#post-list li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+#post-list li span{flex:1;white-space:pre-wrap;word-break:break-word;color:var(--ink-soft)}
+#post-list li img{width:44px;height:44px;object-fit:cover;border-radius:3px}
+#post-list button{margin:0;padding:4px 8px;font-size:10px}
 #prices-panel{margin-top:64px;padding-top:32px;border-top:1px solid var(--line)}
 .hint{font-size:12px;line-height:1.6;color:var(--ink-soft)}
 #reprice-report{margin-top:14px;padding-left:18px;font-size:12px;line-height:1.7}

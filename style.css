@@ -416,6 +416,15 @@ main#shop{max-width:1280px;margin:0 auto;padding:28px 32px 48px}
   font-family:var(--font-mono);font-size:12px;color:var(--ink-soft);
   padding:60px 0;text-align:center;border-top:1px solid #eee;
 }
+.blog-cats a.on{color:var(--ink);border-color:var(--ink)}
+/* feed — posts typed/pasted from /admin, newest first, MySpace-bulletin plain */
+.feed{border-top:1px solid #eee}
+.post{padding:26px 0;border-bottom:1px solid #eee}
+.post-meta{display:flex;gap:10px;align-items:baseline;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:12px}
+.post-meta b{color:var(--ink);font-weight:600}
+.post-title{font-size:14px;font-weight:600;margin-bottom:8px}
+.post-body{font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.post-img{display:block;max-width:100%;margin-top:14px;border-radius:2px}
 
 /* --- design / lookbook --- */
 .design-grid{
@@ -540,3 +549,9 @@ body.home-static{background:#fff;color:var(--ink);font-family:var(--font-mono);m
 .mpc-wheel.dragging,.mpc-fader.dragging{cursor:grabbing}
 .mpc-pad{position:absolute;display:block;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none}
 .mpc-pad:focus-visible{outline:1px solid rgba(0,0,0,.35);outline-offset:2px}
+
+/* ================= GALLERY — white wall, art hung in a masonry grid ================= */
+.gallery-wall{columns:3 240px;column-gap:28px}
+.gallery-piece{break-inside:avoid;margin:0 0 34px;cursor:zoom-in}
+.gallery-piece img{display:block;width:100%;height:auto;background:#f6f6f6;box-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 22px rgba(0,0,0,.06)}
+.gallery-cap{margin-top:10px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);text-align:center}

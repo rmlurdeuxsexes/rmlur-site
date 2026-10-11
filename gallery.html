@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gallery — RMLUR :: deux SEXES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<img src="assets/worldstar-watermark.png" alt="RMLUR STAR" class="site-watermark">
+
+<div class="corner-nav">
+  <a href="about.html">About</a>
+  <a href="blog.html">Blog</a>
+  <a href="design.html">Design</a>
+  <span class="corner-sep">|</span>
+  <a href="mailto:jayrewindbeatz@gmail.com">Contact</a>
+</div>
+
+<!-- ================= PHOTO LIGHTBOX (same full-bleed pattern as the shop's product overlay) ================= -->
+<div id="lightbox-overlay" class="pdp-overlay" hidden>
+  <div class="pdp-topbar">
+    <button id="lightbox-back" class="pdp-back" aria-label="Close">‹</button>
+  </div>
+  <div class="pdp-body">
+    <div class="pdp-image portfolio-lightbox-image">
+      <img id="lightbox-img" src="" alt="">
+      <p id="lightbox-cap" class="gallery-cap"></p>
+    </div>
+  </div>
+</div>
+
+<main class="page-wrap">
+  <a class="back-link" href="index.html">← Back</a>
+  <div class="page-title">Gallery</div>
+
+  <div id="gallery" class="gallery-wall"></div>
+</main>
+
+<footer class="site-footer">
+  <span>♪ ♫ ♪ ♫ ♪</span>
+  <span>jayrewindbeatz@gmail.com</span>
+</footer>
+
+<script src="jasons-work.js"></script>
+<script src="gallery.js"></script>
+<script src="radio-player.js"></script>
+</body>
+</html>
