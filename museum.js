@@ -156,11 +156,14 @@
     return canvasTex(2048, 2048, function (ctx, w, h) {
       var cx = w / 2, cy = h / 2, R = w / 2;
       var light = base.light, mid = base.mid, dark = base.dark;
-      var cg = ctx.createConicGradient(-Math.PI / 2 + 0.35, cx, cy);
-      [[0, mid], [0.06, light], [0.13, mid], [0.25, dark], [0.36, mid], [0.44, light], [0.5, mid],
-       [0.56, light], [0.63, mid], [0.75, dark], [0.86, mid], [0.94, light], [1, mid]]
-        .forEach(function (st) { cg.addColorStop(st[0], st[1]); });
-      ctx.fillStyle = cg; ctx.fillRect(0, 0, w, h);
+      // conic sheen (older Safari has no createConicGradient → flat base tone)
+      var cg = ctx.createConicGradient ? ctx.createConicGradient(-Math.PI / 2 + 0.35, cx, cy) : null;
+      if (cg) {
+        [[0, mid], [0.06, light], [0.13, mid], [0.25, dark], [0.36, mid], [0.44, light], [0.5, mid],
+         [0.56, light], [0.63, mid], [0.75, dark], [0.86, mid], [0.94, light], [1, mid]]
+          .forEach(function (st) { cg.addColorStop(st[0], st[1]); });
+      }
+      ctx.fillStyle = cg || mid; ctx.fillRect(0, 0, w, h);
       // soft overall falloff toward the rim
       var rg = ctx.createRadialGradient(cx, cy, R * 0.3, cx, cy, R);
       rg.addColorStop(0, 'rgba(255,255,255,0.10)'); rg.addColorStop(1, 'rgba(0,0,0,0.10)');
@@ -448,8 +451,7 @@
         spot.target.position.copy(from); spot.castShadow = true; spot.shadow.mapSize.set(1024, 1024);
         spot.shadow.bias = -0.0004; spot.shadow.radius = 6;
         scene.add(spot); scene.add(spot.target);
-        var focus = from.clone().addScaledVector(n, 1.35); focus.y = EYE;
-        plaques.push({ group: g, data: p, focus: focus, look: from.clone() });
+        plaques.push({ group: g, data: p, look: from.clone(), normal: n.clone() });
       });
     });
   }
@@ -513,9 +515,20 @@
       if (k >= 1) anim = null;
     };
   }
+  // Stand far enough back that the whole plaque fits the screen — on a
+  // portrait phone the horizontal field of view is what limits it.
+  function focusPoint(pl) {
+    var vHalf = THREE.MathUtils.degToRad(camera.fov / 2);
+    var hHalf = Math.atan(Math.tan(vHalf) * camera.aspect);
+    var dist = Math.max(1.35, (0.86 * 1.12 / 2) / Math.tan(hHalf), (1.07 * (camera.aspect < 0.9 ? 2.1 : 1.15) / 2) / Math.tan(vHalf));
+    var p = pl.look.clone().addScaledVector(pl.normal, dist); p.y = EYE;
+    return p;
+  }
   function focusOn(pl) {
-    target = pl; var a = anglesTo(pl.focus, pl.look);
-    glide(pl.focus, a.yaw, a.pitch); showCard(pl.data);
+    // portrait: aim below centre so the plaque sits above the details card
+    var aim = pl.look.clone(); if (camera.aspect < 0.9) aim.y -= 0.3;
+    target = pl; var to = focusPoint(pl), a = anglesTo(to, aim);
+    glide(to, a.yaw, a.pitch); showCard(pl.data);
     backBtn.hidden = false; hud.textContent = 'esc or step back to return';
   }
   function stepBack() {

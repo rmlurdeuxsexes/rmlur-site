@@ -18,7 +18,7 @@ export default {
         request,
         onBeforeGenerateToken: async () => ({
           allowedContentTypes: [
-            'image/jpeg', 'image/png', 'image/webp',
+            'image/jpeg', 'image/png', 'image/webp', 'image/gif',
             'audio/mpeg', 'audio/wav', 'audio/x-wav',
             'application/zip', 'application/x-zip-compressed',
             'application/octet-stream',

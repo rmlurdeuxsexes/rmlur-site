@@ -155,7 +155,7 @@ document.getElementById('reprice-btn').addEventListener('click', async (event) =
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `failed (${res.status})`);
     const missing = data.beats.filter(b => !b.tiers.some(t => t.buyable));
-    status.textContent = `Updated ${data.updated} beats. ${missing.length ? missing.length + ' have no download file yet (listed in red).' : 'All of them have a download file.'}`;
+    status.textContent = `Updated ${data.updated} beats. ${missing.length ? `${missing.length} ${missing.length === 1 ? 'has' : 'have'} no download file yet (listed in red).` : 'All of them have a download file.'}`;
     status.classList.add('ok');
     for (const b of data.beats) {
       const li = document.createElement('li');
