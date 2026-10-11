@@ -5,58 +5,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <title>Floppy Cabinet (lab) — RMLUR</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Nothing+You+Could+Do&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Nothing+You+Could+Do&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
-  html,body{margin:0;height:100%;background:#fff;color:#1b1b1b;font-family:"IBM Plex Mono",ui-monospace,monospace;overflow:hidden}
+  :root{--ink:#1b1b1b;--soft:#6b675e;--line:#d9d6ce;--gutter:16px}
+  html,body{margin:0;height:100%;background:#fff;color:var(--ink);font-family:"IBM Plex Mono",ui-monospace,monospace;overflow:hidden}
   #stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
-  .hud{position:fixed;left:0;right:0;bottom:14px;text-align:center;font-size:11px;letter-spacing:.12em;color:#55524a;pointer-events:none;text-transform:uppercase}
-  .top{position:fixed;top:12px;left:16px;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
-  .top a{color:inherit;text-decoration:none;border-bottom:1px solid #aaa}
-  .panel{position:fixed;right:16px;bottom:48px;width:min(300px,calc(100vw - 32px));background:#fff;border:1px solid #1b1b1b;padding:14px;font-size:12px;display:none}
-  .panel.show{display:block}
-  .panel h2{margin:0 0 4px;font-size:14px;font-weight:500}
-  .panel .meta{color:#55524a;margin-bottom:10px}
-  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .btn{font:inherit;font-size:12px;padding:7px 12px;border:1px solid #1b1b1b;background:#fff;color:#1b1b1b;border-radius:2px;cursor:pointer}
-  .btn.buy{background:#1b1b1b;color:#fff}
-  .pw{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);display:none;gap:8px;background:#fff;border:1px solid #1b1b1b;padding:10px;font-size:12px}
+  button,select,input{font:inherit;color:inherit}
+
+  /* Layout rule: everything at the top lives in .topbar, everything at the bottom
+     lives in .dock. Both are normal-flow flex containers, so their children can
+     never overlap each other; the 3D framing reads the dock's height (see
+     cabinet.js insets()) so nothing in the scene sits under it either. */
+  .topbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:baseline;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;padding:12px var(--gutter) 8px;background:linear-gradient(to bottom,#fff 0,#fff calc(100% - 8px),rgba(255,255,255,0) 100%);font-size:11px;letter-spacing:.14em;text-transform:uppercase;z-index:4;pointer-events:none}
+  .topbar > *{pointer-events:auto;min-width:0}
+  .topbar a,.topbar .link{color:inherit;text-decoration:none;background:none;border:0;border-bottom:1px solid #aaa;padding:0 0 2px;cursor:pointer;letter-spacing:inherit;text-transform:inherit;font-size:inherit}
+  .topbar .ctx{color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .topbar .back{display:none}
+  body.viewing .topbar .home{display:none}
+  body.viewing .topbar .back{display:inline}
+
+  .dock{position:fixed;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px var(--gutter) 14px;text-align:center;z-index:4;
+    background:linear-gradient(to top,#fff 0,#fff calc(100% - 18px),rgba(255,255,255,0) 100%)}   /* white band: dock text never sits on the 3D */
+  .dock > *{max-width:520px}
+  .dock[hidden]{display:none}
+  .dots{display:flex;gap:10px;justify-content:center;min-height:9px}
+  .dots[hidden]{display:none}
+  .dots .dot{width:8px;height:8px;border-radius:50%;border:0;padding:0;background:#cfccc4;cursor:pointer}
+  .dots .dot.on{background:var(--ink)}
+  .item{display:flex;flex-direction:column;gap:3px;max-width:100%}
+  .item h2{margin:0;font-size:14px;font-weight:500;letter-spacing:.04em;overflow-wrap:anywhere}
+  .item .meta{color:var(--soft);font-size:12px}
+  .controls{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+  .btn{font-size:12px;padding:8px 13px;border:1px solid var(--ink);background:#fff;border-radius:2px;cursor:pointer;line-height:1.1}
+  .btn:disabled{opacity:.45;cursor:default}
+  .btn.buy{background:var(--ink);color:#fff}
+  select.btn{padding:7px 8px}
+  .hint{font-size:10px;letter-spacing:.1em;color:#8a877f;text-transform:uppercase;line-height:1.5;text-wrap:balance}
+  .hint .v{display:none}
+  body.viewing .hint .b{display:none}
+  body.viewing .hint .v{display:inline}
+
+  .pw{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:none;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;background:#fff;border:1px solid var(--ink);padding:10px;font-size:12px;z-index:5;max-width:calc(100vw - 2 * var(--gutter));box-sizing:border-box}
   .pw.show{display:flex}
-  .pw input{font:inherit;padding:6px 8px;border:1px solid #1b1b1b;width:150px}
-  .pw .err{color:#c8322b;align-self:center}
-  /* clear-case viewer (case-viewer.js): white sweep, buy panel under the case */
-  .fade{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s ease}
+  .pw input{padding:6px 8px;border:1px solid var(--ink);width:150px}
+  .pw .err{color:#c8322b}
+
+  .fade{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:3}
   .fade.on{opacity:1;transition:none}
-  .vbar,.vdots,.vhint{display:none}
-  body.viewing .vbar{display:flex;position:fixed;top:12px;left:16px;right:16px;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;z-index:5}
-  body.viewing .vbar button{font:inherit;letter-spacing:inherit;text-transform:inherit;background:none;border:0;border-bottom:1px solid #aaa;padding:0 0 2px;cursor:pointer;color:#1b1b1b}
-  body.viewing .top,body.viewing .hud{display:none}
-  body.viewing .vdots{display:flex;position:fixed;left:0;right:0;bottom:calc(min(250px,36vh) - 52px);justify-content:center;gap:8px}
-  .vdots[hidden]{display:none!important}
-  .vdots .dot{width:7px;height:7px;border-radius:50%;border:0;padding:0;background:#c9c9c9;cursor:pointer}
-  .vdots .dot.on{background:#1b1b1b}
-  body.viewing .vhint{display:block;position:fixed;left:0;right:0;bottom:14px;text-align:center;font-size:10px;letter-spacing:.12em;color:#8a877f;text-transform:uppercase}
-  body.viewing .panel{left:50%;right:auto;transform:translateX(-50%);bottom:40px;border:0;background:transparent;text-align:center;width:min(420px,calc(100vw - 32px))}
-  body.viewing .panel .row{justify-content:center}
 </style>
 </head>
 <body>
-<div class="top"><a href="/store.html">← store</a> &nbsp; lab / floppy cabinet</div>
 <canvas id="stage"></canvas>
-<div class="hud" id="hud">tap a drawer · esc to close</div>
+
+<header class="topbar" id="topbar">
+  <span class="home"><a href="/store.html">← store</a> &nbsp; lab / floppy cabinet</span>
+  <button class="link back" id="vBack" type="button">← back to the drawer</button>
+  <span class="ctx" id="ctx">tap a drawer</span>
+</header>
 
 <form class="pw" id="pw" autocomplete="off">
   <span>VAULT KEY</span><input id="pwInput" type="password" aria-label="Vault password" placeholder="password">
-  <button class="btn buy" type="submit">Turn key</button><span class="err" id="pwErr"></span>
+  <button class="btn buy" type="submit">Turn key</button><span class="err" id="pwErr" aria-live="polite"></span>
 </form>
 
 <div class="fade" id="fade"></div>
-<div class="vbar" id="vBar"><button id="vBack" type="button">← back to the drawer</button><span><span id="vLabel"></span> · <span id="vCount"></span></span></div>
-<div class="vdots" id="vDots" role="group" aria-label="Disks in this drawer"></div>
-<div class="vhint">tap the case to open · drag sideways to flip · swipe or scroll for the next disk · esc to go back</div>
-<div class="panel" id="panel" role="dialog" aria-live="polite">
-  <h2 id="pTitle"></h2><div class="meta" id="pMeta"></div>
-  <div class="row"><button class="btn" id="pPlay">Play</button><select class="btn" id="pTier" aria-label="License"></select><button class="btn buy" id="pBuy">Buy</button></div>
-</div>
+
+<section class="dock" id="dock" hidden aria-live="polite">
+  <div class="dots" id="vDots" role="group" aria-label="Disks in this drawer" hidden></div>
+  <div class="item"><h2 id="pTitle"></h2><div class="meta" id="pMeta"></div></div>
+  <div class="controls">
+    <button class="btn" id="pPlay" type="button">Play</button>
+    <select class="btn" id="pTier" aria-label="License"></select>
+    <button class="btn buy" id="pBuy" type="button">Buy</button>
+    <button class="btn" id="pCase" type="button">Open case</button>
+  </div>
+  <div class="hint" id="hint"><span class="b">tap the disk to flip to the next beat · tap a flipped disk to go back · esc closes the drawer</span><span class="v">tap the case to open it and play · drag sideways to flip it over · swipe or scroll for the next disk</span></div>
+</section>
+
 <audio id="audio" preload="none"></audio>
 <noscript><p style="padding:60px 16px">This page needs JavaScript. <a href="/store.html">Go to the store</a>.</p></noscript>
 
