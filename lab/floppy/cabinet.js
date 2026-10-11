@@ -516,17 +516,28 @@ function showItem(d) {
 }
 
 /* ---------------- preview audio ----------------
-   Catalog paths are site-relative ("previews/x.mp3"); resolve them from the
-   site root, not from /lab/floppy/. A HEAD check tells us up front whether
-   the file exists so the button says so instead of failing silently. */
+   Catalog paths are either site-relative ("previews/x.mp3") or absolute Vercel
+   Blob URLs; relative ones resolve from the site root, not from /lab/floppy/.
+   A metadata probe tells us up front whether the file loads, so the button says
+   so instead of failing silently. */
 const audio = $('audio');
 const previewOk = new Map();   // src -> true | false | Promise
 function previewSrc(p) { return p && p.preview ? new URL(p.preview, location.origin + '/').href : null; }
 function checkPreview(src) {
+  // probe with a throwaway <audio> (loads metadata only). Unlike fetch(), media
+  // elements don't need CORS, so a real cross-origin preview (Vercel Blob) can
+  // never be misreported as missing; only an actual load error counts.
   if (!src) return Promise.resolve(false);
   if (previewOk.has(src)) return Promise.resolve(previewOk.get(src));
-  const pr = fetch(src, { method: 'HEAD' }).then(r => r.ok && !/text\/html/.test(r.headers.get('content-type') || '')).catch(() => false)
-    .then(ok => { previewOk.set(src, ok); return ok; });
+  const pr = new Promise(res => {
+    const a = new Audio(); let settled = false;
+    const done = ok => { if (settled) return; settled = true; a.removeAttribute('src'); a.load(); res(ok); };
+    a.preload = 'metadata';
+    a.addEventListener('loadedmetadata', () => done(true), { once: true });
+    a.addEventListener('error', () => done(false), { once: true });
+    setTimeout(() => done(true), 8000);   // slow network: assume playable rather than block the button
+    a.src = src;
+  }).then(ok => { previewOk.set(src, ok); return ok; });
   previewOk.set(src, pr); return pr;
 }
 function setPlay(label, disabled) { const b = $('pPlay'); b.textContent = label; b.disabled = !!disabled; }
