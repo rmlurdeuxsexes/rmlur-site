@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Placements — RMLUR :: deux SEXES</title>
+<meta name="description" content="JayRewind placements, plaques and accomplishments — a white-wall museum.">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;background:#fff;color:#1b1b1b;font-family:"IBM Plex Mono",ui-monospace,monospace;overflow:hidden}
+  #stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #stage.dragging{cursor:grabbing}
+  #stage.hot{cursor:pointer}
+  .top{position:fixed;top:14px;left:16px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;z-index:3}
+  .top a,.top button{color:inherit;text-decoration:none;border:0;border-bottom:1px solid #aaa;background:none;font:inherit;letter-spacing:inherit;text-transform:inherit;padding:0 0 2px;cursor:pointer}
+  .top button[hidden]{display:none}
+  .hud{position:fixed;left:0;right:0;bottom:14px;text-align:center;font-size:10px;letter-spacing:.14em;color:#8a877f;text-transform:uppercase;pointer-events:none}
+  .card{position:fixed;right:18px;top:50%;transform:translateY(-50%);width:min(300px,calc(100vw - 36px));background:#fff;border:1px solid #1b1b1b;padding:18px 18px 14px;font-size:11px;line-height:1.55;display:none;z-index:3}
+  .card.show{display:block}
+  .card h2{margin:0 0 2px;font-size:14px;font-weight:600;letter-spacing:.02em}
+  .card .sub{color:#55524a;margin-bottom:12px}
+  .card dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+  .card dt{color:#8a877f;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;padding-top:2px}
+  .card dd{margin:0}
+  .card .note{margin-top:10px;color:#55524a;font-size:10.5px}
+  .card .pending{display:inline-block;margin-top:12px;padding:2px 6px;border:1px solid #c8322b;color:#c8322b;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase}
+  .card .links a{color:inherit}
+  @media (max-width:640px){.card{top:auto;bottom:44px;transform:none;left:18px;right:18px;width:auto}}
+</style>
+</head>
+<body>
+<div class="top"><a href="index.html">← RMLUR</a> &nbsp; <button type="button" id="back" hidden>← step back</button></div>
+<canvas id="stage" aria-label="3D museum of JayRewind placements — drag to look around, tap a plaque for details"></canvas>
+<div class="hud" id="hud">drag to look around · tap a plaque</div>
+<aside class="card" id="card" aria-live="polite"></aside>
+<noscript><p style="padding:60px 16px">This page needs JavaScript to show the museum.</p></noscript>
+
+<script src="vendor/three.min.js"></script>
+<script src="museum.js"></script>
+</body>
+</html>
