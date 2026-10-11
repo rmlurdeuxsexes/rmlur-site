@@ -353,7 +353,8 @@ function binView(d) {
   const ins = insets(), freeFrac = Math.max(0.25, (innerHeight - ins.top - ins.bottom - 24) / innerHeight);
   const t = Math.tan((camera.fov * Math.PI) / 360);
   // the front disk (9.4 tall, seen ~52deg from above) takes ~58% of the free height; never wider than 70% of the screen
-  const dist = Math.max(8.2 / (t * 0.58 * freeFrac), 9.4 / (t * camera.aspect * 0.70));
+  // visible height at distance d is 2*d*t, so solve 8.2 = 0.58 * freeFrac * 2*d*t (and the same for width)
+  const dist = Math.max(8.2 / (2 * t * 0.58 * freeFrac), 9.4 / (2 * t * camera.aspect * 0.70));
   const dir = new THREE.Vector3(0, 27, 21).normalize();
   return { pos: f.clone().addScaledVector(dir, dist), look: f };
 }
@@ -538,12 +539,12 @@ function refreshPlay() {
 }
 function stopAudio() { audio.pause(); if (dockItem) refreshPlay(); }
 function playPreview(p) {
-  const src = previewSrc(p); if (!src) return refreshPlay();
+  const src = previewSrc(p); if (!src || previewOk.get(src) === false) return refreshPlay();
   if (audio.dataset.id !== p.id) { audio.src = src; audio.dataset.id = p.id; }
   setPlay('Pause');
   audio.play().catch(() => { previewOk.set(src, false); refreshPlay(); });
 }
-audio.addEventListener('error', () => { if (audio.src) previewOk.set(audio.src, false); if (viewer.active && viewer.lidOpen) viewer.setLid(false); refreshPlay(); });
+audio.addEventListener('error', () => { if (audio.src) previewOk.set(audio.src, false); refreshPlay(); });   // a missing file never closes the case
 audio.addEventListener('ended', () => { refreshPlay(); if (viewer.active && viewer.lidOpen) viewer.setLid(false); });
 $('pPlay').addEventListener('click', () => {
   if (!dockItem) return;
