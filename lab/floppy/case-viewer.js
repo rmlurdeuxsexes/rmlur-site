@@ -259,7 +259,7 @@ export function createCaseViewer({ THREE, renderer, canvas, makeDisk, insets, on
     const ins = insets ? insets() : { top: 0, bottom: 0 };
     const vh = st.vh, vw = st.vw, freePx = Math.max(120, vh - ins.top - ins.bottom - 24);
     const t = Math.tan((camera.fov * Math.PI) / 360);
-    const fitH = (H * 1.34) / 2 / (t * (freePx / vh));                            // tilted case fits in ~75% of the free height
+    const fitH = (H * 1.42) / 2 / (t * (freePx / vh));                            // tilted case (lid open, in perspective) fits in ~70% of the free height
     const fitW = ((W + 1.6) * (1 + open)) / 2 / (t * camera.aspect * 0.90);       // width incl. the open lid
     const swing = Math.sin(Math.PI * open);                                     // lid edge-on toward the camera mid-swing
     const z = Math.max(fitH, fitW) * (1 + 0.28 * swing);
