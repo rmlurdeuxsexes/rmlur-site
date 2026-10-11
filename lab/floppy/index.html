@@ -23,6 +23,20 @@
   .pw.show{display:flex}
   .pw input{font:inherit;padding:6px 8px;border:1px solid #1b1b1b;width:150px}
   .pw .err{color:#c8322b;align-self:center}
+  /* clear-case viewer (case-viewer.js): white sweep, buy panel under the case */
+  .fade{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s ease}
+  .fade.on{opacity:1;transition:none}
+  .vbar,.vdots,.vhint{display:none}
+  body.viewing .vbar{display:flex;position:fixed;top:12px;left:16px;right:16px;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;z-index:5}
+  body.viewing .vbar button{font:inherit;letter-spacing:inherit;text-transform:inherit;background:none;border:0;border-bottom:1px solid #aaa;padding:0 0 2px;cursor:pointer;color:#1b1b1b}
+  body.viewing .top,body.viewing .hud{display:none}
+  body.viewing .vdots{display:flex;position:fixed;left:0;right:0;bottom:calc(min(250px,36vh) - 52px);justify-content:center;gap:8px}
+  .vdots[hidden]{display:none!important}
+  .vdots .dot{width:7px;height:7px;border-radius:50%;border:0;padding:0;background:#c9c9c9;cursor:pointer}
+  .vdots .dot.on{background:#1b1b1b}
+  body.viewing .vhint{display:block;position:fixed;left:0;right:0;bottom:14px;text-align:center;font-size:10px;letter-spacing:.12em;color:#8a877f;text-transform:uppercase}
+  body.viewing .panel{left:50%;right:auto;transform:translateX(-50%);bottom:40px;border:0;background:transparent;text-align:center;width:min(420px,calc(100vw - 32px))}
+  body.viewing .panel .row{justify-content:center}
 </style>
 </head>
 <body>
@@ -35,6 +49,10 @@
   <button class="btn buy" type="submit">Turn key</button><span class="err" id="pwErr"></span>
 </form>
 
+<div class="fade" id="fade"></div>
+<div class="vbar" id="vBar"><button id="vBack" type="button">← back to the drawer</button><span><span id="vLabel"></span> · <span id="vCount"></span></span></div>
+<div class="vdots" id="vDots" role="group" aria-label="Disks in this drawer"></div>
+<div class="vhint">tap the case to open · drag sideways to flip · swipe or scroll for the next disk · esc to go back</div>
 <div class="panel" id="panel" role="dialog" aria-live="polite">
   <h2 id="pTitle"></h2><div class="meta" id="pMeta"></div>
   <div class="row"><button class="btn" id="pPlay">Play</button><select class="btn" id="pTier" aria-label="License"></select><button class="btn buy" id="pBuy">Buy</button></div>
