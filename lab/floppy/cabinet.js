@@ -4,6 +4,7 @@
    slides, grey dividers inside, white diamond key. Content comes from
    data/cabinet.config.json + the catalog (see cabinet-data.js). */
 import { loadProducts, assignDrawers, checkPassword } from './cabinet-data.js';
+import { createCaseViewer } from './case-viewer.js';
 
 const THREE = window.THREE;
 const $ = id => document.getElementById(id);
@@ -269,10 +270,12 @@ const VIEWS = {
   top: { pos: new THREE.Vector3(0, 132, 104), look: new THREE.Vector3(0, 16, 26) },
   bottom: { pos: new THREE.Vector3(0, 112, 98), look: new THREE.Vector3(0, 4, 26) },
 };
+let viewer = null;   // clear-case viewer, created once the drawers exist
 let camPos = VIEWS.closed.pos.clone(), camLook = VIEWS.closed.look.clone(), view = 'closed';
 function resize() {
   const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
   camera.fov = w / h < 1 ? 28 / Math.min(1, (w / h) * 1.1) : 28; camera.updateProjectionMatrix();
+  if (viewer) viewer.resize(w, h);
 }
 addEventListener('resize', resize); resize();
 
@@ -292,9 +295,9 @@ function pick(e) {
   if (hit) { let o = hit.object; while (o && !drawerObjs.some(d => d.face === o)) o = o.parent; return { type: 'drawer', drawer: drawerObjs.find(d => d.face === o) }; }
   return null;
 }
-canvas.addEventListener('pointermove', e => { const p = pick(e); hoverDrawer = p?.type === 'drawer' ? p.drawer : null; canvas.style.cursor = p ? 'pointer' : 'default'; });
+canvas.addEventListener('pointermove', e => { if (viewer.active) return; const p = pick(e); hoverDrawer = p?.type === 'drawer' ? p.drawer : null; canvas.style.cursor = p ? 'pointer' : 'default'; });
 canvas.addEventListener('click', e => {
-  if (busy) return;
+  if (busy || viewer.active) return;
   const p = pick(e);
   if (!p) return;
   if (p.type === 'disk') return selectDisk(p.disk);
@@ -316,24 +319,52 @@ function closeDrawer(silent) {
   if (openDrawer) { openDrawer.target = 0; openDrawer = null; }
   view = 'closed'; if (!silent) hud.textContent = 'tap a drawer · esc to close';
 }
-function selectDisk(d) {
-  if (selected && selected !== d) selected.userData.lift = 0;
-  selected = d; d.userData.lift = 1;
-  const p = d.userData.product;
+/* selecting a disk opens it in the clear-case viewer (case-viewer.js); the
+   buy panel moves under the case and opening the lid plays the preview */
+function fillPanel(p) {
   $('pTitle').textContent = p.title; $('pMeta').textContent = [p.genre, p.bpm ? p.bpm + ' bpm' : '', p.key].filter(Boolean).join(' · ');
   const opts = (p.tiers || []).slice().sort((a, b) => a.price - b.price); if (p.exclusive) opts.push({ id: 'exclusive', label: 'EXCLUSIVE', price: p.exclusive.price, stripeLink: p.exclusive.stripeLink });
   const sel = $('pTier'); sel.innerHTML = ''; opts.forEach((t, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${t.label} $${Number(t.price).toFixed(2).replace(/\.00$/, '')}`; sel.appendChild(o); });
   $('panel').classList.add('show'); $('panel')._opts = opts; $('panel')._p = p;
-  const a = $('audio'); a.pause(); $('pPlay').textContent = 'Play';
 }
-function deselect() { if (selected) selected.userData.lift = 0; selected = null; $('panel').classList.remove('show'); $('audio').pause(); }
+function renderDots(n, i) {
+  const el = $('vDots'); el.innerHTML = ''; el.hidden = n < 2;
+  for (let k = 0; k < n; k++) { const b = document.createElement('button'); b.className = 'dot' + (k === i ? ' on' : ''); b.setAttribute('aria-label', `Disk ${k + 1} of ${n}`); b.addEventListener('click', () => { if (k !== viewer.index) viewer.go(k - viewer.index); }); el.appendChild(b); }
+  $('vCount').textContent = `${i + 1} / ${n}`;
+}
+function playPreview(p) {
+  const a = $('audio');
+  if (!p) { a.pause(); $('pPlay').textContent = 'Play'; return; }
+  if (a.dataset.id !== p.id) { a.src = p.preview || ''; a.dataset.id = p.id; }
+  a.play().then(() => { $('pPlay').textContent = 'Pause'; }).catch(() => { $('pPlay').textContent = 'Unavailable'; });
+}
+let viewerDrawer = null;
+viewer = createCaseViewer({
+  THREE, renderer, canvas, makeDisk: buildDisk,
+  onLid: (open, p) => { if (open && p) playPreview(p); else { $('audio').pause(); $('pPlay').textContent = 'Play'; } },
+  onIndex: (i, p) => { fillPanel(p); renderDots(viewerDrawer ? Math.min(36, viewerDrawer.cfg.items.length) : 1, i); },
+  onClose: () => { document.body.classList.remove('viewing'); $('panel').classList.remove('show'); selected = null; hud.textContent = openDrawer ? openDrawer.cfg.label + ' · tap a disk · esc to close' : 'tap a drawer · esc to close'; },
+});
+viewer.resize(innerWidth, innerHeight);
+function whiteFade() { const f = $('fade'); f.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove('on'))); }
+function selectDisk(d) {
+  const drawer = drawerObjs.find(x => x.disks.includes(d)); if (!drawer) return;
+  viewerDrawer = drawer; selected = d;
+  whiteFade(); document.body.classList.add('viewing');
+  $('vLabel').textContent = drawer.cfg.label;
+  viewer.open(drawer.cfg.items.slice(0, 36), drawer.disks.indexOf(d));
+  hud.textContent = '';
+}
+function deselect() { if (viewer.active) viewer.close(); selected = null; $('panel').classList.remove('show'); $('audio').pause(); }
+$('vBack').addEventListener('click', () => { whiteFade(); viewer.close(); });
 
 $('pPlay').addEventListener('click', () => {
+  if (viewer.active) return viewer.setLid(!viewer.lidOpen);     // the case lid is the play button
   const a = $('audio'), p = $('panel')._p; if (!p) return;
   if (!a.paused) { a.pause(); $('pPlay').textContent = 'Play'; return; }
-  a.src = p.preview || ''; a.play().then(() => { $('pPlay').textContent = 'Pause'; }).catch(() => { $('pPlay').textContent = 'Unavailable'; });
+  playPreview(p);
 });
-$('audio').addEventListener('ended', () => { $('pPlay').textContent = 'Play'; });
+$('audio').addEventListener('ended', () => { $('pPlay').textContent = 'Play'; if (viewer.active && viewer.lidOpen) viewer.setLid(false); });
 $('pBuy').addEventListener('click', async () => {
   const panel = $('panel'), tier = panel._opts[$('pTier').value], p = panel._p; if (!tier) return;
   const fallback = () => { location.href = tier.stripeLink || 'mailto:jayrewindbeatz@gmail.com?subject=' + encodeURIComponent(`Buy "${p.title}" — ${tier.label}`); };
@@ -390,8 +421,10 @@ function frame(now) {
   const v = VIEWS[view];
   camPos.lerp(v.pos, Math.min(1, dt * 3)); camLook.lerp(v.look, Math.min(1, dt * 3));
   camera.position.copy(camPos); camera.lookAt(camLook);
-  renderer.render(scene, camera);
+  viewer.update(dt);
+  if (viewer.active) renderer.render(viewer.scene, viewer.camera);   // the bin keeps its state underneath
+  else renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__cabinet = { drawers: drawerObjs, requestOpen, closeDrawer, selectDisk, tune: { renderer, key, fill, hemi: scene.children.find(o => o.isHemisphereLight) } };
+window.__cabinet = { drawers: drawerObjs, requestOpen, closeDrawer, selectDisk, viewer, tune: { renderer, key, fill, hemi: scene.children.find(o => o.isHemisphereLight) } };
