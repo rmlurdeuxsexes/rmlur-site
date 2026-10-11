@@ -144,7 +144,7 @@ const FACE_W = CELL_W - 0.8, FACE_H = CELL_H - 0.8, FACE_D = 3;
 // disks in an open drawer: one row standing on the bin floor, leaning back a
 // little so the front label faces the camera; flipped disks fall forward onto
 // a pile. Sized so a full row (max) still clears the bin's back wall.
-const STACK = { z0: -FACE_D / 2 - 9.6, gap: 0.7, floor: -6.2, lean: -0.34, flat: 1.25, max: 22 };
+const STACK = { z0: -FACE_D / 2 - 9.6, gap: 0.7, floor: -6.2, lean: -0.5, flat: 1.25, max: 18 };
 
 /* ---------------- Blender kit (assets/cabinet/cabinet.glb) ----------------
    Built by scripts/blender/build_cabinet.py. If it fails to load the procedural
@@ -352,10 +352,10 @@ function binView(d) {
   const f = new THREE.Vector3(d.cx, d.cy + STACK.floor + 4.4, gz + STACK.z0 - d.cur * STACK.gap + 0.8);
   const ins = insets(), freeFrac = Math.max(0.25, (innerHeight - ins.top - ins.bottom - 24) / innerHeight);
   const t = Math.tan((camera.fov * Math.PI) / 360);
-  // the front disk (9.4 tall, seen ~52deg from above) takes ~58% of the free height; never wider than 70% of the screen
+  // the front disk (9.4 tall, leaning back, seen ~65deg from above) takes ~58% of the free height; never wider than 70% of the screen
   // visible height at distance d is 2*d*t, so solve 8.2 = 0.58 * freeFrac * 2*d*t (and the same for width)
   const dist = Math.max(8.2 / (2 * t * 0.58 * freeFrac), 9.4 / (2 * t * camera.aspect * 0.70));
-  const dir = new THREE.Vector3(0, 27, 21).normalize();
+  const dir = new THREE.Vector3(0, 32, 15).normalize();   // steep enough to look over the drawer front at the pile and the front disk
   return { pos: f.clone().addScaledVector(dir, dist), look: f };
 }
 // shift the projection so the scene is centred in the space between the top bar
