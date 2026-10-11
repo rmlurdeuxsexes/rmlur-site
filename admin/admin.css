@@ -9,8 +9,8 @@ button{margin-top:24px;padding:10px 16px;border:1px solid var(--ink);border-radi
 button:hover{background:var(--ink);color:var(--paper)}
 .status{margin-top:14px;font-size:12px;color:var(--rec-red)}
 .status.ok{color:var(--teal)}
-#upload-form,#prices-panel{display:none}
-#prices-panel{margin-top:64px;padding-top:32px;border-top:1px solid var(--line)}
+#upload-form,#prices-panel,#cleanup-panel{display:none}
+#prices-panel,#cleanup-panel{margin-top:64px;padding-top:32px;border-top:1px solid var(--line)}
 .hint{font-size:12px;line-height:1.6;color:var(--ink-soft)}
 #reprice-report{margin-top:14px;padding-left:18px;font-size:12px;line-height:1.7}
 #reprice-report .nofile{color:var(--rec-red)}
