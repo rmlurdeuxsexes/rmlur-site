@@ -14,7 +14,7 @@ const SLIDE = 24;                       // how far a case travels when swapping
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const easeInOut = u => (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2);
 
-export function createCaseViewer({ THREE, renderer, canvas, makeDisk, onLid, onIndex, onClose }) {
+export function createCaseViewer({ THREE, renderer, canvas, makeDisk, insets, onLid, onIndex, onClose }) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xffffff);
   const camera = new THREE.PerspectiveCamera(38, 1, 1, 400);   // wide-ish lens: the clip's strong perspective on tilt
@@ -253,16 +253,20 @@ export function createCaseViewer({ THREE, renderer, canvas, makeDisk, onLid, onI
       st.cur.root.position.y = -dir * SLIDE * (1 - e);
       if (st.slide.t >= 1) { if (st.leaving) disposeCase(st.leaving); st.leaving = null; st.slide = null; }
     }
-    // frame the case in the free area between the top bar and the buy panel
+    // frame the case inside the free area between the top bar and the dock: size it
+    // to that area, then shift the projection so it is centred there (pixel-exact)
     const open = st.cur ? easeInOut(clamp(st.cur.lid, 0, 1)) : 0;
-    const topPx = 44, botPx = Math.min(250, st.vh * 0.36), freePx = Math.max(120, st.vh - topPx - botPx);
+    const ins = insets ? insets() : { top: 0, bottom: 0 };
+    const vh = st.vh, vw = st.vw, freePx = Math.max(120, vh - ins.top - ins.bottom - 24);
     const t = Math.tan((camera.fov * Math.PI) / 360);
-    const fitH = (H * 1.18) / 2 / (t * (freePx / st.vh));                          // case height = ~85% of the free area
-    const fitW = ((W + 1.6) * (1 + open)) / 2 / (t * camera.aspect * 0.92);      // width incl. open lid
-    const swing = Math.sin(Math.PI * open);                                    // lid edge-on toward the camera mid-swing
+    const fitH = (H * 1.42) / 2 / (t * (freePx / vh));                            // tilted case (lid open, in perspective) fits in ~70% of the free height
+    const fitW = ((W + 1.6) * (1 + open)) / 2 / (t * camera.aspect * 0.90);       // width incl. the open lid
+    const swing = Math.sin(Math.PI * open);                                     // lid edge-on toward the camera mid-swing
     const z = Math.max(fitH, fitW) * (1 + 0.28 * swing);
-    const perPx = (2 * z * t) / st.vh, lift = ((botPx - topPx) / 2) * perPx;   // raise the case above the panel
-    camera.position.set(0, -lift + 0.4, z); camera.lookAt(0, -lift, 0);
+    camera.position.set(0, 0.4, z); camera.lookAt(0, 0, 0);
+    const dy = Math.round((ins.bottom - ins.top) / 2), v = camera.view;
+    if (dy === 0) { if (v && v.enabled) camera.clearViewOffset(); }
+    else if (!v || !v.enabled || v.offsetY !== dy || v.fullWidth !== vw || v.fullHeight !== vh) camera.setViewOffset(vw, vh, 0, dy, vw, vh);
   }
 
   function resize(w, h) { st.vw = w; st.vh = h; camera.aspect = w / h; camera.updateProjectionMatrix(); }

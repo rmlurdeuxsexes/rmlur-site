@@ -21,6 +21,7 @@ document.getElementById('login-btn').addEventListener('click', async () => {
     loginForm.style.display = 'none';
     uploadForm.style.display = 'block';
     document.getElementById('prices-panel').style.display = 'block';
+    document.getElementById('cleanup-panel').style.display = 'block';
     document.getElementById('post-panel').style.display = 'block';
     loadMyPosts();
   } else {
@@ -164,6 +165,29 @@ document.getElementById('reprice-btn').addEventListener('click', async (event) =
       li.textContent = `${b.title} — ${b.tiers.map(t => `${t.id} $${t.price}${t.buyable ? '' : ' (no file)'}`).join(' · ')}`;
       report.appendChild(li);
     }
+  } catch (err) {
+    status.textContent = 'Error: ' + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// One-off cleanup: delete the seed placeholder products from the live catalog.
+const PLACEHOLDERS = ['midnight-pager', 'deux-sexes-drums-v1', 'getty-tape'];
+document.getElementById('cleanup-btn').addEventListener('click', async (event) => {
+  const btn = event.currentTarget, status = document.getElementById('cleanup-status');
+  if (!confirm('Delete MIDNIGHT PAGER, DEUX SEXES DRUMS V1 and GETTY TAPE from the live catalog?')) return;
+  btn.disabled = true; status.classList.remove('ok'); status.textContent = 'removing…';
+  try {
+    const res = await fetch('/api/admin-delete', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: PLACEHOLDERS }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `failed (${res.status})`);
+    const parts = [];
+    if (data.deleted.length) parts.push(`Removed ${data.deleted.join(', ')}.`);
+    if (data.missing.length) parts.push(`Already gone: ${data.missing.join(', ')}.`);
+    if (data.blocked.length) parts.push(`Kept (has a paid order): ${data.blocked.join(', ')}.`);
+    status.textContent = parts.join(' ');
+    status.classList.add('ok');
   } catch (err) {
     status.textContent = 'Error: ' + err.message;
   } finally {

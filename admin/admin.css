@@ -9,7 +9,7 @@ button{margin-top:24px;padding:10px 16px;border:1px solid var(--ink);border-radi
 button:hover{background:var(--ink);color:var(--paper)}
 .status{margin-top:14px;font-size:12px;color:var(--rec-red)}
 .status.ok{color:var(--teal)}
-#upload-form,#prices-panel,#post-panel{display:none}
+#upload-form,#prices-panel,#cleanup-panel,#post-panel{display:none}
 #post-panel{margin-bottom:64px;padding-bottom:32px;border-bottom:1px solid var(--line)}
 #post-body{min-height:140px;resize:vertical;line-height:1.55}
 .post-kind{display:flex;gap:22px;margin-bottom:12px}
@@ -23,6 +23,7 @@ button:hover{background:var(--ink);color:var(--paper)}
 #post-list li img{width:44px;height:44px;object-fit:cover;border-radius:3px}
 #post-list button{margin:0;padding:4px 8px;font-size:10px}
 #prices-panel{margin-top:64px;padding-top:32px;border-top:1px solid var(--line)}
+#prices-panel,#cleanup-panel{margin-top:64px;padding-top:32px;border-top:1px solid var(--line)}
 .hint{font-size:12px;line-height:1.6;color:var(--ink-soft)}
 #reprice-report{margin-top:14px;padding-left:18px;font-size:12px;line-height:1.7}
 #reprice-report .nofile{color:var(--rec-red)}

@@ -8,9 +8,6 @@
     { image: 'assets/sticker-rmlur-logo.png', title: 'rmlur deux :: sexes' },
     { image: 'assets/sticker-rmlur-demo.png', title: 'RMLUR demo' },
     { image: 'assets/sticker-beats-text.png', title: 'beats' },
-    { image: 'assets/midnight-pager.jpg', title: 'Midnight Pager' },
-    { image: 'assets/getty-tape.jpg', title: 'Getty tape' },
-    { image: 'assets/deux-sexes-drums-v1.jpg', title: 'Deux Sexes Drums V1' },
     { image: 'assets/mpc-hero.jpg', title: 'MPC 2000XL' }
   ].concat((window.JASON_PHOTOS || []).map(function (p) { return { image: p.src, title: p.alt }; }));
 

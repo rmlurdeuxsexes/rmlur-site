@@ -54,6 +54,57 @@ function paperTexture(lines, opts = {}) {
   }, true, flipY);
 }
 
+/* drawer label: a strip of clear tape over the label window, written on in
+   Sharpie. The tape is frosted and slightly glossy with cut ends; the ink has a
+   little marker texture. Drawn at 1024px so it stays crisp when zoomed. */
+function tapeTexture(text, seed = 1) {
+  const W = 1024, H = 288, rnd = (n => () => (n = (n * 16807) % 2147483647) / 2147483647)(Math.floor(seed * 9973) + 7);
+  return canvasTex(W, H, (ctx) => {
+    ctx.clearRect(0, 0, W, H);
+    // strip outline with lightly serrated cut ends (tape torn off the dispenser)
+    const top = 34, bot = H - 34, l = 22, r = W - 22;
+    const path = new Path2D(); path.moveTo(l, top); path.lineTo(r, top);
+    for (let y = top, i = 0; y < bot; y += 9, i++) path.lineTo(r - (i % 2 ? 7 : 0) - rnd() * 3, Math.min(bot, y + 9));
+    path.lineTo(l, bot);
+    for (let y = bot, i = 0; y > top; y -= 9, i++) path.lineTo(l + (i % 2 ? 7 : 0) + rnd() * 3, Math.max(top, y - 9));
+    path.closePath();
+    // frosted film
+    ctx.fillStyle = 'rgba(250,249,243,0.50)'; ctx.fill(path);
+    ctx.save(); ctx.clip(path);
+    const sheen = ctx.createLinearGradient(0, top, 0, bot);
+    sheen.addColorStop(0, 'rgba(255,255,255,0.55)'); sheen.addColorStop(0.18, 'rgba(255,255,255,0.08)');
+    sheen.addColorStop(0.8, 'rgba(255,255,255,0.02)'); sheen.addColorStop(1, 'rgba(255,255,255,0.30)');
+    ctx.fillStyle = sheen; ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < 1400; i++) { ctx.fillStyle = `rgba(255,255,255,${0.05 + rnd() * 0.08})`; ctx.fillRect(rnd() * W, top + rnd() * (bot - top), 1 + rnd() * 2, 1); }
+    // Sharpie: fit to the strip, slight baseline drift, two-pass ink for marker bleed
+    const label = String(text).toUpperCase();
+    let size = 132; ctx.font = `${size}px "Permanent Marker", "Marker Felt", cursive`;
+    while (ctx.measureText(label).width > (r - l) * 0.84 && size > 48) { size -= 4; ctx.font = `${size}px "Permanent Marker", "Marker Felt", cursive`; }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.translate(W / 2, (top + bot) / 2 + 6); ctx.rotate((rnd() - 0.5) * 0.035);
+    ctx.fillStyle = 'rgba(14,14,16,0.22)'; ctx.fillText(label, 1.5, 1.5);
+    ctx.fillStyle = '#121214'; ctx.fillText(label, 0, 0);
+    ctx.restore();
+    // marker grain: knock tiny flecks out of the ink so it reads as felt tip, not vector type
+    ctx.save(); ctx.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 2600; i++) { ctx.fillStyle = `rgba(0,0,0,${0.10 + rnd() * 0.25})`; ctx.fillRect(rnd() * W, rnd() * H, 1.2, 1.2); }
+    ctx.restore();
+    // thin edge highlight on the film
+    ctx.strokeStyle = 'rgba(255,255,255,0.65)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(l + 8, top + 1); ctx.lineTo(r - 8, top + 1); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,0.07)'; ctx.beginPath(); ctx.moveTo(l + 8, bot - 1); ctx.lineTo(r - 8, bot - 1); ctx.stroke();
+  }, true, true);   // THREE.PlaneGeometry UVs run bottom-up, unlike the glTF label quads
+}
+function tapeMesh(text, idx, z) {
+  const tex = tapeTexture(text, idx + 1); tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(13.9, 13.9 * 288 / 1024),
+    new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.02, roughness: 0.32, metalness: 0, depthWrite: false }));
+  // tape is torn by hand: a touch off-level, never the same twice
+  m.position.set(-4.0 + ((idx * 37) % 5 - 2) * 0.06, 4.7 + ((idx * 53) % 3 - 1) * 0.05, z);
+  m.rotation.z = (((idx * 29) % 7) - 3) * 0.006;
+  m.renderOrder = 5; m.userData.tape = true;
+  return m;
+}
+
 /* ---------------- materials ---------------- */
 const abs = absTexture(1), absBump = bumpTexture();
 const M = {
@@ -90,6 +141,10 @@ const COLS = 3, ROWS = 2, CELL_W = 22, CELL_H = 18, DEPTH = 36;
 const CAB_W = COLS * CELL_W + 2, CAB_H = ROWS * CELL_H + 2;
 const TRAVEL = 26;
 const FACE_W = CELL_W - 0.8, FACE_H = CELL_H - 0.8, FACE_D = 3;
+// disks in an open drawer: one row standing on the bin floor, leaning back a
+// little so the front label faces the camera; flipped disks fall forward onto
+// a pile. Sized so a full row (max) still clears the bin's back wall.
+const STACK = { z0: -FACE_D / 2 - 9.6, gap: 0.7, floor: -6.2, lean: -0.5, flat: 1.25, max: 18 };
 
 /* ---------------- Blender kit (assets/cabinet/cabinet.glb) ----------------
    Built by scripts/blender/build_cabinet.py. If it fails to load the procedural
@@ -113,6 +168,15 @@ async function loadKit() {
 
 const kit = await loadKit();
 
+// canvas labels are drawn once; draw them only after the handwriting fonts load
+// (otherwise they silently fall back to a system serif)
+async function fontsReady() {
+  if (!document.fonts) return;
+  const want = ['72px "Permanent Marker"', '38px "Nothing You Could Do"'];
+  try { await Promise.race([Promise.all(want.map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 4000))]); } catch {}
+}
+await fontsReady();
+
 /* ---------------- scene ---------------- */
 const canvas = $('stage');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -122,6 +186,13 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0xffffff);
 const camera = new THREE.PerspectiveCamera(28, 1, 1, 600);
+{ // soft studio reflections for the metal parts (disk shutters, slide rails)
+  const pm = new THREE.PMREMGenerator(renderer), room = new THREE.Scene();
+  room.add(new THREE.Mesh(new THREE.BoxGeometry(80, 80, 80), new THREE.MeshBasicMaterial({ color: 0x9ea2a8, side: THREE.BackSide })));
+  const soft = (w, h, x, y, z, ry, c) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide })); m.position.set(x, y, z); m.rotation.y = ry; room.add(m); };
+  soft(40, 14, -24, 22, 26, 0.7, 0xffffff); soft(10, 40, 32, 4, 12, -1.1, 0xe9ecf0); soft(60, 6, 0, -30, 0, 0, 0xdcdcdc);
+  scene.environment = pm.fromScene(room, 0.04).texture; scene.environmentIntensity = 0.55; pm.dispose();
+}
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0xd9d3c4, 1.0));
 const key = new THREE.DirectionalLight(0xfff3e0, 2.0); key.position.set(-60, 110, 90); key.castShadow = true;
@@ -160,10 +231,11 @@ function buildFace(cfg) {
   // label window: frame, paper, clear cover
   const wx = -4.0, wy = 4.7;
   g.add(box(13.6, 4.8, 0.5, M.absDark, wx, wy, front - 0.1));
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(12.6, 3.9), new THREE.MeshStandardMaterial({ map: paperTexture([cfg.label], { w: 512, h: 144, size: 46 }), roughness: 0.9 }));
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(12.6, 3.9), new THREE.MeshStandardMaterial({ map: paperTexture([], { w: 512, h: 144 }), roughness: 0.9 }));
   label.position.set(wx, wy, front + 0.18); g.add(label);
   const clear = box(13.0, 4.2, 0.5, M.clear, wx, wy, front + 0.42); clear.castShadow = false; g.add(clear);
   g.add(box(13.2, 0.3, 0.7, M.steel, wx, wy + 2.15, front + 0.45)); // retainer lip
+  g.add(tapeMesh(cfg.label, cfg._idx || 0, front + 0.72));
   // lock plate + keyhole
   const lx = 7.4, ly = 4.7;
   g.add(box(4.6, 4.6, 0.6, M.abs, lx, ly, front + 0.1));
@@ -181,9 +253,10 @@ function kitFace(cfg) {
   const g = new THREE.Group();
   g.add(kit.drawer.clone());
   const lab = kit.label.clone();
-  lab.material = new THREE.MeshStandardMaterial({ map: paperTexture([cfg.label], { w: 512, h: 144, size: 46, y0: 92, flipY: false }), roughness: 0.9 });
+  lab.material = new THREE.MeshStandardMaterial({ map: paperTexture([], { w: 512, h: 144, flipY: false }), roughness: 0.9 });
   g.add(lab);
   const win = kit.window.clone(); win.material = M.clear; win.castShadow = false; g.add(win);
+  g.add(tapeMesh(cfg.label, cfg._idx || 0, FACE_D / 2 + 0.33));   // window front sits at ~+1.80
   g.userData.lock = new THREE.Vector3(7.4, 4.7, FACE_D / 2 + 0.5);
   return g;
 }
@@ -234,23 +307,25 @@ const products = await loadProducts();
 const drawers = assignDrawers(products, config);
 
 drawers.forEach((cfg, idx) => {
+  cfg._idx = idx;
   const r = Math.floor(idx / COLS), c = idx % COLS;
   const cx = (c - 1) * CELL_W, cy = 1.2 + (ROWS - 1 - r) * (CELL_H + 0) + CELL_H / 2 - 0.4;
   const group = new THREE.Group(); group.position.set(cx, cy, DEPTH / 2 - FACE_D / 2);
   const face = kit ? kitFace(cfg) : buildFace(cfg); group.add(face); if (!kit) group.add(buildBody());
-  const disks = cfg.items.slice(0, 36).map((p, i) => {
+  const disks = cfg.items.slice(0, STACK.max).map((p, i) => {
     const d = buildDisk(p, i);
-    const col = i % 2, row = Math.floor(i / 2);
-    d.userData.home = new THREE.Vector3(col ? 4.9 : -4.9, -2.7, -FACE_D / 2 - 25 + row * 1.5); // filed from the back wall forward
-    d.userData.homeRot = -0.62;
-    d.position.copy(d.userData.home); d.rotation.x = d.userData.homeRot; d.userData.lift = 0;
-    group.add(d); return d;
+    const pivot = new THREE.Group();                       // hinge along the disk's bottom edge
+    pivot.position.set(0, STACK.floor, STACK.z0 - i * STACK.gap);
+    d.position.set(0, 4.7, 0); pivot.add(d); group.add(pivot);
+    Object.assign(d.userData, { pivot, index: i, angle: STACK.lean, va: 0, ta: STACK.lean, y: 0, ty: 0, holdUntil: 0 });
+    pivot.rotation.x = STACK.lean;
+    return d;
   });
-  if (cfg.locked) { // dark divider tabs like the reference's grey plastic dividers
-    for (let i = 0; i < 3; i++) { const dv = kit ? kit.divider.clone() : box(18, 8, 0.5, M.divider, 0, 0, 0); dv.position.set(0, -1, -FACE_D / 2 - 5 - i * 6); group.add(dv); }
+  if (cfg.locked) { // dark divider tabs like the reference's grey plastic dividers, behind the disks
+    for (let i = 0; i < 3; i++) { const dv = kit ? kit.divider.clone() : box(18, 8, 0.5, M.divider, 0, 0, 0); dv.position.set(0, -1, STACK.z0 - (disks.length + 1.5 + i * 2.2) * STACK.gap); group.add(dv); }
   }
   cab.add(group);
-  drawerObjs.push({ group, face, cfg, cx, cy, open: 0, target: 0, disks, hover: 0, row: r, locked: !!cfg.locked, unlocked: !cfg.locked });
+  drawerObjs.push({ group, face, cfg, cx, cy, open: 0, target: 0, disks, cur: 0, hover: 0, row: r, locked: !!cfg.locked, unlocked: !cfg.locked });
 });
 
 /* key */
@@ -270,6 +345,27 @@ const VIEWS = {
   top: { pos: new THREE.Vector3(0, 132, 104), look: new THREE.Vector3(0, 16, 26) },
   bottom: { pos: new THREE.Vector3(0, 112, 98), look: new THREE.Vector3(0, 4, 26) },
 };
+// open drawer: the camera comes in close over the bin, looking down at the front
+// disk so its label is readable, and follows it back as you flip through
+function binView(d) {
+  const gz = DEPTH / 2 - FACE_D / 2 + TRAVEL;
+  const f = new THREE.Vector3(d.cx, d.cy + STACK.floor + 4.4, gz + STACK.z0 - d.cur * STACK.gap + 0.8);
+  const ins = insets(), freeFrac = Math.max(0.25, (innerHeight - ins.top - ins.bottom - 24) / innerHeight);
+  const t = Math.tan((camera.fov * Math.PI) / 360);
+  // the front disk (9.4 tall, leaning back, seen ~65deg from above) takes ~58% of the free height; never wider than 70% of the screen
+  // visible height at distance d is 2*d*t, so solve 8.2 = 0.58 * freeFrac * 2*d*t (and the same for width)
+  const dist = Math.max(8.2 / (2 * t * 0.58 * freeFrac), 9.4 / (2 * t * camera.aspect * 0.70));
+  const dir = new THREE.Vector3(0, 32, 15).normalize();   // steep enough to look over the drawer front at the pile and the front disk
+  return { pos: f.clone().addScaledVector(dir, dist), look: f };
+}
+// shift the projection so the scene is centred in the space between the top bar
+// and the dock (pixel-exact; raycasting uses the same projection)
+function frameOffset(cam) {
+  const { top, bottom } = insets(), w = innerWidth, h = innerHeight, dy = Math.round((bottom - top) / 2);
+  const cur = cam.view, on = cur && cur.enabled;
+  if (dy === 0) { if (on) cam.clearViewOffset(); return; }
+  if (!on || cur.offsetY !== dy || cur.fullWidth !== w || cur.fullHeight !== h) cam.setViewOffset(w, h, 0, dy, w, h);
+}
 let viewer = null;   // clear-case viewer, created once the drawers exist
 let camPos = VIEWS.closed.pos.clone(), camLook = VIEWS.closed.look.clone(), view = 'closed';
 function resize() {
@@ -281,13 +377,21 @@ addEventListener('resize', resize); resize();
 
 /* ---------------- interaction ---------------- */
 const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
-let openDrawer = null, selected = null, hoverDrawer = null, busy = false;
-const hud = $('hud');
+let openDrawer = null, hoverDrawer = null, hoverDisk = null, busy = false, clock = 0;
+const ctxEl = $('ctx'), dock = $('dock');
+const isTyping = t => t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA');
+
+// screen space the 3D view must leave free: the top bar and the bottom dock
+function insets() {
+  const top = $('topbar').getBoundingClientRect().bottom;
+  const bottom = dock.hidden ? 0 : Math.max(0, innerHeight - dock.getBoundingClientRect().top);
+  return { top, bottom };
+}
 
 function setPtr(e) { const r = canvas.getBoundingClientRect(); ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); }
 function pick(e) {
   setPtr(e); ray.setFromCamera(ptr, camera);
-  if (openDrawer) {
+  if (openDrawer && openDrawer.disks.length) {
     const hit = ray.intersectObjects(openDrawer.disks, true)[0];
     if (hit) return { type: 'disk', disk: hit.object.userData.diskRoot };
   }
@@ -295,85 +399,209 @@ function pick(e) {
   if (hit) { let o = hit.object; while (o && !drawerObjs.some(d => d.face === o)) o = o.parent; return { type: 'drawer', drawer: drawerObjs.find(d => d.face === o) }; }
   return null;
 }
-canvas.addEventListener('pointermove', e => { if (viewer.active) return; const p = pick(e); hoverDrawer = p?.type === 'drawer' ? p.drawer : null; canvas.style.cursor = p ? 'pointer' : 'default'; });
+canvas.addEventListener('pointermove', e => {
+  if (viewer.active) return;
+  const p = pick(e);
+  hoverDrawer = p?.type === 'drawer' ? p.drawer : null;
+  hoverDisk = p?.type === 'disk' ? p.disk : null;
+  canvas.style.cursor = p ? 'pointer' : 'default';
+});
+canvas.addEventListener('pointerleave', () => { hoverDrawer = hoverDisk = null; });
 canvas.addEventListener('click', e => {
   if (busy || viewer.active) return;
   const p = pick(e);
   if (!p) return;
-  if (p.type === 'disk') return selectDisk(p.disk);
+  if (p.type === 'disk') return tapDisk(openDrawer, p.disk);
   const d = p.drawer;
   if (d === openDrawer) return closeDrawer();
   requestOpen(d);
 });
-addEventListener('keydown', e => { if (e.key === 'Escape') { if (selected) deselect(); else if (!$('pw').classList.contains('show')) closeDrawer(); hidePw(); } });
+addEventListener('keydown', e => {
+  if (viewer.active || isTyping(e.target)) return;
+  if (e.key === 'Escape') { if (!$('pw').classList.contains('show')) closeDrawer(); hidePw(); return; }
+  if (!openDrawer || !openDrawer.disks.length) return;
+  const onPage = e.target === document.body || e.target === canvas;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || (e.key === ' ' && onPage)) { e.preventDefault(); stepDisk(openDrawer, 1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); stepDisk(openDrawer, -1); }
+  else if (e.key === 'Enter' && onPage) { e.preventDefault(); openCase(); }
+});
 
 function requestOpen(d) {
   closeDrawer(true);
   if (d.locked && !d.unlocked) return showPw(d);
-  hidePw(); d.target = 1; openDrawer = d; view = d.row === 0 ? 'top' : 'bottom';
-  VIEWS[view].pos.x = d.cx; VIEWS[view].look.x = d.cx; // keep the open drawer centred
-  hud.textContent = d.cfg.label + ' · ' + (d.cfg.items.length ? 'tap a disk' : 'empty') + ' · esc to close';
+  hidePw(); d.target = 1; openDrawer = d;
+  showItem(d);
 }
 function closeDrawer(silent) {
-  deselect(); hidePw();
+  hidePw(); stopAudio();
   if (openDrawer) { openDrawer.target = 0; openDrawer = null; }
-  view = 'closed'; if (!silent) hud.textContent = 'tap a drawer · esc to close';
+  hoverDisk = null; dock.hidden = true; view = 'closed';
+  if (!silent) ctxEl.textContent = 'tap a drawer';
 }
-/* selecting a disk opens it in the clear-case viewer (case-viewer.js); the
-   buy panel moves under the case and opening the lid plays the preview */
-function fillPanel(p) {
-  $('pTitle').textContent = p.title; $('pMeta').textContent = [p.genre, p.bpm ? p.bpm + ' bpm' : '', p.key].filter(Boolean).join(' · ');
-  const opts = (p.tiers || []).slice().sort((a, b) => a.price - b.price); if (p.exclusive) opts.push({ id: 'exclusive', label: 'EXCLUSIVE', price: p.exclusive.price, stripeLink: p.exclusive.stripeLink });
-  const sel = $('pTier'); sel.innerHTML = ''; opts.forEach((t, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${t.label} $${Number(t.price).toFixed(2).replace(/\.00$/, '')}`; sel.appendChild(o); });
-  $('panel').classList.add('show'); $('panel')._opts = opts; $('panel')._p = p;
+
+/* ---- flip-through: tap the front disk and it falls forward onto the pile,
+   showing the next beat; tap a flipped disk to bring it back; on the last disk
+   a tap stands the whole row back up (the last one down comes up first). */
+function setCurrent(d, i, restack = false) {
+  const n = d.disks.length; if (!n) return;
+  const prev = d.cur; d.cur = Math.max(0, Math.min(n - 1, i));
+  if (restack) d.disks.forEach((k, j) => { k.userData.holdUntil = clock + Math.max(0, prev - 1 - j) * 0.07; });
+  if (d.cur !== prev) stopAudio();
+  showItem(d);
 }
+function stepDisk(d, dir) {
+  const n = d.disks.length; if (!n) return;
+  if (dir > 0) { if (d.cur + 1 < n) setCurrent(d, d.cur + 1); else setCurrent(d, 0, true); }
+  else setCurrent(d, d.cur - 1);
+}
+function tapDisk(d, disk) {
+  if (!d || !disk) return;
+  const i = disk.userData.index;
+  if (i === d.cur) stepDisk(d, 1); else setCurrent(d, i);
+}
+function diskTarget(d, k) {
+  const u = k.userData, i = u.index;
+  if (i < d.cur) return { a: Math.max(0.78, STACK.flat - 0.045 * i), y: 0 };           // on the pile
+  if (i === d.cur) return { a: STACK.lean, y: k === hoverDisk ? 0.9 : 0.35 };          // front disk sits a touch proud
+  return { a: STACK.lean, y: 0 };
+}
+
+/* ---------------- dock: the current beat, with play / license / buy ---------------- */
+let dockItem = null, dockSource = null;   // dockSource: 'bin' | 'case'
+function tiersFor(p) {
+  const opts = (p.tiers || []).slice().sort((a, b) => a.price - b.price);
+  if (p.exclusive) opts.push({ id: 'exclusive', label: 'EXCLUSIVE', price: p.exclusive.price, stripeLink: p.exclusive.stripeLink, buyable: p.exclusive.buyable });
+  return opts;
+}
+const money = n => '$' + Number(n).toFixed(2).replace(/\.00$/, '');
+function fillDock(p, index, total, source) {
+  dockItem = p; dockSource = source;
+  $('pTitle').textContent = p.title;
+  $('pMeta').textContent = [p.genre, p.bpm ? p.bpm + ' bpm' : '', p.key].filter(Boolean).join(' · ');
+  const opts = tiersFor(p), sel = $('pTier'); sel.innerHTML = '';
+  opts.forEach((t, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${t.label} ${money(t.price)}`; sel.appendChild(o); });
+  sel.disabled = !opts.length; dock._opts = opts;
+  setBuyLabel();
+  $('pCase').hidden = source !== 'bin';
+  renderDots(total, index);
+  refreshPlay();
+  dock.hidden = false;
+}
+function setBuyLabel() {
+  const t = dock._opts && dock._opts[$('pTier').value];
+  // buyable === false: no download file yet, so ask instead of taking payment (same rule as /store)
+  $('pBuy').textContent = t && t.buyable === false ? 'Ask' : 'Buy';
+  $('pBuy').disabled = !t;
+}
+$('pTier').addEventListener('change', setBuyLabel);
 function renderDots(n, i) {
   const el = $('vDots'); el.innerHTML = ''; el.hidden = n < 2;
-  for (let k = 0; k < n; k++) { const b = document.createElement('button'); b.className = 'dot' + (k === i ? ' on' : ''); b.setAttribute('aria-label', `Disk ${k + 1} of ${n}`); b.addEventListener('click', () => { if (k !== viewer.index) viewer.go(k - viewer.index); }); el.appendChild(b); }
-  $('vCount').textContent = `${i + 1} / ${n}`;
+  for (let k = 0; k < n; k++) {
+    const b = document.createElement('button'); b.type = 'button';
+    b.className = 'dot' + (k === i ? ' on' : ''); b.setAttribute('aria-label', `Beat ${k + 1} of ${n}`);
+    if (k === i) b.setAttribute('aria-current', 'true');
+    b.addEventListener('click', () => {
+      if (viewer.active) { if (k !== viewer.index) viewer.go(k - viewer.index); }
+      else if (openDrawer) setCurrent(openDrawer, k);
+    });
+    el.appendChild(b);
+  }
 }
-function playPreview(p) {
-  const a = $('audio');
-  if (!p) { a.pause(); $('pPlay').textContent = 'Play'; return; }
-  if (a.dataset.id !== p.id) { a.src = p.preview || ''; a.dataset.id = p.id; }
-  a.play().then(() => { $('pPlay').textContent = 'Pause'; }).catch(() => { $('pPlay').textContent = 'Unavailable'; });
+function showItem(d) {
+  const n = d.disks.length;
+  if (!n) { dock.hidden = true; ctxEl.textContent = `${d.cfg.label} · empty`; return; }
+  const p = d.disks[d.cur].userData.product;
+  fillDock(p, d.cur, n, 'bin');
+  ctxEl.textContent = `${d.cfg.label} · ${d.cur + 1} / ${n}`;
 }
-let viewerDrawer = null;
-viewer = createCaseViewer({
-  THREE, renderer, canvas, makeDisk: buildDisk,
-  onLid: (open, p) => { if (open && p) playPreview(p); else { $('audio').pause(); $('pPlay').textContent = 'Play'; } },
-  onIndex: (i, p) => { fillPanel(p); renderDots(viewerDrawer ? Math.min(36, viewerDrawer.cfg.items.length) : 1, i); },
-  onClose: () => { document.body.classList.remove('viewing'); $('panel').classList.remove('show'); selected = null; hud.textContent = openDrawer ? openDrawer.cfg.label + ' · tap a disk · esc to close' : 'tap a drawer · esc to close'; },
-});
-viewer.resize(innerWidth, innerHeight);
-function whiteFade() { const f = $('fade'); f.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove('on'))); }
-function selectDisk(d) {
-  const drawer = drawerObjs.find(x => x.disks.includes(d)); if (!drawer) return;
-  viewerDrawer = drawer; selected = d;
-  whiteFade(); document.body.classList.add('viewing');
-  $('vLabel').textContent = drawer.cfg.label;
-  viewer.open(drawer.cfg.items.slice(0, 36), drawer.disks.indexOf(d));
-  hud.textContent = '';
-}
-function deselect() { if (viewer.active) viewer.close(); selected = null; $('panel').classList.remove('show'); $('audio').pause(); }
-$('vBack').addEventListener('click', () => { whiteFade(); viewer.close(); });
 
+/* ---------------- preview audio ----------------
+   Catalog paths are either site-relative ("previews/x.mp3") or absolute Vercel
+   Blob URLs; relative ones resolve from the site root, not from /lab/floppy/.
+   A metadata probe tells us up front whether the file loads, so the button says
+   so instead of failing silently. */
+const audio = $('audio');
+const previewOk = new Map();   // src -> true | false | Promise
+function previewSrc(p) { return p && p.preview ? new URL(p.preview, location.origin + '/').href : null; }
+function checkPreview(src) {
+  // probe with a throwaway <audio> (loads metadata only). Unlike fetch(), media
+  // elements don't need CORS, so a real cross-origin preview (Vercel Blob) can
+  // never be misreported as missing; only an actual load error counts.
+  if (!src) return Promise.resolve(false);
+  if (previewOk.has(src)) return Promise.resolve(previewOk.get(src));
+  const pr = new Promise(res => {
+    const a = new Audio(); let settled = false;
+    const done = ok => { if (settled) return; settled = true; a.removeAttribute('src'); a.load(); res(ok); };
+    a.preload = 'metadata';
+    a.addEventListener('loadedmetadata', () => done(true), { once: true });
+    a.addEventListener('error', () => done(false), { once: true });
+    setTimeout(() => done(true), 8000);   // slow network: assume playable rather than block the button
+    a.src = src;
+  }).then(ok => { previewOk.set(src, ok); return ok; });
+  previewOk.set(src, pr); return pr;
+}
+function setPlay(label, disabled) { const b = $('pPlay'); b.textContent = label; b.disabled = !!disabled; }
+function refreshPlay() {
+  const p = dockItem, src = previewSrc(p);
+  if (!src) return setPlay('No preview', true);
+  if (!audio.paused && audio.dataset.id === p.id) return setPlay('Pause');
+  setPlay('Play');
+  checkPreview(src).then(ok => { if (dockItem === p && !ok) setPlay('No preview yet', true); });
+}
+function stopAudio() { audio.pause(); if (dockItem) refreshPlay(); }
+function playPreview(p) {
+  const src = previewSrc(p); if (!src || previewOk.get(src) === false) return refreshPlay();
+  if (audio.dataset.id !== p.id) { audio.src = src; audio.dataset.id = p.id; }
+  setPlay('Pause');
+  audio.play().catch(() => { previewOk.set(src, false); refreshPlay(); });
+}
+audio.addEventListener('error', () => { if (audio.src) previewOk.set(audio.src, false); refreshPlay(); });   // a missing file never closes the case
+audio.addEventListener('ended', () => { refreshPlay(); if (viewer.active && viewer.lidOpen) viewer.setLid(false); });
 $('pPlay').addEventListener('click', () => {
-  if (viewer.active) return viewer.setLid(!viewer.lidOpen);     // the case lid is the play button
-  const a = $('audio'), p = $('panel')._p; if (!p) return;
-  if (!a.paused) { a.pause(); $('pPlay').textContent = 'Play'; return; }
-  playPreview(p);
+  if (!dockItem) return;
+  if (viewer.active) return viewer.setLid(!viewer.lidOpen);      // in the case, the lid is the play button
+  if (!audio.paused && audio.dataset.id === dockItem.id) { audio.pause(); refreshPlay(); }
+  else playPreview(dockItem);
 });
-$('audio').addEventListener('ended', () => { $('pPlay').textContent = 'Play'; if (viewer.active && viewer.lidOpen) viewer.setLid(false); });
 $('pBuy').addEventListener('click', async () => {
-  const panel = $('panel'), tier = panel._opts[$('pTier').value], p = panel._p; if (!tier) return;
+  const tier = dock._opts && dock._opts[$('pTier').value], p = dockItem; if (!tier || !p) return;
   const fallback = () => { location.href = tier.stripeLink || 'mailto:jayrewindbeatz@gmail.com?subject=' + encodeURIComponent(`Buy "${p.title}" — ${tier.label}`); };
+  if (tier.buyable === false) return fallback();
   try {
     const cfg = await (await fetch('/api/checkout')).json(); if (!cfg.enabled) return fallback();
     const j = await (await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: p.id, tierId: tier.id }) })).json();
     if (j.url) location.href = j.url; else fallback();
   } catch { fallback(); }
 });
+
+/* ---------------- the clear case (case-viewer.js) ----------------
+   "Open case" shows the current disk in its case; swiping there moves through
+   the same drawer, and closing it leaves the bin on whatever disk you ended on. */
+let viewerDrawer = null;
+viewer = createCaseViewer({
+  THREE, renderer, canvas, makeDisk: buildDisk, insets,
+  onLid: (open, p) => { if (open && p) playPreview(p); else { audio.pause(); if (dockItem) refreshPlay(); } },
+  onIndex: (i, p) => { const n = viewerDrawer ? viewerDrawer.cfg.items.length : 1; /* the case pages the whole drawer */ fillDock(p, i, n, 'case'); ctxEl.textContent = `${viewerDrawer ? viewerDrawer.cfg.label : ''} · ${i + 1} / ${n}`; },
+  onClose: () => {
+    document.body.classList.remove('viewing');
+    if (viewerDrawer && openDrawer === viewerDrawer) setCurrent(viewerDrawer, viewer.index);
+    viewerDrawer = null;
+  },
+});
+viewer.resize(innerWidth, innerHeight);
+function whiteFade() { const f = $('fade'); f.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove('on'))); }
+function openCase() {
+  const d = openDrawer; if (!d || !d.disks.length) return;
+  viewerDrawer = d; whiteFade(); document.body.classList.add('viewing');
+  viewer.open(d.cfg.items, d.cur);
+}
+function selectDisk(disk) {   // kept for tests/console: open a specific disk in its case
+  const d = drawerObjs.find(x => x.disks.includes(disk)); if (!d) return;
+  if (openDrawer !== d) requestOpen(d);
+  setCurrent(d, disk.userData.index); openCase();
+}
+$('pCase').addEventListener('click', openCase);
+$('vBack').addEventListener('click', () => { whiteFade(); viewer.close(); });
 
 /* vault: key flies to the lock, turns (or refuses) */
 let pwDrawer = null, keyAnim = null;
@@ -405,26 +633,39 @@ const easeOut = u => 1 - Math.pow(1 - Math.min(1, Math.max(0, u)), 3);
 /* ---------------- loop ---------------- */
 let last = performance.now();
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
   for (const d of drawerObjs) {
     const goal = d.target + (d === hoverDrawer && !d.target ? 0.04 : 0);
     d.open += (goal - d.open) * Math.min(1, dt * 6);
     d.group.position.z = DEPTH / 2 - FACE_D / 2 + d.open * TRAVEL;
     for (const k of d.disks) {
-      const u = k.userData, L = u.lift, cur = k.position.y - u.home.y;
-      const ty = L * 6.5, tr = u.homeRot + L * 0.55;
-      k.position.y += (u.home.y + ty - k.position.y) * Math.min(1, dt * 10);
-      k.rotation.x += (tr - k.rotation.x) * Math.min(1, dt * 10); void cur;
+      const u = k.userData;
+      if (clock >= u.holdUntil) { const t = diskTarget(d, k); u.ta = t.a; u.ty = t.y; }
+      // slightly under-damped hinge spring: the disk lands on the pile with a small bounce
+      u.va += ((u.ta - u.angle) * 140 - u.va * 15) * dt; u.angle += u.va * dt;
+      u.y += (u.ty - u.y) * Math.min(1, dt * 10);
+      u.pivot.rotation.x = u.angle; u.pivot.position.y = STACK.floor + u.y;
     }
   }
   stepKey(dt);
-  const v = VIEWS[view];
+  const v = openDrawer ? binView(openDrawer) : VIEWS[view];
   camPos.lerp(v.pos, Math.min(1, dt * 3)); camLook.lerp(v.look, Math.min(1, dt * 3));
   camera.position.copy(camPos); camera.lookAt(camLook);
+  frameOffset(camera);
   viewer.update(dt);
   if (viewer.active) renderer.render(viewer.scene, viewer.camera);   // the bin keeps its state underneath
   else renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__cabinet = { drawers: drawerObjs, requestOpen, closeDrawer, selectDisk, viewer, tune: { renderer, key, fill, hemi: scene.children.find(o => o.isHemisphereLight) } };
+// settle(): jump every animation to its resting state (used by the headless layout tests)
+function settle() {
+  for (const d of drawerObjs) {
+    d.open = d.target; d.group.position.z = DEPTH / 2 - FACE_D / 2 + d.open * TRAVEL;
+    for (const k of d.disks) { const u = k.userData, t = diskTarget(d, k); u.ta = u.angle = t.a; u.va = 0; u.ty = u.y = t.y; u.holdUntil = 0; u.pivot.rotation.x = u.angle; u.pivot.position.y = STACK.floor + u.y; }
+  }
+  const v = openDrawer ? binView(openDrawer) : VIEWS[view];
+  camPos.copy(v.pos); camLook.copy(v.look);
+  camera.position.copy(camPos); camera.lookAt(camLook); frameOffset(camera); camera.updateMatrixWorld();
+}
+window.__cabinet = { drawers: drawerObjs, requestOpen, closeDrawer, selectDisk, openCase, stepDisk, tapDisk, settle, camera, get openDrawer() { return openDrawer; }, viewer, tune: { renderer, key, fill, hemi: scene.children.find(o => o.isHemisphereLight) } };
