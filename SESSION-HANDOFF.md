@@ -20,6 +20,14 @@ Sell beats from rmlur.com with no BeatStars: buyer pays via Stripe, gets a downl
 - **Publishing paths**: `npm run publish-beats -- --sync` and `scripts/beat-drop-watch.mjs` both upload deliverables to R2 when `R2_*` env vars exist (priority: sidecar `dropbox` entry > R2 > Vercel Blob).
 - **Browser admin** (`/admin`, `admin/index.html`, `admin/admin.js`, `api/admin-r2-presign.js`, `api/admin-upload.js`): log in, fill title/genre/BPM, choose WAV (+ optional MP3, stems zip, cover, preview), Publish. Browser PUTs files straight to R2 via presigned URL; writes product row with tiers WAV/MP3/STEMS + EXCLUSIVE ($34.99 / $24.99 / $59.99 / $249.99 defaults). Tier only appears if its file was added. Last fix: asset paths made absolute so `/admin` works without a trailing slash (before that the page was unstyled and Log In did nothing).
 
+## Went live 2026-10-12
+`main` now has the MPC homepage, blog, gallery, museum and RIAA-style plaques, merged with the catalog-cleanup work: the `/admin` panels are Post, Add product, Prices and Catalog cleanup.
+
+User follow-ups:
+- Make one test post at /admin.
+- Press "Apply standard prices".
+- Send real placement credits for `data/placements.json`.
+
 ## Homepage MPC, blog, gallery, museum (2026-10-11, branch `claude/friendly-hypatia-3fmmrn`, not on main until the user okays it)
 - **Homepage** (`index.html`, `home.js`): the Readymag photo is the only UI. The nav bar is gone.
   - `scripts/build-hero-layers.py` measures the 16 pads from the pixels and cuts out the VOL fader cap and the jog wheel. It rebuilds the slot behind the cap and writes `data/hero-map.json`. Re-run it if the photo changes.
