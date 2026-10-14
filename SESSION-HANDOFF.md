@@ -20,6 +20,30 @@ Sell beats from rmlur.com with no BeatStars: buyer pays via Stripe, gets a downl
 - **Publishing paths**: `npm run publish-beats -- --sync` and `scripts/beat-drop-watch.mjs` both upload deliverables to R2 when `R2_*` env vars exist (priority: sidecar `dropbox` entry > R2 > Vercel Blob).
 - **Browser admin** (`/admin`, `admin/index.html`, `admin/admin.js`, `api/admin-r2-presign.js`, `api/admin-upload.js`): log in, fill title/genre/BPM, choose WAV (+ optional MP3, stems zip, cover, preview), Publish. Browser PUTs files straight to R2 via presigned URL; writes product row with tiers WAV/MP3/STEMS + EXCLUSIVE ($34.99 / $24.99 / $59.99 / $249.99 defaults). Tier only appears if its file was added. Last fix: asset paths made absolute so `/admin` works without a trailing slash (before that the page was unstyled and Log In did nothing).
 
+## Went live 2026-10-12
+`main` now has the MPC homepage, blog, gallery, museum and RIAA-style plaques, merged with the catalog-cleanup work: the `/admin` panels are Post, Add product, Prices and Catalog cleanup.
+
+User follow-ups:
+- Make one test post at /admin.
+- Press "Apply standard prices".
+- Send real placement credits for `data/placements.json`.
+
+## Homepage MPC, blog, gallery, museum (2026-10-11, branch `claude/friendly-hypatia-3fmmrn`, not on main until the user okays it)
+- **Homepage** (`index.html`, `home.js`): the Readymag photo is the only UI. The nav bar is gone.
+  - `scripts/build-hero-layers.py` measures the 16 pads from the pixels and cuts out the VOL fader cap and the jog wheel. It rebuilds the slot behind the cap and writes `data/hero-map.json`. Re-run it if the photo changes.
+  - Pad destinations live in `HOME_PADS` in `hotspots.js`: 1 Home, 2 Beats, 3 YouTube, 4 Instagram, 5 TikTok, 6 Contact, 7 Blog, 8 Gallery, 9 Museum, 10 About. Pads 11–16 play one-shots.
+  - The fader drags and the wheel turns; they control nothing, by user choice.
+  - At rest the page matches the original photo pixel for pixel.
+- **Blog + gallery:** a `posts` table, auto-created, behind `/api/posts`.
+  - Public GET; admin-only POST and DELETE.
+  - The Post box on `/admin` takes pasted text plus an optional image. The type is Blog or Gallery.
+  - `blog.html` and `blog.js` show the feed, rendered as text only. `gallery.html` and `gallery.js` show a masonry wall seeded with the repo's art.
+- **Museum** (`museum.html`, `museum.js`): a white-wall Three.js room with plaques, built from `data/placements.json`.
+  - Only Mariah the Scientist, *Hearts Sold Separately* (Buckles Laboratories / Epic, 2025-08-22) has public facts.
+  - Gold is as the user reported it; the public record shows the single "Burning Blue" is RIAA Gold.
+  - Taj, B6, Swampa and Billboard are placeholders with `verified:false`, which shows "details pending". Fill in real facts in the JSON and never invent certifications.
+- Instagram, Readymag and Genius were blocked from the cloud session, so the pad map is a best guess. Confirm it with the user.
+
 ## Checkout safety + standard prices (2026-10-11, branch `claude/friendly-hypatia-3fmmrn`)
 - **No more paying for files that don't exist.** `/api/checkout` returns 409 `not available yet` when the tier has no deliverable. `/api/products` now gives each tier and the exclusive a `buyable` flag (the file reference stays hidden). The store shows **Ask** (mailto) instead of **Buy** for those tiers.
 - **Producer alert.** If a paid order still has no file, the webhook emails `jayrewindbeatz@gmail.com` (override with `ORDERS_NOTIFY_EMAIL`) through Resend. It needs `RESEND_API_KEY`.

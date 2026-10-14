@@ -11,28 +11,23 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="home-static">
-<nav class="home-nav" aria-label="Main">
-  <a href="index.html" aria-current="page">Home</a>
-  <a href="store.html">Beats</a>
-  <a href="https://www.youtube.com/" target="_blank" rel="noopener">YouTube</a>
-  <a href="https://www.instagram.com/kennethglamour/" target="_blank" rel="noopener">Instagram</a>
-  <a href="https://www.tiktok.com/@jayrewindbeatz" target="_blank" rel="noopener">TikTok</a>
-  <a href="about.html">About</a>
-  <a href="mailto:jayrewindbeatz@gmail.com">Contact</a>
-</nav>
-
-<!-- Live homepage = the original Readymag MPC 2000XL hero. The 3D MPC scene
-     (mpc-3d.js, cassette-bay.js, hotspots.js) is untouched and just not
-     loaded here; see PROGRESS.md. -->
+<!-- The MPC photo IS the site. Every pad is an exact, invisible hit area
+     measured from the pixels (scripts/build-hero-layers.py → data/hero-map.json);
+     the VOL fader cap and the jog wheel are cut-out layers of the same photo
+     that move in place. Pad destinations live in HOME_PADS (hotspots.js). -->
 <main class="home-hero">
-  <a href="store.html" class="home-hero-link" aria-label="Buy beats">
-    <img src="assets/hero-mpc-2000xl-readymag.png" width="1412" height="1136"
-         alt="Worn cream Akai MPC 2000XL covered in stickers — buy beats here">
-  </a>
+  <div class="mpc" id="mpc">
+    <img class="mpc-photo" src="assets/hero/hero-base.png" width="1412" height="1136"
+         alt="Worn cream Akai MPC 2000XL covered in stickers — the pads are the menu">
+    <img class="mpc-wheel" id="mpcWheel" src="assets/hero/jog-wheel.png" alt="" draggable="false">
+    <img class="mpc-fader" id="mpcFader" src="assets/hero/fader-cap.png" alt="" draggable="false">
+  </div>
 </main>
 
 <footer class="site-footer mini-footer">
   <span>jayrewindbeatz@gmail.com</span>
 </footer>
+<script src="hotspots.js"></script>
+<script src="home.js"></script>
 </body>
 </html>
