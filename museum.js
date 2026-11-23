@@ -602,7 +602,7 @@
         ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#1b1b1b'; ctx.textBaseline = 'top';
         ctx.font = '600 66px "IBM Plex Mono", monospace'; ctx.fillText('CREDITS', 60, 56);
         ctx.fillStyle = '#55524a'; ctx.font = '400 30px "IBM Plex Mono", monospace';
-        ctx.fillText(data.count + ' credits · via Muso', 60, 140);
+        ctx.fillText(data.count + ' credits · featured first', 60, 140);
         ctx.fillStyle = '#d9d6ce'; ctx.fillRect(60, 196, w - 120, 2);
         data.credits.slice(0, 22).forEach(function (c, i) {
           var y = 222 + i * 44;
@@ -683,7 +683,7 @@
       row(dl, 'Track', p.track ? String(p.track) : null); row(dl, 'Producers', p.producers);
       row(dl, 'Role', p.role); row(dl, 'Label', p.label); row(dl, 'Released', p.released);
       (p.charts || []).forEach(function (ch) { row(dl, 'Chart', ch.chart + ' — peak #' + ch.peak); });
-      if (p.tracks && p.tracks.length) row(dl, 'Tracks', p.tracks.join(', '));
+      if (p.tracks && p.tracks.length) row(dl, 'Tracks', p.tracks.join('\n'));
       row(dl, 'Certified', c ? (p.certBody || 'RIAA') + ' ' + (p.certLabel || c.label) : null);
       row(dl, 'Streams', p.streams);
       if (p.billboard) row(dl, 'Billboard', p.billboard.chart + (p.billboard.peak ? ' — peak #' + p.billboard.peak : ''));
@@ -715,19 +715,35 @@
     card.appendChild(buy); card.appendChild(notice);
     card.classList.add('show');
   }
+  function fmtPlays(n) { return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'K plays' : n + ' plays'; }
   function showCreditsCard(p) {
     var data = p._credits || { credits: [], count: 0 };
     card.appendChild(el('h2', null, 'Credits'));
     card.appendChild(el('div', 'sub', data.count + ' credits — JayRewind'));
-    var list = el('ol', 'list');
-    data.credits.forEach(function (c) {
-      var li = el('li');
-      li.appendChild(el('b', null, c.title));
-      li.appendChild(document.createTextNode(' — ' + c.artists.join(', ') + ' (' + c.date.slice(0, 4) + ') · ' + c.roles.join(', ')));
-      list.appendChild(li);
+    var sections = [
+      ['Featured', function (c) { return c.priority; }],
+      ['On SoundCloud', function (c) { return !c.priority && c.source === 'soundcloud'; }],
+      ['Credited on Muso', function (c) { return c.source !== 'soundcloud'; }]
+    ];
+    var box = el('div', 'list');
+    sections.forEach(function (sec) {
+      var items = data.credits.filter(sec[1]); if (!items.length) return;
+      box.appendChild(el('div', 'sec', sec[0] + ' (' + items.length + ')'));
+      var ol = el('ol');
+      items.forEach(function (c) {
+        var li = el('li'), t;
+        if (c.url) { t = el('a', null, c.title); t.href = c.url; t.target = '_blank'; t.rel = 'noopener'; var b = el('b'); b.appendChild(t); li.appendChild(b); }
+        else li.appendChild(el('b', null, c.title));
+        var bits = [c.artists.join(', ') + ' (' + c.date.slice(0, 4) + ')', c.roles.join(', ')];
+        if (c.coProducers && c.coProducers.length) bits.push('with ' + c.coProducers.join(', '));
+        if (c.plays) bits.push(fmtPlays(c.plays));
+        li.appendChild(document.createTextNode(' — ' + bits.join(' · ')));
+        ol.appendChild(li);
+      });
+      box.appendChild(ol);
     });
-    card.appendChild(list);
-    var l = el('div', 'note links'); var a = el('a', null, 'Full profile on Muso'); a.href = data.source || '#'; a.target = '_blank'; a.rel = 'noopener'; l.appendChild(a);
+    card.appendChild(box);
+    var l = el('div', 'note links'); var a = el('a', null, 'Full profile on Muso'); a.href = (data.sources && data.sources.muso) || data.source || '#'; a.target = '_blank'; a.rel = 'noopener'; l.appendChild(a);
     card.appendChild(l);
     card.classList.add('show');
   }

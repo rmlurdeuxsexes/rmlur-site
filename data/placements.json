@@ -11,14 +11,17 @@
       "album": "Hearts Sold Separately",
       "label": "Buckles Laboratories / Epic Records",
       "released": "2025-08-22",
-      "role": "Producer, Instrumentation",
+      "role": "Co-Producer, Co-Writer, Instrumentation",
       "cert": "gold",
       "certBody": "RIAA",
-      "certNote": "Double Gold, as reported by JayRewind.",
       "streams": null,
       "billboard": null,
       "cover": "assets/museum/cover-hearts-sold-separately.jpg",
       "links": [
+        {
+          "label": "YouTube",
+          "url": "https://www.youtube.com/watch?v=9o9AnpvxKro"
+        },
         {
           "label": "Billboard",
           "url": "https://www.billboard.com/music/chart-beat/mariah-scientist-hearts-sold-number-1-top-rb-albums-chart-1236058949/"
@@ -34,7 +37,7 @@
       ],
       "verified": true,
       "track": 8,
-      "producers": "JayRewind & 1985",
+      "producers": "JayRewind & Nineteen85",
       "charts": [
         {
           "chart": "Billboard Hot R&B Songs",
@@ -69,7 +72,8 @@
           "url": "https://en.wikipedia.org/wiki/Mariah_the_Scientist_discography"
         }
       ],
-      "verified": true
+      "verified": true,
+      "cover": "assets/museum/cover-hearts-sold-separately.jpg"
     },
     {
       "id": "tahj-keeton",
@@ -136,7 +140,7 @@
       "album": "ATTENTION",
       "label": null,
       "released": null,
-      "role": "Producer — confirm",
+      "role": "Producer (intro track), Post-production & transitions (tracks 3, 8, 13)",
       "cert": "none",
       "certBody": null,
       "certNote": null,
@@ -144,25 +148,34 @@
       "billboard": null,
       "cover": "assets/museum/cover-b6.jpg",
       "links": [],
-      "verified": false,
-      "format": "album"
+      "verified": true,
+      "format": "album",
+      "tracks": [
+        "1. Intro — produced",
+        "3. Post-production / transitions",
+        "8. Post-production / transitions",
+        "13. Post-production / transitions"
+      ],
+      "notes": [
+        "Artists: bfuxkin6, adhdyadighaha, souljaspirits, coleigo."
+      ]
     },
     {
       "id": "swapa",
       "type": "plaque",
       "wall": "right",
-      "song": "CLRBLND",
+      "song": "Fully Chop",
       "artist": "Swapa",
       "album": "CLRBLND",
       "label": "Hallwood & 9th St.",
       "released": "2025-11-14",
-      "role": "Executive Producer, Mixing & Mastering, Additional Production",
+      "role": "Producer (track 2, solo), all transitions, Mixing & Mastering, Executive Producer",
       "cert": "none",
       "certBody": null,
       "certNote": null,
       "streams": null,
       "billboard": null,
-      "cover": null,
+      "cover": "assets/museum/cover-clrblnd.jpg",
       "links": [
         {
           "label": "Genius",
@@ -172,8 +185,44 @@
       "verified": true,
       "format": "album",
       "notes": [
-        "17 tracks. Genius lists JayRewind under Additional Production."
-      ]
+        "17-track album. JayRewind produced \"Fully Chop\" (track 2) alone, did every transition, and mixed and mastered the project."
+      ],
+      "track": 2,
+      "producers": "JayRewind (solo)"
+    },
+    {
+      "id": "real-pop-it-boy",
+      "type": "plaque",
+      "wall": "right",
+      "song": "REAL POP IT BOY",
+      "artist": "Jbandwxy",
+      "album": "REAL POP IT BOY",
+      "label": null,
+      "released": "2026-10-30",
+      "role": "Executive Producer, Mixing & Mastering, Producer (5 tracks)",
+      "producers": "JayRewind",
+      "cert": "none",
+      "certBody": null,
+      "cover": "assets/museum/cover-real-pop-it-boy.jpg",
+      "format": "album",
+      "tracks": [
+        "1. 1,2, POP'S COMIN FOR YOU INTRO",
+        "2. JASON",
+        "10. WOAH KEMOSABE (with bclark)",
+        "11. DEMON IN DISGUISE",
+        "12. STICKING/YOU SURE? (with the0n1yp)"
+      ],
+      "notes": [
+        "13 tracks, 29 minutes. Executive produced by RMLUR / JayRewind.",
+        "Mixed by JayRewind with the0n1yp and Mikel; mastered by JayRewind."
+      ],
+      "links": [
+        {
+          "label": "Apple Music",
+          "url": "https://music.apple.com/us/album/real-pop-it-boy/6828623539"
+        }
+      ],
+      "verified": true
     },
     {
       "id": "parental-rmlur",

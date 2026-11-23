@@ -1,8 +1,1012 @@
 {
- "_comment": "JayRewind's credits as listed on Muso (muso.ai), captured 2026-11-23. Shown on museum.html as the credits wall. Re-capture from the profile when it changes.",
+ "_comment": "JayRewind's credits. Order = display order: priority SoundCloud placements first (direct links, Surf, mber montes), then notable SoundCloud placements (5k+ plays, credited by name), then the Muso list (muso.ai, captured 2026-11-23). Re-capture when they change.",
  "source": "https://muso.ai/profile/fa15a1ad-0e8a-425a-b4e4-39bfb7451d48",
- "count": 87,
+ "count": 148,
  "credits": [
+  {
+   "title": "TWIST",
+   "artists": [
+    "PIMPYZ"
+   ],
+   "date": "2016-06-24",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 177124,
+   "url": "https://soundcloud.com/pimpyz/twist-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "link"
+  },
+  {
+   "title": "love drunk!",
+   "artists": [
+    "Jahvor"
+   ],
+   "date": "2025-11-12",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 12792,
+   "url": "https://soundcloud.com/jahvor/love-drunk-p-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "link"
+  },
+  {
+   "title": "Mirror",
+   "artists": [
+    "Surf"
+   ],
+   "date": "2021-03-12",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "Vintage"
+   ],
+   "plays": 69948,
+   "url": "https://soundcloud.com/surfskrt/mirror",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "Need Me",
+   "artists": [
+    "Surf"
+   ],
+   "date": "2019-05-17",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 52047,
+   "url": "https://soundcloud.com/surfskrt/needme",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "Houdini (ft. Surf)",
+   "artists": [
+    "Tre Infinite"
+   ],
+   "date": "2019-11-27",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "Eli Brown"
+   ],
+   "plays": 29197,
+   "url": "https://soundcloud.com/yungxtre/houdini-ft-surf-prod-jayrewind-eli-brown",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "GODLY",
+   "artists": [
+    "Secret Surf"
+   ],
+   "date": "2021-09-06",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "Surf"
+   ],
+   "plays": 27139,
+   "url": "https://soundcloud.com/1secretsurf/godly",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "honesty",
+   "artists": [
+    "Surf"
+   ],
+   "date": "2021-03-20",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "varo"
+   ],
+   "plays": 26412,
+   "url": "https://soundcloud.com/notvaro/surf-honesty-prod-varo-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "BEAKER",
+   "artists": [
+    "Secret Surf"
+   ],
+   "date": "2022-02-09",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "Surf"
+   ],
+   "plays": 23373,
+   "url": "https://soundcloud.com/1secretsurf/beaker",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "STONE COLD STUNNER",
+   "artists": [
+    "Secret Surf"
+   ],
+   "date": "2022-01-01",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "Surf"
+   ],
+   "plays": 8910,
+   "url": "https://soundcloud.com/1secretsurf/stonecoldstunner",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "COPING MECHANISMS",
+   "artists": [
+    "Surf"
+   ],
+   "date": "2021-11-04",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 6353,
+   "url": "https://soundcloud.com/user-261574844/coping-mechanisms-prod-jay-rewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "SHATTERED MEMORIES",
+   "artists": [
+    "Surf"
+   ],
+   "date": "2021-11-04",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "Surf"
+   ],
+   "plays": 2879,
+   "url": "https://soundcloud.com/user-261574844/shattered-memories-prod-surf-jay-rewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "4EVER",
+   "artists": [
+    "Surf"
+   ],
+   "date": "2021-11-04",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "Surf"
+   ],
+   "plays": 2059,
+   "url": "https://soundcloud.com/user-261574844/4ever-prod-surf-jay-rewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "Blast Em",
+   "artists": [
+    "Surf"
+   ],
+   "date": "2024-11-17",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "VVDSound"
+   ],
+   "plays": 560,
+   "url": "https://soundcloud.com/starzxan/surf-blast-em-prod-vvdsound",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "surf"
+  },
+  {
+   "title": "luv sweet vida",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-29",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 1450,
+   "url": "https://soundcloud.com/mbermontes-innerloods/luv-sweet-vida-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "robobae",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-11-20",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 1256,
+   "url": "https://soundcloud.com/mbermontes-innerloods/robobae-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "midnight ballerina",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-11-24",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 1002,
+   "url": "https://soundcloud.com/mbermontes-innerloods/the-midnight-ballerina-prod",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "pretty lucky girl",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-07",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 989,
+   "url": "https://soundcloud.com/mbermontes-innerloods/pretty-lucky-girl-prod",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "virgin(ia) ya ya",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-07-23",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 664,
+   "url": "https://soundcloud.com/mbermontes-innerloods/virgin-ia-ya-ya-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "immortal mona",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-29",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 498,
+   "url": "https://soundcloud.com/mbermontes-innerloods/immortal-mona-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "cashews",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-11-20",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 448,
+   "url": "https://soundcloud.com/mbermontes-innerloods/cashews-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "dear tupac",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-18",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "kookup_",
+    "prodkavin",
+    "sammyhaig"
+   ],
+   "plays": 407,
+   "url": "https://soundcloud.com/mbermontes-innerloods/dear-tupac",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "red is the color",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-15",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 374,
+   "url": "https://soundcloud.com/mbermontes-innerloods/red-is-the-color-prod",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "kill the dj",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-08",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 365,
+   "url": "https://soundcloud.com/mbermontes-innerloods/kill-the-dj-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "pp4life",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-11-24",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 331,
+   "url": "https://soundcloud.com/mbermontes-innerloods/pp4life-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "my boyfriends a slore",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-11-20",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 315,
+   "url": "https://soundcloud.com/mbermontes-innerloods/my-boyfriends-a-slore-prod",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "come set away",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-15",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 288,
+   "url": "https://soundcloud.com/mbermontes-innerloods/come-set-away-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "always on my mind",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-15",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 236,
+   "url": "https://soundcloud.com/mbermontes-innerloods/always-on-my-mind-prod",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "picture me",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-15",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 211,
+   "url": "https://soundcloud.com/mbermontes-innerloods/picture-me-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "when a women",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-15",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 191,
+   "url": "https://soundcloud.com/mbermontes-innerloods/when-a-women-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "1080p",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-11-25",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 178,
+   "url": "https://soundcloud.com/mbermontes-innerloods/1080p-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "birthday suit",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-04",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 174,
+   "url": "https://soundcloud.com/mbermontes-innerloods/birthday-suit-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "home is where",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-21",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 169,
+   "url": "https://soundcloud.com/mbermontes-innerloods/home-is-where-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "the whos who aka famous contacts",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-18",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 156,
+   "url": "https://soundcloud.com/mbermontes-innerloods/the-whos-who-aka-famous",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "alright dj",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-11-26",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 153,
+   "url": "https://soundcloud.com/mbermontes-innerloods/alright-dj-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "on top",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-04",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 143,
+   "url": "https://soundcloud.com/mbermontes-innerloods/on-top-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "spark in the dark",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-16",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 137,
+   "url": "https://soundcloud.com/mbermontes-innerloods/spark-in-the-dark-prod",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "girl fight",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-15",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 133,
+   "url": "https://soundcloud.com/mbermontes-innerloods/girl-fight-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "i see u feel u hear u",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-16",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 128,
+   "url": "https://soundcloud.com/mbermontes-innerloods/feel-u-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "7 reasons",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-15",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 122,
+   "url": "https://soundcloud.com/mbermontes-innerloods/7-reasons-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "baby daddy",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-04",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 119,
+   "url": "https://soundcloud.com/mbermontes-innerloods/baby-daddy-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "steel digger",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-15",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 119,
+   "url": "https://soundcloud.com/mbermontes-innerloods/steel-digger-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "signs from the times",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2026-01-15",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 114,
+   "url": "https://soundcloud.com/mbermontes-innerloods/signs-from-the-times-prod",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "same song aka rip shock g",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-04",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 114,
+   "url": "https://soundcloud.com/mbermontes-innerloods/same-song-aka-rip-shock-g-prod",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "don't need you",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-04",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 87,
+   "url": "https://soundcloud.com/mbermontes-innerloods/dont-need-you-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "yung forever",
+   "artists": [
+    "mber montes"
+   ],
+   "date": "2025-12-04",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 83,
+   "url": "https://soundcloud.com/mbermontes-innerloods/yung-forever-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": true,
+   "group": "mber"
+  },
+  {
+   "title": "Brand New",
+   "artists": [
+    "bandsxx"
+   ],
+   "date": "2018-06-10",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 180502,
+   "url": "https://soundcloud.com/bandsxxxx/brand-new-prod-jay-rewind",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "ALL I GOT (BROTHERS)",
+   "artists": [
+    "Bankz Bankroll & Savvy Baby"
+   ],
+   "date": "2017-07-19",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 61705,
+   "url": "https://soundcloud.com/traporbehoot/bankz-bankroll-x-savvy-baby-all-i-got-brothers",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "MIND YA BU$$INE$$",
+   "artists": [
+    "Johnny"
+   ],
+   "date": "2018-04-07",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 35681,
+   "url": "https://soundcloud.com/johnnytre/mind-ya-buine-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "Tweakin",
+   "artists": [
+    "jk"
+   ],
+   "date": "2023-11-26",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "Quincy Sxbra"
+   ],
+   "plays": 24183,
+   "url": "https://soundcloud.com/jeffkush/tweakin-prod-quincy-sxbra-x-jayrewind",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "8",
+   "artists": [
+    "kodz"
+   ],
+   "date": "2016-04-28",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 15999,
+   "url": "https://soundcloud.com/kody99/8-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "ok what up!",
+   "artists": [
+    "Jahvor"
+   ],
+   "date": "2024-09-13",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 15621,
+   "url": "https://soundcloud.com/jahvor/ok-what-up-p-jayrewind-flp-mp3",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "Bones",
+   "artists": [
+    "Smitty Cash"
+   ],
+   "date": "2020-01-10",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 12463,
+   "url": "https://soundcloud.com/aycsmittycash/bones-prod-jay-rewind",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "INTRO",
+   "artists": [
+    "Mari Kvlls"
+   ],
+   "date": "2022-09-30",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 9993,
+   "url": "https://soundcloud.com/user-888526308/intro-prodjayrewind",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "Roll Deep (ft. Juice)",
+   "artists": [
+    "jk"
+   ],
+   "date": "2023-11-26",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "Quincy Sxbra"
+   ],
+   "plays": 9365,
+   "url": "https://soundcloud.com/jeffkush/juicebox-x-jeff-kush-roll-deep-prod-quincy-sxbra-jayrewind",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "Let Me Know",
+   "artists": [
+    "Smitty Cash"
+   ],
+   "date": "2020-04-27",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 8632,
+   "url": "https://soundcloud.com/aycsmittycash/let-me-know-prod-jayrewind",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "Toxic Energy (ft. Nayyy)",
+   "artists": [
+    "Louie XO"
+   ],
+   "date": "2022-02-14",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 8059,
+   "url": "https://soundcloud.com/xlouiexo/toxic-energy-feat-nayyy-prod",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "Investigation",
+   "artists": [
+    "Savvy Baby, Bankz Bankroll & Blazo Santana"
+   ],
+   "date": "2018-06-09",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 6922,
+   "url": "https://soundcloud.com/traporbehoot/12-investigation-savvy-baby-x-bankz-bankroll-x-blazo119",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "Too Real",
+   "artists": [
+    "jk"
+   ],
+   "date": "2023-11-26",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [
+    "Quincy Sxbra"
+   ],
+   "plays": 6876,
+   "url": "https://soundcloud.com/jeffkush/too-real-prod-quincy-sxbra-jayrewind",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "14",
+   "artists": [
+    "MAYZiN"
+   ],
+   "date": "2020-03-13",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 6489,
+   "url": "https://soundcloud.com/immayzin/14s",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "toXic",
+   "artists": [
+    "CashOutJony"
+   ],
+   "date": "2021-03-20",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 6355,
+   "url": "https://soundcloud.com/cashoutjonycc/toxic",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
+  {
+   "title": "LIFEOFTHEPARTY",
+   "artists": [
+    "Kodz"
+   ],
+   "date": "2017-05-05",
+   "roles": [
+    "Producer"
+   ],
+   "coProducers": [],
+   "plays": 6241,
+   "url": "https://soundcloud.com/kody99/lifeoftheparty",
+   "source": "soundcloud",
+   "priority": false,
+   "group": "sc"
+  },
   {
    "title": "OURO",
    "artists": [
@@ -11,7 +1015,8 @@
    "date": "2026-11-11",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Outata (OG Freestyle)",
@@ -22,7 +1027,8 @@
    "roles": [
     "Producer",
     "Executive Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Checking Me Out",
@@ -32,7 +1038,8 @@
    "date": "2025-12-19",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "good day",
@@ -42,7 +1049,8 @@
    "date": "2025-12-01",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "I'm so sorry for your loss",
@@ -53,7 +1061,8 @@
    "roles": [
     "Composer",
     "Engineer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "stay instead",
@@ -63,7 +1072,8 @@
    "date": "2025-11-21",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "nervous",
@@ -73,7 +1083,8 @@
    "date": "2025-10-30",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Gothgirl Summer",
@@ -83,7 +1094,8 @@
    "date": "2025-10-10",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "POV",
@@ -93,7 +1105,8 @@
    "date": "2025-09-30",
    "roles": [
     "Executive Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Rainy Days",
@@ -104,7 +1117,8 @@
    "roles": [
     "Producer",
     "Instrumentation"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Swoosh",
@@ -114,7 +1128,8 @@
    "date": "2025-08-01",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "The Eye",
@@ -125,7 +1140,8 @@
    "roles": [
     "Composer",
     "Lyricist"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "TAKE ME AWAY",
@@ -135,7 +1151,8 @@
    "date": "2025-07-11",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Experimentālā Serēna",
@@ -145,7 +1162,8 @@
    "date": "2025-05-30",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "MOON & STARS*",
@@ -155,7 +1173,8 @@
    "date": "2025-05-18",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "OFFTHEEDGE",
@@ -165,7 +1184,8 @@
    "date": "2025-04-11",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "CHAOS",
@@ -175,7 +1195,8 @@
    "date": "2024-11-01",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Hearin Me Out",
@@ -185,7 +1206,8 @@
    "date": "2024-09-21",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Hearing Me Out",
@@ -195,7 +1217,8 @@
    "date": "2024-09-21",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Browser",
@@ -205,7 +1228,8 @@
    "date": "2024-06-21",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "ICUDSEEIT*",
@@ -215,7 +1239,8 @@
    "date": "2024-06-04",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Wrong man",
@@ -225,7 +1250,8 @@
    "date": "2024-06-04",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "COMEVISIT",
@@ -237,7 +1263,8 @@
     "Composer",
     "Lyricist",
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "SPACE COUPE",
@@ -247,7 +1274,8 @@
    "date": "2023-11-17",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Pull Up",
@@ -258,7 +1286,8 @@
    "roles": [
     "Composer",
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "TOUCHING THE STARS",
@@ -269,7 +1298,8 @@
    "roles": [
     "Composer",
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "ITHINKIMNLUV",
@@ -279,7 +1309,8 @@
    "date": "2023-08-18",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Let's Take a Trip",
@@ -289,7 +1320,8 @@
    "date": "2023-08-18",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "LET IT GO THE THINGS YOU CAN'T CONTROL",
@@ -299,7 +1331,8 @@
    "date": "2023-08-11",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Party on the Moon",
@@ -310,7 +1343,8 @@
    "roles": [
     "Composer",
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Space",
@@ -320,7 +1354,8 @@
    "date": "2023-04-30",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "FROSTY",
@@ -330,7 +1365,8 @@
    "date": "2023-04-30",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "THERAPY",
@@ -340,7 +1376,8 @@
    "date": "2023-04-22",
    "roles": [
     "Co-Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Stella's Interlude",
@@ -350,7 +1387,8 @@
    "date": "2023-04-18",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "on the low",
@@ -360,7 +1398,8 @@
    "date": "2023-04-14",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "SHE WAS MY BEST",
@@ -370,7 +1409,8 @@
    "date": "2023-04-01",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Sacrifices",
@@ -381,7 +1421,8 @@
    "date": "2023-03-01",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "WUZ HERE...",
@@ -392,7 +1433,8 @@
    "roles": [
     "Composer",
     "Lyricist"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "UUUUHH",
@@ -403,7 +1445,8 @@
    "roles": [
     "Composer",
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "QUAL É A CENA",
@@ -414,7 +1457,8 @@
    "roles": [
     "Composer",
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "To U From Me XO",
@@ -424,7 +1468,8 @@
    "date": "2022-12-23",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Sky High",
@@ -434,7 +1479,8 @@
    "date": "2022-11-28",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Hip-Hop Back",
@@ -446,7 +1492,8 @@
    "date": "2022-11-18",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Mamazala",
@@ -457,7 +1504,8 @@
    "date": "2022-11-18",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Pressure [An ode to DMX]",
@@ -468,7 +1516,8 @@
    "date": "2022-11-18",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Green No Blue",
@@ -478,7 +1527,8 @@
    "date": "2022-11-18",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "DUENA",
@@ -489,7 +1539,8 @@
    "date": "2022-09-21",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "HAŁAS",
@@ -499,7 +1550,8 @@
    "date": "2022-09-02",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "NEW START NEW DAY",
@@ -509,7 +1561,8 @@
    "date": "2022-08-24",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Lavazza",
@@ -519,7 +1572,8 @@
    "date": "2022-06-03",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "BEEP STOP",
@@ -529,7 +1583,8 @@
    "date": "2022-03-31",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "GUNS GON3 BUSS/GUNS GONE BUSS",
@@ -539,7 +1594,8 @@
    "date": "2022-02-25",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Outrageous",
@@ -549,7 +1605,8 @@
    "date": "2022-02-11",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Hungry Flow PT. 1",
@@ -559,7 +1616,8 @@
    "date": "2022-01-21",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "High On Life",
@@ -569,7 +1627,8 @@
    "date": "2021-11-05",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "TUNNEL VISION",
@@ -579,7 +1638,8 @@
    "date": "2021-07-04",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "DREAMTEAM",
@@ -591,7 +1651,8 @@
    "roles": [
     "Composer",
     "Lyricist"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Raid Freestyle",
@@ -601,7 +1662,8 @@
    "date": "2021-06-25",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "WHATEVA",
@@ -611,7 +1673,8 @@
    "date": "2021-06-14",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "LONG WAY",
@@ -622,7 +1685,8 @@
    "date": "2021-05-07",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "MECTD UP",
@@ -632,7 +1696,8 @@
    "date": "2021-04-09",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "RIRI",
@@ -644,7 +1709,8 @@
     "Composer",
     "Producer",
     "Mixing"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Palm Trees (LitchyMix)",
@@ -656,7 +1722,8 @@
    "date": "2021-02-24",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Bonkers (Lights Out)",
@@ -667,7 +1734,8 @@
    "date": "2021-02-19",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "ICYHOT",
@@ -678,7 +1746,8 @@
    "roles": [
     "Composer",
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Insecure (interlude)",
@@ -688,7 +1757,8 @@
    "date": "2021-02-03",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Kaïzoku 5",
@@ -698,7 +1768,8 @@
    "date": "2021-01-29",
    "roles": [
     "Composer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "The Coupe Is A Range",
@@ -708,7 +1779,8 @@
    "date": "2021-01-01",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Mars & Back",
@@ -719,7 +1791,8 @@
    "date": "2020-12-08",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Dancer",
@@ -729,7 +1802,8 @@
    "date": "2020-08-28",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Shut It Down",
@@ -739,7 +1813,8 @@
    "date": "2020-04-26",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Flexin",
@@ -749,7 +1824,8 @@
    "date": "2020-04-24",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "CHAMPION",
@@ -761,7 +1837,8 @@
    "date": "2020-02-28",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "FIFA",
@@ -773,7 +1850,8 @@
    "date": "2020-01-10",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Loose",
@@ -783,7 +1861,8 @@
    "date": "2019-12-31",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Mo",
@@ -793,7 +1872,8 @@
    "date": "2019-10-04",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Too Much",
@@ -803,7 +1883,8 @@
    "date": "2019-09-20",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Sally",
@@ -813,7 +1894,8 @@
    "date": "2019-09-11",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Topo do Game",
@@ -823,7 +1905,8 @@
    "date": "2019-09-11",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Hang Tight",
@@ -833,7 +1916,8 @@
    "date": "2019-07-22",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Point of View",
@@ -843,7 +1927,8 @@
    "date": "2019-07-19",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Cloud",
@@ -853,7 +1938,8 @@
    "date": "2019-07-19",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "All Good",
@@ -863,7 +1949,8 @@
    "date": "2019-07-19",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "ROCK$TAR.",
@@ -873,7 +1960,8 @@
    "date": "2019-07-19",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "MELT (DEMO)",
@@ -883,7 +1971,8 @@
    "date": "2019-06-14",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "BIG TALK",
@@ -893,7 +1982,8 @@
    "date": "2019-03-22",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   },
   {
    "title": "Go AWF",
@@ -904,7 +1994,11 @@
    "date": "2018-06-24",
    "roles": [
     "Producer"
-   ]
+   ],
+   "source": "muso"
   }
- ]
+ ],
+ "sources": {
+  "muso": "https://muso.ai/profile/fa15a1ad-0e8a-425a-b4e4-39bfb7451d48"
+ }
 }

@@ -24,6 +24,7 @@ test('placements.json: every entry is hangable', () => {
 test('credits.json: every Muso credit has title, artists, date and roles', () => {
   const c = JSON.parse(readFileSync(new URL('../data/credits.json', import.meta.url)));
   assert.equal(c.credits.length, c.count);
+  for (const x of c.credits) if (x.url) assert.match(x.url, /^https:\/\//);
   for (const x of c.credits) {
     assert.ok(x.title && x.artists.length && x.roles.length, x.title);
     assert.match(x.date, /^\d{4}-\d{2}-\d{2}$/);
