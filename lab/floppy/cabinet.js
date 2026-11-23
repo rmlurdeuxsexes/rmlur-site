@@ -42,7 +42,7 @@ function absTexture(seed = 0) {
 function bumpTexture() { return canvasTex(256, 256, (ctx, w, h) => { ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, w, h); noise(ctx, w, h, 60); }, false); }
 
 function paperTexture(lines, opts = {}) {
-  const { y0 = 50, flipY = true, w = 512, h = 180, font = '"Nothing You Could Do", "Grape Nuts", cursive', ink = '#243044', size = 38, ruled = false } = opts;
+  const { y0 = 50, flipY = true, w = 512, h = 180, font = '"RMLUR Hand", "Nothing You Could Do", "Grape Nuts", cursive', ink = '#243044', size = 38, ruled = false } = opts;
   return canvasTex(w, h, (ctx) => {
     ctx.fillStyle = opts.paper || '#efeadb'; ctx.fillRect(0, 0, w, h);
     noise(ctx, w, h, 16);
@@ -69,7 +69,7 @@ function tapeTexture(text, seed = 1) {
     for (let y = bot, i = 0; y > top; y -= 9, i++) path.lineTo(l + (i % 2 ? 7 : 0) + rnd() * 3, Math.max(top, y - 9));
     path.closePath();
     // frosted film
-    ctx.fillStyle = 'rgba(250,249,243,0.50)'; ctx.fill(path);
+    ctx.fillStyle = 'rgba(238,224,190,0.58)'; ctx.fill(path);   // old tape: yellowed film
     ctx.save(); ctx.clip(path);
     const sheen = ctx.createLinearGradient(0, top, 0, bot);
     sheen.addColorStop(0, 'rgba(255,255,255,0.55)'); sheen.addColorStop(0.18, 'rgba(255,255,255,0.08)');
@@ -78,8 +78,8 @@ function tapeTexture(text, seed = 1) {
     for (let i = 0; i < 1400; i++) { ctx.fillStyle = `rgba(255,255,255,${0.05 + rnd() * 0.08})`; ctx.fillRect(rnd() * W, top + rnd() * (bot - top), 1 + rnd() * 2, 1); }
     // Sharpie: fit to the strip, slight baseline drift, two-pass ink for marker bleed
     const label = String(text).toUpperCase();
-    let size = 132; ctx.font = `${size}px "Permanent Marker", "Marker Felt", cursive`;
-    while (ctx.measureText(label).width > (r - l) * 0.84 && size > 48) { size -= 4; ctx.font = `${size}px "Permanent Marker", "Marker Felt", cursive`; }
+    let size = 132; ctx.font = `${size}px "RMLUR Hand", "Permanent Marker", "Marker Felt", cursive`;
+    while (ctx.measureText(label).width > (r - l) * 0.84 && size > 48) { size -= 4; ctx.font = `${size}px "RMLUR Hand", "Permanent Marker", "Marker Felt", cursive`; }
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.translate(W / 2, (top + bot) / 2 + 6); ctx.rotate((rnd() - 0.5) * 0.035);
     ctx.fillStyle = 'rgba(14,14,16,0.22)'; ctx.fillText(label, 1.5, 1.5);
@@ -144,12 +144,50 @@ const FACE_W = CELL_W - 0.8, FACE_H = CELL_H - 0.8, FACE_D = 3;
 // disks in an open drawer: one row standing on the bin floor, leaning back a
 // little so the front label faces the camera; flipped disks fall forward onto
 // a pile. Sized so a full row (max) still clears the bin's back wall.
-const STACK = { z0: -FACE_D / 2 - 9.6, gap: 0.7, floor: -6.2, lean: -0.5, flat: 1.25, max: 18 };
+// flipped disks lean forward like a real flip-through (~55deg), not near-flat, so the bin's empty
+// front gap can be ~2.5 units shorter
+const STACK = { z0: -FACE_D / 2 - 7.2, gap: 0.7, floor: -6.2, lean: -0.5, flat: 0.98, max: 18 };
 
 /* ---------------- Blender kit (assets/cabinet/cabinet.glb) ----------------
    Built by scripts/blender/build_cabinet.py. If it fails to load the procedural
    cabinet below is used instead, so the page never breaks. */
-const KIT_TINT = [0.95, 1.0, 1.12];   // cool trim: the bake is warm, the reference plastic is nearly neutral
+const KIT_TINT = [0.95, 1.0, 1.12];   // cool trim for the disks' baked maps (keeps them neutral)
+// The cabinet itself is old cream/tan ABS like the MPC 2000XL: warm tint, then
+// ageShader() adds yellowed mottling, dust specks and a dusty film on top faces.
+const CAB_TINT = [0.98, 0.89, 0.74];
+function ageShader(mat) {
+  if (mat.userData.aged) return;
+  mat.userData.aged = true;
+  mat.color.setRGB(CAB_TINT[0], CAB_TINT[1], CAB_TINT[2]);
+  mat.roughness = Math.max(mat.roughness ?? 0.6, 0.78);       // dust kills the sheen
+  mat.onBeforeCompile = sh => {
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vAgeW; varying vec3 vAgeN;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvAgeW = (modelMatrix * vec4(transformed, 1.0)).xyz;')
+      .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nvAgeN = normalize(mat3(modelMatrix) * objectNormal);');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+varying vec3 vAgeW; varying vec3 vAgeN;
+float ah(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float an(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(ah(i), ah(i + vec3(1,0,0)), f.x), mix(ah(i + vec3(0,1,0)), ah(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(ah(i + vec3(0,0,1)), ah(i + vec3(1,0,1)), f.x), mix(ah(i + vec3(0,1,1)), ah(i + vec3(1,1,1)), f.x), f.y), f.z); }
+float afbm(vec3 p){ float v = 0.0, a = 0.5; for (int k = 0; k < 4; k++) { v += a * an(p); p *= 2.03; a *= 0.5; } return v; }`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+{
+  float yel = afbm(vAgeW * 0.05);                                   // slow yellowing / sun-fade patches
+  diffuseColor.rgb *= mix(vec3(1.03, 1.02, 1.0), vec3(0.86, 0.78, 0.62), smoothstep(0.30, 0.72, yel));
+  float grime = afbm(vAgeW * 0.8 + 7.0);                            // fine handling grime
+  diffuseColor.rgb *= 0.88 + 0.16 * grime;
+  float speck = step(0.994, ah(floor(vAgeW * 11.0))) * step(0.45, afbm(vAgeW * 0.4)); // sparse, clustered specks
+  diffuseColor.rgb *= 1.0 - 0.22 * speck;
+  float up = smoothstep(0.55, 0.95, vAgeN.y);                       // dust settles on top faces
+  float film = up * (0.45 + 0.55 * afbm(vAgeW * 0.35 + 3.0));
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.75, 0.69), film * 0.45);
+}`);
+  };
+  mat.needsUpdate = true;
+}
 async function loadKit() {
   if (!THREE.GLTFLoader) return null;
   try {
@@ -162,6 +200,9 @@ async function loadKit() {
     const baked = []; gltf.scene.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) if (m.map && !baked.includes(m)) baked.push(m); });
     window.__tint = c => baked.forEach(m => m.color.setRGB(c[0], c[1], c[2]));
     window.__tint(KIT_TINT);
+    // age the cabinet + drawers (clones share these materials)
+    for (const part of [kit.cabinet, kit.drawer, kit.divider])
+      part.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) if (m.isMeshStandardMaterial && m.map) ageShader(m); });   // baked plastic only; steel / red steel untouched
     return kit;
   } catch (e) { console.warn('[cabinet] using procedural fallback:', e.message || e); return null; }
 }
@@ -172,7 +213,7 @@ const kit = await loadKit();
 // (otherwise they silently fall back to a system serif)
 async function fontsReady() {
   if (!document.fonts) return;
-  const want = ['72px "Permanent Marker"', '38px "Nothing You Could Do"'];
+  const want = ['72px "RMLUR Hand"', '72px "Permanent Marker"', '38px "Nothing You Could Do"'];
   try { await Promise.race([Promise.all(want.map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 4000))]); } catch {}
 }
 await fontsReady();
@@ -231,7 +272,7 @@ function buildFace(cfg) {
   // label window: frame, paper, clear cover
   const wx = -4.0, wy = 4.7;
   g.add(box(13.6, 4.8, 0.5, M.absDark, wx, wy, front - 0.1));
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(12.6, 3.9), new THREE.MeshStandardMaterial({ map: paperTexture([], { w: 512, h: 144 }), roughness: 0.9 }));
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(12.6, 3.9), new THREE.MeshStandardMaterial({ map: paperTexture([], { w: 512, h: 144 }), roughness: 0.9, color: 0xeadfc6 }));
   label.position.set(wx, wy, front + 0.18); g.add(label);
   const clear = box(13.0, 4.2, 0.5, M.clear, wx, wy, front + 0.42); clear.castShadow = false; g.add(clear);
   g.add(box(13.2, 0.3, 0.7, M.steel, wx, wy + 2.15, front + 0.45)); // retainer lip
@@ -253,7 +294,7 @@ function kitFace(cfg) {
   const g = new THREE.Group();
   g.add(kit.drawer.clone());
   const lab = kit.label.clone();
-  lab.material = new THREE.MeshStandardMaterial({ map: paperTexture([], { w: 512, h: 144, flipY: false }), roughness: 0.9 });
+  lab.material = new THREE.MeshStandardMaterial({ map: paperTexture([], { w: 512, h: 144, flipY: false }), roughness: 0.9, color: 0xeadfc6 });
   g.add(lab);
   const win = kit.window.clone(); win.material = M.clear; win.castShadow = false; g.add(win);
   g.add(tapeMesh(cfg.label, cfg._idx || 0, FACE_D / 2 + 0.33));   // window front sits at ~+1.80
@@ -349,12 +390,13 @@ const VIEWS = {
 // disk so its label is readable, and follows it back as you flip through
 function binView(d) {
   const gz = DEPTH / 2 - FACE_D / 2 + TRAVEL;
-  const f = new THREE.Vector3(d.cx, d.cy + STACK.floor + 4.4, gz + STACK.z0 - d.cur * STACK.gap + 0.8);
+  const f = new THREE.Vector3(d.cx, d.cy + STACK.floor + 4.4, gz + STACK.z0 - d.cur * STACK.gap + 2.4);   // aim a bit forward so the drawer front stays in view
   const ins = insets(), freeFrac = Math.max(0.25, (innerHeight - ins.top - ins.bottom - 24) / innerHeight);
   const t = Math.tan((camera.fov * Math.PI) / 360);
-  // the front disk (9.4 tall, leaning back, seen ~65deg from above) takes ~58% of the free height; never wider than 70% of the screen
-  // visible height at distance d is 2*d*t, so solve 8.2 = 0.58 * freeFrac * 2*d*t (and the same for width)
-  const dist = Math.max(8.2 / (2 * t * 0.58 * freeFrac), 9.4 / (2 * t * camera.aspect * 0.70));
+  // the front disk (9.4 tall, leaning back, seen ~65deg from above) takes ~34% of the free height and at most 40% of the
+  // width, so the whole open drawer (and a bit of cabinet) stays in frame instead of a close-up
+  // visible height at distance d is 2*d*t, so solve 8.2 = 0.34 * freeFrac * 2*d*t (and the same for width)
+  const dist = Math.max(8.2 / (2 * t * 0.34 * freeFrac), 9.4 / (2 * t * camera.aspect * 0.40));
   const dir = new THREE.Vector3(0, 32, 15).normalize();   // steep enough to look over the drawer front at the pile and the front disk
   return { pos: f.clone().addScaledVector(dir, dist), look: f };
 }
@@ -370,7 +412,10 @@ let viewer = null;   // clear-case viewer, created once the drawers exist
 let camPos = VIEWS.closed.pos.clone(), camLook = VIEWS.closed.look.clone(), view = 'closed';
 function resize() {
   const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
-  camera.fov = w / h < 1 ? 28 / Math.min(1, (w / h) * 1.1) : 28; camera.updateProjectionMatrix();
+  // portrait: widen the vertical FOV until the whole cabinet width (+ a little margin) fits the screen
+  // (horizontal half-angle needs tan ~0.30 at the closed-view distance)
+  const ar = w / h;
+  camera.fov = ar < 1 ? Math.max(28, 2 * Math.atan(0.30 / ar) * 180 / Math.PI) : 28; camera.updateProjectionMatrix();
   if (viewer) viewer.resize(w, h);
 }
 addEventListener('resize', resize); resize();
@@ -461,7 +506,7 @@ function tapDisk(d, disk) {
 }
 function diskTarget(d, k) {
   const u = k.userData, i = u.index;
-  if (i < d.cur) return { a: Math.max(0.78, STACK.flat - 0.045 * i), y: 0 };           // on the pile
+  if (i < d.cur) return { a: Math.max(0.62, STACK.flat - 0.03 * i), y: 0 };           // on the pile
   if (i === d.cur) return { a: STACK.lean, y: k === hoverDisk ? 0.9 : 0.35 };          // front disk sits a touch proud
   return { a: STACK.lean, y: 0 };
 }

@@ -40,9 +40,9 @@
           if (cfg.sound) playOneShot(cfg.sound);
         });
       }
-      var name = cfg.label ? cfg.label.toUpperCase() : 'PAD ' + n;
-      el.addEventListener('pointerenter', function () { lcdShow(name); });
-      el.addEventListener('focus', function () { lcdShow(name); });
+      var st = padState(n, cfg);
+      el.addEventListener('pointerenter', function () { lcdShow(st); });
+      el.addEventListener('focus', function () { lcdShow(st); });
       el.addEventListener('pointerleave', lcdIdle);
       el.addEventListener('blur', lcdIdle);
       place(el, map.pads[key]);
@@ -51,11 +51,18 @@
   }
 
   // ── LCD: the screen is the way into the beat store, and it names whatever
-  //    pad you're on. Box comes from data/hero-map.json, text/url from HOME_LCD. ──
-  var lcd = window.HOME_LCD || { idle: 'BEAT STORE', url: 'store.html' };
-  var lcdText = null, lcdBusy = false;
-  function lcdShow(t) { if (lcdText && !lcdBusy) { lcdText.textContent = t; lcdText.classList.remove('idle'); } }
-  function lcdIdle() { if (lcdText && !lcdBusy) { lcdText.textContent = lcd.idle + ' \u25BA'; lcdText.classList.add('idle'); } }
+  //    pad you're on, drawn like the real MPC2000XL screen (lcd-screen.js).
+  //    Box comes from data/hero-map.json, url from HOME_LCD. ──
+  var lcd = window.HOME_LCD || { url: 'store.html' };
+  var lcdBusy = false;
+  function lcdShow(st) { if (window.MpcLcd && !lcdBusy) MpcLcd.show(st); }
+  function lcdIdle() { lcdShow({ kind: 'idle' }); }
+  function padState(n, cfg) {
+    var label = cfg.label ? cfg.label.toUpperCase() : 'PAD ' + n;
+    var store = cfg.url && /store\.html/.test(cfg.url);
+    var action = cfg.sound ? 'PLAY ' + label : store ? 'GO TO BEAT STORE' : cfg.url ? 'OPEN ' + label : 'EMPTY PAD';
+    return { kind: 'pad', n: n, label: label, action: action, sound: !!cfg.sound, store: store };
+  }
 
   function buildLcd(box) {
     if (!box) return;
@@ -68,25 +75,111 @@
     var g = box.glass;
     glass.style.left = g.left + '%'; glass.style.top = g.top + '%';
     glass.style.width = g.width + '%'; glass.style.height = g.height + '%';
-    lcdText = document.createElement('span');
-    lcdText.className = 'mpc-lcd-text';
-    glass.appendChild(lcdText);
     el.appendChild(glass);
-    el.addEventListener('pointerenter', function () { lcdShow('OPEN BEAT STORE \u25BA'); });
+    place(el, box);
+    mpc.appendChild(el);
+    if (window.MpcLcd) MpcLcd.mount(glass);
+    el.addEventListener('pointerenter', function () { lcdShow({ kind: 'store' }); });
     el.addEventListener('pointerleave', lcdIdle);
     el.addEventListener('click', function (e) {
       if (e.metaKey || e.ctrlKey || e.shiftKey) return; // let new-tab clicks through
       e.preventDefault();
       if (lcdBusy) return;
-      lcdShow('LOADING...');
+      lcdShow({ kind: 'loading' });
       lcdBusy = true;
-      setTimeout(function () { window.location.href = lcd.url; }, 450);
+      setTimeout(function () { window.location.href = lcd.url; }, 600);
     });
     // coming Back from the store (bfcache) must not leave the screen stuck on LOADING
     window.addEventListener('pageshow', function () { lcdBusy = false; lcdIdle(); });
-    place(el, box);
-    mpc.appendChild(el);
-    lcdIdle();
+  }
+
+  // ── LEDs: the real indicator dots on the photo, lit like the hardware when
+  //    it's powered on. Positions (center, % of photo) live in hero-map.json. ──
+  function buildLeds(list) {
+    (list || []).forEach(function (l) {
+      var el = document.createElement('span');
+      el.className = 'mpc-led mpc-led-' + l.color;
+      el.style.left = l.x + '%';
+      el.style.top = l.y + '%';
+      el.setAttribute('aria-hidden', 'true');
+      mpc.appendChild(el);
+    });
+  }
+
+  // ── Knobs (REC GAIN, MAIN VOLUME): circular cut-outs of the photo that turn
+  //    in place like the jog wheel, but stop at MIN/MAX like a real pot. No job
+  //    yet (roles get assigned later). Data from hero-map.json "knobs". ──
+  function buildKnobs(list) {
+    (list || []).forEach(function (k) {
+      var el = document.createElement('img');
+      el.className = 'mpc-knob';
+      el.src = k.src; el.alt = ''; el.draggable = false;
+      el.setAttribute('role', 'slider');
+      el.setAttribute('aria-label', k.label);
+      el.setAttribute('aria-valuemin', k.min); el.setAttribute('aria-valuemax', k.max);
+      el.tabIndex = 0;
+      place(el, k);
+      mpc.appendChild(el);
+      var abs = k.angle, last = null;
+      function level() { return Math.round((abs - k.min) / (k.max - k.min) * 100); }
+      function show() { lcdShow({ kind: 'ctl', label: k.label, info: 'LEVEL ' + level(), level: level() / 100 }); }
+      function apply() {
+        el.style.transform = 'rotate(' + (abs - k.angle) + 'deg)';
+        el.setAttribute('aria-valuenow', Math.round(abs));
+      }
+      function turn(d) { abs = Math.max(k.min, Math.min(k.max, abs + d)); apply(); show(); }
+      function pointerAngle(e) {
+        var r = el.getBoundingClientRect();
+        return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI;
+      }
+      el.addEventListener('pointerdown', function (e) {
+        e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('dragging'); last = pointerAngle(e);
+      });
+      el.addEventListener('pointermove', function (e) {
+        if (!el.hasPointerCapture(e.pointerId)) return;
+        var a = pointerAngle(e), d = a - last;
+        if (d > 180) d -= 360; else if (d < -180) d += 360;
+        last = a; turn(d);
+      });
+      function end(e) { if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId); el.classList.remove('dragging'); }
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+      el.addEventListener('wheel', function (e) { e.preventDefault(); turn(e.deltaY > 0 ? -8 : 8); }, { passive: false });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { e.preventDefault(); turn(8); }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); turn(-8); }
+      });
+      el.addEventListener('pointerenter', show);
+      el.addEventListener('focus', show);
+      el.addEventListener('pointerleave', function () { if (!el.classList.contains('dragging')) lcdIdle(); });
+      el.addEventListener('blur', lcdIdle);
+      apply();
+    });
+  }
+
+  // ── Hardware buttons: every other key on the machine presses in like the
+  //    pads and names itself on the LCD. No job yet (roles later). ──
+  function buildButtons(list) {
+    (list || []).forEach(function (b) {
+      var el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'mpc-btn';
+      el.setAttribute('aria-label', b.label);
+      place(el, b);
+      mpc.appendChild(el);
+      var st = { kind: 'ctl', label: b.label, info: 'NOT ASSIGNED YET' };
+      function down() { el.classList.add('pressed'); lcdShow(st); }
+      function up() { el.classList.remove('pressed'); }
+      el.addEventListener('pointerdown', down);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+      el.addEventListener('pointerleave', function () { up(); lcdIdle(); });
+      el.addEventListener('pointerenter', function () { lcdShow(st); });
+      el.addEventListener('focus', function () { lcdShow(st); });
+      el.addEventListener('blur', lcdIdle);
+      el.addEventListener('keydown', function (e) { if (e.key === ' ' || e.key === 'Enter') down(); });
+      el.addEventListener('keyup', up);
+    });
   }
 
   // ── VOL fader: drag the cap along its slot ──
@@ -151,6 +244,9 @@
   fetch('data/hero-map.json')
     .then(function (r) { return r.json(); })
     .then(function (map) {
+      buildButtons(map.buttons);
+      buildKnobs(map.knobs);
+      buildLeds(map.leds);
       buildLcd(map.lcd);
       buildPads(map);
       setupFader(map.fader);

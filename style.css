@@ -552,13 +552,26 @@ body.home-static{background:#fff;color:var(--ink);font-family:var(--font-mono);m
 /* LCD = way into the beat store. Text sits inside the photo's own glass, lit like the real screen. */
 .mpc-lcd{position:absolute;display:block;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none;z-index:1}
 .mpc-lcd:focus-visible{outline:1px solid rgba(0,0,0,.35);outline-offset:2px}
-.mpc-lcd-glass{position:absolute;display:flex;align-items:center;justify-content:center;overflow:hidden;container-type:size;pointer-events:none}
-.mpc-lcd-text{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:500;font-size:34cqh;letter-spacing:.14em;white-space:nowrap;
-  color:#ffb547;text-shadow:0 0 .35em rgba(255,170,60,.75),0 0 .08em rgba(255,210,140,.9);transition:opacity .15s}
-.mpc-lcd-text.idle{animation:mpcLcdBlink 2.4s steps(1,end) infinite}
-.mpc-lcd:hover .mpc-lcd-text{color:#ffd28a}
-@keyframes mpcLcdBlink{0%,82%{opacity:1}83%,100%{opacity:.35}}
-@media (prefers-reduced-motion:reduce){.mpc-lcd-text.idle{animation:none}}
+.mpc-lcd-glass{position:absolute;display:block;overflow:hidden;pointer-events:none;border-radius:2px;
+  box-shadow:0 0 14px 2px rgba(60,80,255,.35),inset 0 0 6px rgba(0,0,30,.55)}
+.mpc-lcd-canvas{display:block;width:100%;height:100%}
+/* knobs turn like the jog wheel; buttons press in like the pads */
+.mpc-knob{position:absolute;display:block;cursor:grab;transform-origin:50% 50%;will-change:transform;-webkit-user-drag:none;touch-action:none;border-radius:50%;outline:none;visibility:hidden}
+.mpc-knob.dragging{cursor:grabbing}
+.mpc-knob:focus-visible{box-shadow:0 0 0 2px rgba(0,0,0,.35)}
+.mpc-btn{position:absolute;display:block;padding:0;margin:0;border:0;background:transparent;cursor:pointer;border-radius:3px;-webkit-tap-highlight-color:transparent;outline:none;transition:background-color .06s,box-shadow .06s}
+.mpc-btn:hover{background:rgba(255,255,255,.06)}
+.mpc-btn.pressed{background:rgba(0,0,0,.16);box-shadow:inset 0 2px 4px rgba(0,0,0,.5),inset 0 -1px 0 rgba(255,255,255,.15)}
+.mpc-btn:focus-visible{box-shadow:0 0 0 2px rgba(0,0,0,.35)}
+/* LEDs: sized to the photo's LED dot (~0.5% of width), lit core + soft spill onto the panel */
+.mpc-led{position:absolute;width:.62%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none}
+.mpc-led::after{content:"";position:absolute;inset:-220%;border-radius:50%;mix-blend-mode:screen;pointer-events:none}
+.mpc-led-green{background:radial-gradient(circle at 42% 38%,#eaffd8 0 18%,#7dff4a 42%,#2fc414 72%,#1a7a0a 100%);
+  box-shadow:0 0 3px 1px rgba(110,255,70,.85),0 0 9px 3px rgba(80,255,40,.35)}
+.mpc-led-green::after{background:radial-gradient(circle,rgba(110,255,70,.28) 0,rgba(110,255,70,0) 62%)}
+.mpc-led-red{background:radial-gradient(circle at 42% 38%,#ffe0d8 0 18%,#ff5a3c 42%,#e01a0a 72%,#7a0a04 100%);
+  box-shadow:0 0 3px 1px rgba(255,70,40,.85),0 0 9px 3px rgba(255,40,20,.35)}
+.mpc-led-red::after{background:radial-gradient(circle,rgba(255,80,50,.3) 0,rgba(255,80,50,0) 62%)}
 
 /* ================= GALLERY — white wall, art hung in a masonry grid ================= */
 .gallery-wall{columns:3 240px;column-gap:28px}

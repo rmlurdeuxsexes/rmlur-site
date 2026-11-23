@@ -130,5 +130,481 @@
       "width": 57.5439,
       "height": 40.5128
     }
-  }
+  },
+  "leds": [
+    {
+      "id": "full-level",
+      "x": 59.986,
+      "y": 20.158,
+      "color": "green"
+    },
+    {
+      "id": "16-levels",
+      "x": 66.147,
+      "y": 20.07,
+      "color": "green"
+    },
+    {
+      "id": "next-seq",
+      "x": 60.057,
+      "y": 27.377,
+      "color": "green"
+    },
+    {
+      "id": "track-mute",
+      "x": 66.218,
+      "y": 27.289,
+      "color": "green"
+    },
+    {
+      "id": "pad-bank-a",
+      "x": 72.309,
+      "y": 27.113,
+      "color": "green"
+    },
+    {
+      "id": "pad-bank-b",
+      "x": 78.47,
+      "y": 27.025,
+      "color": "green"
+    },
+    {
+      "id": "pad-bank-c",
+      "x": 84.561,
+      "y": 26.937,
+      "color": "green"
+    },
+    {
+      "id": "pad-bank-d",
+      "x": 90.722,
+      "y": 26.849,
+      "color": "green"
+    },
+    {
+      "id": "after",
+      "x": 9.773,
+      "y": 54.049,
+      "color": "green"
+    },
+    {
+      "id": "undo-seq",
+      "x": 18.697,
+      "y": 61.444,
+      "color": "green"
+    },
+    {
+      "id": "rec",
+      "x": 17.918,
+      "y": 74.208,
+      "color": "red"
+    },
+    {
+      "id": "overdub",
+      "x": 23.654,
+      "y": 74.12,
+      "color": "red"
+    },
+    {
+      "id": "play",
+      "x": 35.127,
+      "y": 73.944,
+      "color": "green"
+    }
+  ],
+  "knobs": [
+    {
+      "id": "rec-gain",
+      "label": "REC GAIN",
+      "src": "assets/hero/knob-rec-gain.png",
+      "angle": 80,
+      "min": -135,
+      "max": 135,
+      "left": 76.3456,
+      "top": 17.4296,
+      "width": 4.3909,
+      "height": 5.4577
+    },
+    {
+      "id": "main-volume",
+      "label": "MAIN VOLUME",
+      "src": "assets/hero/knob-main-volume.png",
+      "angle": -30,
+      "min": -135,
+      "max": 135,
+      "left": 85.4816,
+      "top": 17.0775,
+      "width": 4.3909,
+      "height": 5.4577
+    }
+  ],
+  "buttons": [
+    {
+      "id": "full-level",
+      "label": "FULL LEVEL",
+      "left": 58.3569,
+      "top": 20.9507,
+      "width": 3.2578,
+      "height": 2.1127
+    },
+    {
+      "id": "16-levels",
+      "label": "16 LEVELS",
+      "left": 64.4476,
+      "top": 20.9507,
+      "width": 3.3286,
+      "height": 2.0246
+    },
+    {
+      "id": "next-seq",
+      "label": "NEXT SEQ",
+      "left": 58.3569,
+      "top": 28.257,
+      "width": 3.3286,
+      "height": 1.9366
+    },
+    {
+      "id": "track-mute",
+      "label": "TRACK MUTE",
+      "left": 64.5184,
+      "top": 28.257,
+      "width": 3.2578,
+      "height": 1.8486
+    },
+    {
+      "id": "pad-bank-a",
+      "label": "PAD BANK A",
+      "left": 70.6799,
+      "top": 28.169,
+      "width": 3.2578,
+      "height": 1.8486
+    },
+    {
+      "id": "pad-bank-b",
+      "label": "PAD BANK B",
+      "left": 76.8414,
+      "top": 28.081,
+      "width": 3.187,
+      "height": 1.8486
+    },
+    {
+      "id": "pad-bank-c",
+      "label": "PAD BANK C",
+      "left": 83.0028,
+      "top": 27.8169,
+      "width": 3.187,
+      "height": 1.9366
+    },
+    {
+      "id": "pad-bank-d",
+      "label": "PAD BANK D",
+      "left": 89.0935,
+      "top": 27.8169,
+      "width": 3.187,
+      "height": 1.9366
+    },
+    {
+      "id": "f1",
+      "label": "F1",
+      "left": 17.7054,
+      "top": 26.4085,
+      "width": 2.6912,
+      "height": 1.6725
+    },
+    {
+      "id": "f2",
+      "label": "F2",
+      "left": 21.6714,
+      "top": 26.4085,
+      "width": 2.6912,
+      "height": 1.6725
+    },
+    {
+      "id": "f3",
+      "label": "F3",
+      "left": 25.6374,
+      "top": 26.4085,
+      "width": 2.6912,
+      "height": 1.6725
+    },
+    {
+      "id": "f4",
+      "label": "F4",
+      "left": 29.5326,
+      "top": 26.4085,
+      "width": 2.8329,
+      "height": 1.6725
+    },
+    {
+      "id": "f5",
+      "label": "F5",
+      "left": 33.4986,
+      "top": 26.4085,
+      "width": 2.8329,
+      "height": 1.6725
+    },
+    {
+      "id": "f6",
+      "label": "F6",
+      "left": 37.5354,
+      "top": 26.4085,
+      "width": 2.8329,
+      "height": 1.6725
+    },
+    {
+      "id": "screen",
+      "label": "MAIN SCREEN",
+      "left": 29.3201,
+      "top": 32.5704,
+      "width": 3.3994,
+      "height": 1.9366
+    },
+    {
+      "id": "open-window",
+      "label": "OPEN WINDOW",
+      "left": 38.5977,
+      "top": 32.3944,
+      "width": 3.5411,
+      "height": 2.0246
+    },
+    {
+      "id": "key-7",
+      "label": "7",
+      "left": 8.2861,
+      "top": 33.4507,
+      "width": 2.762,
+      "height": 1.8486
+    },
+    {
+      "id": "key-8",
+      "label": "8",
+      "left": 14.1643,
+      "top": 33.4507,
+      "width": 2.762,
+      "height": 1.8486
+    },
+    {
+      "id": "key-9",
+      "label": "9",
+      "left": 20.0425,
+      "top": 33.4507,
+      "width": 2.762,
+      "height": 1.8486
+    },
+    {
+      "id": "key-4",
+      "label": "4",
+      "left": 8.2861,
+      "top": 37.5,
+      "width": 2.762,
+      "height": 1.8486
+    },
+    {
+      "id": "key-5",
+      "label": "5",
+      "left": 14.1643,
+      "top": 37.5,
+      "width": 2.762,
+      "height": 1.8486
+    },
+    {
+      "id": "key-6",
+      "label": "6",
+      "left": 20.0425,
+      "top": 37.5,
+      "width": 2.762,
+      "height": 1.8486
+    },
+    {
+      "id": "key-1",
+      "label": "1",
+      "left": 8.2861,
+      "top": 41.7254,
+      "width": 2.762,
+      "height": 1.8486
+    },
+    {
+      "id": "key-2",
+      "label": "2",
+      "left": 14.1643,
+      "top": 41.7254,
+      "width": 2.762,
+      "height": 1.8486
+    },
+    {
+      "id": "key-3",
+      "label": "3",
+      "left": 20.0425,
+      "top": 41.7254,
+      "width": 2.762,
+      "height": 1.8486
+    },
+    {
+      "id": "shift",
+      "label": "SHIFT",
+      "left": 8.2861,
+      "top": 45.9507,
+      "width": 2.8329,
+      "height": 1.7606
+    },
+    {
+      "id": "key-0",
+      "label": "0",
+      "left": 14.1643,
+      "top": 45.8627,
+      "width": 2.762,
+      "height": 1.7606
+    },
+    {
+      "id": "enter",
+      "label": "ENTER",
+      "left": 20.1133,
+      "top": 45.7746,
+      "width": 2.8329,
+      "height": 1.8486
+    },
+    {
+      "id": "after",
+      "label": "AFTER",
+      "left": 7.932,
+      "top": 55.0176,
+      "width": 3.5411,
+      "height": 2.0246
+    },
+    {
+      "id": "tap-tempo",
+      "label": "TAP TEMPO",
+      "left": 19.4759,
+      "top": 53.6972,
+      "width": 4.2493,
+      "height": 3.9613
+    },
+    {
+      "id": "undo-seq",
+      "label": "UNDO SEQ",
+      "left": 16.9972,
+      "top": 62.2359,
+      "width": 3.3994,
+      "height": 2.1127
+    },
+    {
+      "id": "erase",
+      "label": "ERASE",
+      "left": 22.7337,
+      "top": 62.2359,
+      "width": 3.3994,
+      "height": 2.1127
+    },
+    {
+      "id": "cursor-left",
+      "label": "CURSOR LEFT",
+      "left": 31.9405,
+      "top": 56.25,
+      "width": 2.1955,
+      "height": 7.0423
+    },
+    {
+      "id": "cursor-right",
+      "label": "CURSOR RIGHT",
+      "left": 37.7479,
+      "top": 56.25,
+      "width": 2.1955,
+      "height": 7.0423
+    },
+    {
+      "id": "cursor-up",
+      "label": "CURSOR UP",
+      "left": 34.136,
+      "top": 56.25,
+      "width": 3.6119,
+      "height": 3.257
+    },
+    {
+      "id": "cursor-down",
+      "label": "CURSOR DOWN",
+      "left": 34.136,
+      "top": 59.507,
+      "width": 3.6119,
+      "height": 3.7852
+    },
+    {
+      "id": "step-back",
+      "label": "STEP <",
+      "left": 16.9972,
+      "top": 68.2218,
+      "width": 3.4703,
+      "height": 2.2007
+    },
+    {
+      "id": "step-fwd",
+      "label": "STEP >",
+      "left": 22.7337,
+      "top": 68.2218,
+      "width": 3.4703,
+      "height": 2.2007
+    },
+    {
+      "id": "go-to",
+      "label": "GO TO",
+      "left": 28.4703,
+      "top": 68.2218,
+      "width": 3.4703,
+      "height": 2.2007
+    },
+    {
+      "id": "bar-back",
+      "label": "BAR <<",
+      "left": 34.2776,
+      "top": 68.2218,
+      "width": 3.4703,
+      "height": 2.2007
+    },
+    {
+      "id": "bar-fwd",
+      "label": "BAR >>",
+      "left": 40.0142,
+      "top": 68.2218,
+      "width": 3.5411,
+      "height": 2.2007
+    },
+    {
+      "id": "rec",
+      "label": "REC",
+      "left": 16.7847,
+      "top": 75.0,
+      "width": 4.0368,
+      "height": 3.7852
+    },
+    {
+      "id": "overdub",
+      "label": "OVERDUB",
+      "left": 22.5921,
+      "top": 75.0,
+      "width": 3.966,
+      "height": 3.7852
+    },
+    {
+      "id": "stop",
+      "label": "STOP",
+      "left": 28.187,
+      "top": 75.0,
+      "width": 4.0368,
+      "height": 3.7852
+    },
+    {
+      "id": "play",
+      "label": "PLAY",
+      "left": 33.9943,
+      "top": 75.0,
+      "width": 4.0368,
+      "height": 3.7852
+    },
+    {
+      "id": "play-start",
+      "label": "PLAY START",
+      "left": 39.7309,
+      "top": 75.0,
+      "width": 4.1076,
+      "height": 3.7852
+    }
+  ]
 }
