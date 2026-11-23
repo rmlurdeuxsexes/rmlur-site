@@ -263,7 +263,7 @@
       ctx.textAlign = 'center';
       fitText(ctx, ((p.artist || '') + ' / ' + (p.album || '')).toUpperCase(), cx, 640, 720, 40, '700', SERIF);
       ctx.font = '400 22px ' + SERIF; ctx.textAlign = 'left';
-      ['1. ' + (p.song || ''), 'Produced by JayRewind'].forEach(function (t, i) {
+      [(p.track || 1) + '. ' + (p.song || ''), 'Produced by ' + (p.producers || 'JayRewind')].forEach(function (t, i) {
         fitText(ctx, t, cx - 300, 700 + i * 40, 600, 30, '400', SERIF);
       });
       ctx.textAlign = 'center'; ctx.font = '400 15px ' + SERIF; ctx.fillStyle = '#555';
@@ -432,7 +432,93 @@
     return g;
   }
 
+  /* ---------- wall pieces: sign, canvas art, credits panel ---------- */
+  function loadTex(src, cb) {
+    new THREE.TextureLoader().load(src, function (t) { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; cb(t); });
+  }
+  // the Parental Advisory RMLUR sign: a brushed-metal plate on stand-offs
+  function buildSign(p) {
+    var g = new THREE.Group(), w = p.w || 1.4, h = w * 0.47;
+    var mat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.55, roughness: 0.32, envMapIntensity: 0.9 });
+    var edge = new THREE.MeshStandardMaterial({ color: 0x9a9da3, metalness: 1, roughness: 0.35 });
+    var plate = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.012), [edge, edge, edge, edge, mat, edge]);
+    plate.position.z = 0.045; plate.castShadow = true; g.add(plate);
+    loadTex(p.src, function (t) { mat.map = t; mat.needsUpdate = true; h = w * t.image.height / t.image.width; plate.scale.y = h / (w * 0.47); });
+    [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(function (c) {           // chrome stand-offs
+      var s = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.04, 16), edge);
+      s.rotation.x = Math.PI / 2; s.position.set(c[0] * (w / 2 - 0.05), c[1] * (w * 0.47 / 2 - 0.05), 0.02); g.add(s);
+    });
+    return g;
+  }
+  // stretched canvas: image wraps the front, plain gesso sides, a gallery wall label beside it
+  function artLabelTex(p) {
+    return canvasTex(1024, 640, function (ctx, w, h) {
+      ctx.fillStyle = '#fbfaf6'; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#1b1b1b'; ctx.textBaseline = 'top';
+      ctx.font = '600 50px "IBM Plex Mono", monospace'; ctx.fillText(p.artist || 'JayRewind', 56, 52);
+      ctx.font = 'italic 600 58px Georgia, serif'; ctx.fillText(p.title || '', 56, 130);
+      ctx.font = '400 40px Georgia, serif'; ctx.fillText(p.year || '', 56, 206);
+      ctx.fillStyle = '#55524a'; ctx.font = '400 34px "IBM Plex Mono", monospace';
+      [p.medium, p.size, p.edition].filter(Boolean).forEach(function (t, i) { ctx.fillText(t, 56, 290 + i * 50); });
+      ctx.fillStyle = '#1b1b1b'; ctx.font = '600 44px "IBM Plex Mono", monospace'; ctx.fillText(p.price || '', 56, 470);
+      ctx.fillStyle = '#8a877f'; ctx.font = '400 28px "IBM Plex Mono", monospace'; ctx.fillText('tap to purchase', 56, 548);
+    }, true);
+  }
+  function buildArt(p) {
+    var g = new THREE.Group(), S = 1.05, D = 0.045;
+    var front = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92 });
+    var gesso = new THREE.MeshStandardMaterial({ color: 0xf3f1ec, roughness: 0.95 });
+    var cv = new THREE.Mesh(new THREE.BoxGeometry(S, S, D), [gesso, gesso, gesso, gesso, front, gesso]);
+    cv.position.z = D / 2 + 0.01; cv.castShadow = true; g.add(cv);
+    loadTex(p.src, function (t) { front.map = t; front.bumpMap = LINEN; front.bumpScale = 0.6; front.needsUpdate = true; });
+    var lbl = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.2125), new THREE.MeshStandardMaterial({ map: artLabelTex(p), roughness: 0.8 }));
+    lbl.position.set(S / 2 + 0.3, -S / 2 + 0.25, 0.006); lbl.castShadow = true; g.add(lbl);
+    return g;
+  }
+  // credits wall: a white panel listing the newest credits; tap it for all of them
+  function buildCredits(p) {
+    var g = new THREE.Group(), W = 1.25, H = 1.55;
+    var mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
+    var panel = new THREE.Mesh(new THREE.BoxGeometry(W, H, 0.02), [baseMat, baseMat, baseMat, baseMat, mat, baseMat]);
+    panel.position.z = 0.02; panel.castShadow = true; g.add(panel);
+    fetch(p.src, { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (data) {
+      p._credits = data;
+      mat.map = canvasTex(1024, 1270, function (ctx, w, h) {
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#1b1b1b'; ctx.textBaseline = 'top';
+        ctx.font = '600 66px "IBM Plex Mono", monospace'; ctx.fillText('CREDITS', 60, 56);
+        ctx.fillStyle = '#55524a'; ctx.font = '400 30px "IBM Plex Mono", monospace';
+        ctx.fillText(data.count + ' credits · via Muso', 60, 140);
+        ctx.fillStyle = '#d9d6ce'; ctx.fillRect(60, 196, w - 120, 2);
+        data.credits.slice(0, 22).forEach(function (c, i) {
+          var y = 222 + i * 44;
+          ctx.fillStyle = '#1b1b1b'; ctx.font = '600 28px "IBM Plex Mono", monospace';
+          var t = c.title.length > 24 ? c.title.slice(0, 23) + '…' : c.title; ctx.fillText(t, 60, y);
+          ctx.fillStyle = '#55524a'; ctx.font = '400 26px "IBM Plex Mono", monospace';
+          var a = c.artists.join(', '); a = a.length > 22 ? a.slice(0, 21) + '…' : a; ctx.fillText(a, 560, y);
+        });
+        ctx.fillStyle = '#8a877f'; ctx.font = '400 28px "IBM Plex Mono", monospace'; ctx.fillText('tap for all ' + data.count + ' →', 60, h - 70);
+      }, true);
+      mat.needsUpdate = true;
+    }).catch(function () {});
+    return g;
+  }
+  // non-plaque pieces hang at fixed spots on their wall (x along the wall, y height)
+  var PIECE = { sign: { build: buildSign, x: 0, y: 1.3 }, art: { build: buildArt, x: 3.3, y: EYE }, credits: { build: buildCredits, x: -3.3, y: EYE } };
+  function hangPiece(p) {
+    var spec = PIECE[p.type], W = WALLS[p.wall] || WALLS.front, g = spec.build(p);
+    g.position.copy(W.pos); g.position.y = p.y != null ? p.y : spec.y; g.rotation.y = W.rot;
+    g.translateX(p.x != null ? p.x : spec.x); g.translateZ(0.004);
+    scene.add(g);
+    var spot = new THREE.SpotLight(0xfff6e8, 20, 7, 0.36, 0.65, 1.6);
+    var from = g.position.clone(), n = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), W.rot);
+    spot.position.copy(from).addScaledVector(n, 1.0); spot.position.y = ROOM.h - 0.05;
+    spot.target.position.copy(from); scene.add(spot); scene.add(spot.target);
+    plaques.push({ group: g, data: p, look: from.clone(), normal: n.clone() });
+  }
+
   function hang(list, presentedTo) {
+    list.filter(function (p) { return PIECE[p.type]; }).forEach(hangPiece);
+    list = list.filter(function (p) { return !PIECE[p.type]; });
     var byWall = { back: [], left: [], right: [], front: [] };
     list.forEach(function (p) { (byWall[p.wall] || byWall.back).push(p); });
     Object.keys(byWall).forEach(function (wall) {
@@ -463,8 +549,12 @@
     var dd = document.createElement('dd'); dd.textContent = v;
     dl.appendChild(dt); dl.appendChild(dd);
   }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function showCard(p) {
     card.textContent = '';
+    if (p.type === 'art') return showArtCard(p);
+    if (p.type === 'credits') return showCreditsCard(p);
+    if (p.type === 'sign') return;
     var h = document.createElement('h2');
     h.textContent = p.type === 'billboard' ? (p.title || 'Billboard') : (p.song || p.album || '');
     card.appendChild(h);
@@ -475,13 +565,17 @@
     if (p.type === 'billboard') { row(dl, 'Detail', p.detail); row(dl, 'Date', p.date); }
     else {
       var c = certInfo(p.cert);
+      row(dl, 'Track', p.track ? String(p.track) : null); row(dl, 'Producers', p.producers);
       row(dl, 'Role', p.role); row(dl, 'Label', p.label); row(dl, 'Released', p.released);
-      row(dl, 'Certified', c ? (p.certBody || 'RIAA') + ' ' + c.label : null);
+      (p.charts || []).forEach(function (ch) { row(dl, 'Chart', ch.chart + ' — peak #' + ch.peak); });
+      if (p.tracks && p.tracks.length) row(dl, 'Tracks', p.tracks.join(', '));
+      row(dl, 'Certified', c ? (p.certBody || 'RIAA') + ' ' + (p.certLabel || c.label) : null);
       row(dl, 'Streams', p.streams);
       if (p.billboard) row(dl, 'Billboard', p.billboard.chart + (p.billboard.peak ? ' — peak #' + p.billboard.peak : ''));
     }
     card.appendChild(dl);
     if (p.certNote) { var n = document.createElement('div'); n.className = 'note'; n.textContent = p.certNote; card.appendChild(n); }
+    (p.notes || []).forEach(function (t) { card.appendChild(el('div', 'note', t)); });
     if (p.links && p.links.length) {
       var l = document.createElement('div'); l.className = 'note links';
       p.links.forEach(function (u, i) {
@@ -491,6 +585,35 @@
       card.appendChild(l);
     }
     if (p.verified === false) { var t = document.createElement('div'); t.className = 'pending'; t.textContent = 'details pending'; card.appendChild(t); }
+    card.classList.add('show');
+  }
+
+  function showArtCard(p) {
+    card.appendChild(el('h2', null, p.title));
+    card.appendChild(el('div', 'sub', [p.artist, p.year].filter(Boolean).join(', ')));
+    var dl = el('dl'); row(dl, 'Medium', p.medium); row(dl, 'Size', p.size); row(dl, 'Edition', p.edition); row(dl, 'Price', p.price);
+    card.appendChild(dl);
+    var buy = el('button', 'buy', 'Purchase'); buy.type = 'button';
+    var notice = el('div', 'note notice', 'This piece is held in the RMLUR permanent collection and is not for sale. Go to bed — you have work tomorrow.');
+    notice.hidden = true;
+    buy.addEventListener('click', function () { notice.hidden = false; buy.disabled = true; buy.textContent = 'Not available'; });
+    card.appendChild(buy); card.appendChild(notice);
+    card.classList.add('show');
+  }
+  function showCreditsCard(p) {
+    var data = p._credits || { credits: [], count: 0 };
+    card.appendChild(el('h2', null, 'Credits'));
+    card.appendChild(el('div', 'sub', data.count + ' credits — JayRewind'));
+    var list = el('ol', 'list');
+    data.credits.forEach(function (c) {
+      var li = el('li');
+      li.appendChild(el('b', null, c.title));
+      li.appendChild(document.createTextNode(' — ' + c.artists.join(', ') + ' (' + c.date.slice(0, 4) + ') · ' + c.roles.join(', ')));
+      list.appendChild(li);
+    });
+    card.appendChild(list);
+    var l = el('div', 'note links'); var a = el('a', null, 'Full profile on Muso'); a.href = data.source || '#'; a.target = '_blank'; a.rel = 'noopener'; l.appendChild(a);
+    card.appendChild(l);
     card.classList.add('show');
   }
 
@@ -534,7 +657,7 @@
   function stepBack() {
     if (!target) return;
     target = null; card.classList.remove('show'); backBtn.hidden = true;
-    hud.textContent = 'drag to look around · tap a plaque';
+    hud.textContent = 'drag to look around · tap a plaque, the art or the credits';
     glide(HOME, yaw, 0);
   }
   backBtn.addEventListener('click', stepBack);

@@ -673,7 +673,7 @@ $('pPlay').addEventListener('click', () => {
 });
 $('pBuy').addEventListener('click', async () => {
   const tier = dock._opts && dock._opts[$('pTier').value], p = dockItem; if (!tier || !p) return;
-  const fallback = () => { location.href = tier.stripeLink || 'mailto:jayrewindbeatz@gmail.com?subject=' + encodeURIComponent(`Buy "${p.title}" — ${tier.label}`); };
+  const fallback = () => { location.href = tier.stripeLink || 'mailto:rmlurdeuxsexes@gmail.com?subject=' + encodeURIComponent(`Buy "${p.title}" — ${tier.label}`); };
   if (tier.buyable === false) return fallback();
   try {
     const cfg = await (await fetch('/api/checkout')).json(); if (!cfg.enabled) return fallback();
@@ -719,21 +719,43 @@ $('pw').addEventListener('submit', async e => {
   e.preventDefault(); if (!pwDrawer || keyAnim) return;
   const ok = await checkPassword(pwDrawer.cfg, $('pwInput').value);
   const d = pwDrawer, lockWorld = d.face.userData.lock.clone().applyMatrix4(d.group.matrixWorld);
-  keyGroup.visible = true; busy = true;
-  keyAnim = { t: 0, ok, d, lock: lockWorld };
+  keyGroup.visible = false; busy = true;
+  $('pw').classList.add('animating');                       // panel fades so nothing covers the lock
+  keyAnim = { t: 0, ok, d, lock: lockWorld, clicked: false };
 });
+// close-up on the lock while the key does its thing
+function keyView(k) {
+  return { pos: k.lock.clone().add(new THREE.Vector3(7, 5, 32)), look: k.lock.clone().add(new THREE.Vector3(0, -0.6, 0)) };
+}
+// timeline (s): 0-0.55 camera glides in | 0.55-1.25 key flies in | 1.25-1.6 slides into the keyhole
+//   ok:    1.6-2.15 turns a quarter -> click + drawer jolts out a hair -> 2.6 drawer opens
+//   wrong: 1.6-1.9 turns a little and stops -> 1.9-2.3 jiggles -> 2.3-2.75 pulls back out
 function stepKey(dt) {
   const k = keyAnim; if (!k) return; k.t += dt;
   const start = new THREE.Vector3(k.lock.x + 14, k.lock.y - 8, k.lock.z + 20);
   const ins = k.lock.clone().add(new THREE.Vector3(0, -1.2, 1.4));
+  const out = ins.clone().add(new THREE.Vector3(0, 0, 4));
   const t = k.t;
-  if (t < 0.7) { const u = easeOut(t / 0.7); keyGroup.position.lerpVectors(start, ins.clone().add(new THREE.Vector3(0, 0, 4)), u); keyGroup.rotation.set(0, 0, 0); }
-  else if (t < 1.0) { const u = (t - 0.7) / 0.3; keyGroup.position.copy(ins).add(new THREE.Vector3(0, 0, 4 * (1 - u))); }
-  else if (t < 1.6) { const u = easeOut((t - 1.0) / 0.6); keyGroup.rotation.z = (k.ok ? -Math.PI / 2 : -0.28) * u; keyGroup.position.copy(ins); }
-  else if (t < 1.9) { if (!k.ok) { keyGroup.rotation.z = -0.28 * (1 - (t - 1.6) / 0.3) + Math.sin(t * 60) * 0.03; } }
-  else {
-    keyAnim = null; busy = false; keyGroup.visible = false; keyGroup.rotation.set(0, 0, 0);
-    if (k.ok) { k.d.unlocked = true; hidePw(); requestOpen(k.d); } else { $('pwErr').textContent = 'wrong key'; $('pwInput').select(); }
+  keyGroup.visible = t >= 0.55;
+  if (t < 0.55) { keyGroup.position.copy(start); keyGroup.rotation.set(0, 0, 0); }
+  else if (t < 1.25) { keyGroup.position.lerpVectors(start, out, easeOut((t - 0.55) / 0.7)); keyGroup.rotation.set(0, 0, 0); }
+  else if (t < 1.6) { keyGroup.position.lerpVectors(out, ins, easeOut((t - 1.25) / 0.35)); }
+  else if (k.ok) {
+    if (t < 2.15) { keyGroup.position.copy(ins); keyGroup.rotation.z = -Math.PI / 2 * easeOut((t - 1.6) / 0.55); }
+    else if (!k.clicked) { k.clicked = true; keyGroup.rotation.z = -Math.PI / 2; k.d.target = 0.05; }   // the latch lets go
+    else if (t >= 2.6) {
+      keyAnim = null; busy = false; keyGroup.visible = false; keyGroup.rotation.set(0, 0, 0);
+      $('pw').classList.remove('animating'); k.d.target = 0;
+      k.d.unlocked = true; hidePw(); requestOpen(k.d);
+    }
+  } else {
+    if (t < 1.9) { keyGroup.position.copy(ins); keyGroup.rotation.z = -0.28 * easeOut((t - 1.6) / 0.3); }
+    else if (t < 2.3) { keyGroup.rotation.z = -0.28 + Math.sin(t * 55) * 0.05; }
+    else if (t < 2.75) { keyGroup.rotation.z = -0.28 * (1 - (t - 2.3) / 0.45); keyGroup.position.lerpVectors(ins, out, easeOut((t - 2.3) / 0.45)); }
+    else {
+      keyAnim = null; busy = false; keyGroup.visible = false; keyGroup.rotation.set(0, 0, 0);
+      $('pw').classList.remove('animating'); $('pwErr').textContent = 'wrong key'; $('pwInput').select();
+    }
   }
 }
 const easeOut = u => 1 - Math.pow(1 - Math.min(1, Math.max(0, u)), 3);
@@ -756,8 +778,9 @@ function frame(now) {
     }
   }
   stepKey(dt);
-  const v = openDrawer ? binView(openDrawer) : VIEWS[view];
-  camPos.lerp(v.pos, Math.min(1, dt * 3)); camLook.lerp(v.look, Math.min(1, dt * 3));
+  const v = keyAnim ? keyView(keyAnim) : openDrawer ? binView(openDrawer) : VIEWS[view];
+  const ease = Math.min(1, dt * (keyAnim ? 4.5 : 3));
+  camPos.lerp(v.pos, ease); camLook.lerp(v.look, ease);
   camera.position.copy(camPos); camera.lookAt(camLook);
   frameOffset(camera);
   viewer.update(dt);

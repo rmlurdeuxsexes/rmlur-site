@@ -1,7 +1,7 @@
 import { sql } from './_lib/db.js';
 import { siteUrl, verifyStripeSignature, findTier, deliverableFor, manualFulfilmentEmail } from './_lib/checkout.js';
 
-const PRODUCER_EMAIL = () => process.env.ORDERS_NOTIFY_EMAIL || 'jayrewindbeatz@gmail.com';
+const PRODUCER_EMAIL = () => process.env.ORDERS_NOTIFY_EMAIL || 'rmlurdeuxsexes@gmail.com';
 
 async function recordOrder(session) {
   await sql`CREATE TABLE IF NOT EXISTS orders (

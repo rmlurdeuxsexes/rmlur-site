@@ -1,7 +1,7 @@
 // Pure catalog helpers for publish-beats (no fs / network, unit-tested).
 import { parseBeatFilename, inferGenre } from './beat-meta.mjs';
 
-export const CONTACT_EMAIL = 'jayrewindbeatz@gmail.com';
+export const CONTACT_EMAIL = 'rmlurdeuxsexes@gmail.com';
 // Same prices the existing store/pipeline already uses — no new pricing scheme.
 export const DEFAULT_PRICES = { mp3: 24.99, wav: 34.99, stems: 59.99, exclusive: 249.99 };
 

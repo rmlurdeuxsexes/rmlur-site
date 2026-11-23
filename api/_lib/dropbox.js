@@ -42,6 +42,22 @@ export function isDropboxShareLink(v) {
 }
 
 // returns { url, expiresInSec? } or null when it cannot be resolved (caller falls back to manual fulfilment)
+// Can the buyer actually download this file right now? Asks for the first byte of
+// whatever resolveDeliverable hands out. Used before taking payment, so a dead link
+// (e.g. a blocked storage bucket) means "ask the producer" instead of a paid order
+// with nothing to deliver. Network errors / timeouts count as not reachable.
+export async function deliverableReachable(value, { fetchImpl = fetch, timeoutMs = 6000, ...opts } = {}) {
+  let link;
+  try { link = await resolveDeliverable(value, { ...opts, fetchImpl }); } catch { return false; }
+  if (!link || !link.url) return false;
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const res = await fetchImpl(link.url, { method: 'GET', headers: { Range: 'bytes=0-0' }, redirect: 'follow', signal: ctl.signal });
+    try { await res.body?.cancel?.(); } catch {}
+    return res.status === 200 || res.status === 206;
+  } catch { return false; } finally { clearTimeout(t); }
+}
+
 export async function resolveDeliverable(value, opts = {}) {
   if (!value) return null;
   if (isR2Key(value)) {

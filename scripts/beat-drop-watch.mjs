@@ -27,7 +27,7 @@ const WATCH_DIR = process.env.BEAT_WATCH_DIR || path.join(HOME, 'Desktop', 'Rrml
 const LIVE_DIR = path.join(WATCH_DIR, '_LIVE');
 const STATE_FILE = path.join(WATCH_DIR, '.beat-watch-state.json');
 const LOG_FILE = path.join(WATCH_DIR, '.beat-watch-log.txt');
-const CONTACT_EMAIL = 'jayrewindbeatz@gmail.com';
+const CONTACT_EMAIL = 'rmlurdeuxsexes@gmail.com';
 const LICENSE_URL = 'https://rmlur.com/licenses.html';
 
 const AUDIO_EXT = /\.(wav|aiff?|flac)$/i;

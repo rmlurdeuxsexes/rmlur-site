@@ -1,93 +1,194 @@
 {
-  "_comment": "Placements museum (museum.html). One entry per plaque. Edit freely — no code changes needed. type: 'plaque' (record award) | 'billboard' (chart/accomplishment). cert: 'gold' | 'platinum' | 'multi-platinum:N' | 'diamond' | 'none'. wall: 'back' | 'left' | 'right'. cover: path or URL to album art (square), null = generated placeholder. format: 'album' (default; plaque reads 'copies of the long playing record album') | 'single' (reads 'units of the single'). labelColor: optional paper colour for the record label, e.g. '#f3f6f8'. verified:false shows 'details pending' on the card — flip to true once the facts are confirmed. Never put a certification here that isn't real.",
+  "_comment": "Placements museum (museum.html). One entry per plaque. Edit freely — no code changes needed. type: 'plaque' (record award) | 'billboard' (chart/accomplishment). cert: 'gold' | 'platinum' | 'multi-platinum:N' | 'diamond' | 'none'. wall: 'back' | 'left' | 'right'. cover: path or URL to album art (square), null = generated placeholder. format: 'album' (default; plaque reads 'copies of the long playing record album') | 'single' (reads 'units of the single'). labelColor: optional paper colour for the record label, e.g. '#f3f6f8'. verified:false shows 'details pending' on the card — flip to true once the facts are confirmed. Never put a certification here that isn't real. Extra fields: producers, track (track number), charts:[{chart,peak}], tracks:[...], notes:[...]. type 'sign' = image mounted on a wall (src, w). type 'art' = canvas for 'sale' with a gallery label (title, artist, year, medium, size, price); its Purchase button only shows a notice, it never takes payment. type 'credits' = wall panel; tap it for the full list in data/credits.json.",
   "presentedTo": "JayRewind",
   "placements": [
     {
       "id": "hearts-sold-separately",
       "type": "plaque",
       "wall": "back",
-      "song": "Track title — confirm",
+      "song": "Rainy Days",
       "artist": "Mariah the Scientist",
       "album": "Hearts Sold Separately",
       "label": "Buckles Laboratories / Epic Records",
       "released": "2025-08-22",
-      "role": "Producer — confirm",
+      "role": "Producer, Instrumentation",
       "cert": "gold",
       "certBody": "RIAA",
-      "certNote": "Gold as reported by JayRewind. Public record: the album's lead single \"Burning Blue\" is RIAA Gold — confirm whether the plaque is for that single, the album, or another track.",
+      "certNote": "Double Gold, as reported by JayRewind.",
       "streams": null,
       "billboard": null,
       "cover": null,
-      "links": [],
-      "verified": false
-    },
-    {
-      "id": "taj",
-      "type": "plaque",
-      "wall": "left",
-      "song": "Track title — confirm",
-      "artist": "Taj",
-      "album": "Taj project — title to confirm",
-      "label": null,
-      "released": null,
-      "role": "Producer — confirm",
-      "cert": "none",
-      "certBody": null,
-      "certNote": null,
-      "streams": null,
-      "billboard": null,
-      "cover": null,
-      "links": [],
-      "verified": false
-    },
-    {
-      "id": "b6",
-      "type": "plaque",
-      "wall": "left",
-      "song": "Track title — confirm",
-      "artist": "B6",
-      "album": "Project title — confirm",
-      "label": null,
-      "released": null,
-      "role": "Producer — confirm",
-      "cert": "none",
-      "certBody": null,
-      "certNote": null,
-      "streams": null,
-      "billboard": null,
-      "cover": null,
-      "links": [],
-      "verified": false
-    },
-    {
-      "id": "swampa",
-      "type": "plaque",
-      "wall": "right",
-      "song": "Track title — confirm",
-      "artist": "Swampa",
-      "album": "Swampa project — title to confirm",
-      "label": null,
-      "released": null,
-      "role": "Producer — confirm",
-      "cert": "none",
-      "certBody": null,
-      "certNote": null,
-      "streams": null,
-      "billboard": null,
-      "cover": null,
-      "links": [],
-      "verified": false
+      "links": [
+        {
+          "label": "Billboard",
+          "url": "https://www.billboard.com/music/chart-beat/mariah-scientist-hearts-sold-number-1-top-rb-albums-chart-1236058949/"
+        },
+        {
+          "label": "Discography",
+          "url": "https://en.wikipedia.org/wiki/Mariah_the_Scientist_discography"
+        },
+        {
+          "label": "Shazam",
+          "url": "https://www.shazam.com/song/1824543096/rainy-days"
+        }
+      ],
+      "verified": true,
+      "track": 8,
+      "producers": "JayRewind & 1985",
+      "charts": [
+        {
+          "chart": "Billboard Hot R&B Songs",
+          "peak": 10
+        },
+        {
+          "chart": "Billboard Bubbling Under Hot 100",
+          "peak": 11
+        }
+      ],
+      "notes": [
+        "One of four tracks from Hearts Sold Separately to reach the Hot R&B Songs top 10."
+      ],
+      "format": "single",
+      "certLabel": "2× GOLD"
     },
     {
       "id": "billboard",
       "type": "billboard",
       "wall": "right",
       "title": "Billboard",
-      "headline": "Chart placement",
-      "detail": "Chart, song and peak position — confirm",
-      "date": null,
+      "headline": "Rainy Days — Mariah the Scientist",
+      "detail": "Hot R&B Songs: peak #10 · Bubbling Under Hot 100: peak #11",
+      "date": "2025",
+      "links": [
+        {
+          "label": "Billboard",
+          "url": "https://www.billboard.com/music/chart-beat/mariah-scientist-hearts-sold-number-1-top-rb-albums-chart-1236058949/"
+        },
+        {
+          "label": "Discography",
+          "url": "https://en.wikipedia.org/wiki/Mariah_the_Scientist_discography"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "id": "tahj-keeton",
+      "type": "plaque",
+      "wall": "left",
+      "song": "IN MY DREAMS / ALL NIGHT LONG",
+      "artist": "Tahj Keeton",
+      "album": "IN MY DREAMS / ALL NIGHT LONG",
+      "label": null,
+      "released": "2026-10-02",
+      "role": "Producer (every track), Executive Producer, Mixing & Mastering",
+      "cert": "none",
+      "certBody": null,
+      "certNote": null,
+      "streams": null,
+      "billboard": null,
+      "cover": "assets/museum/cover-tahj-keeton.jpg",
+      "links": [
+        {
+          "label": "Audiomack",
+          "url": "https://audiomack.com/tahj-keeton/album/in-my-dreams-all-night-long"
+        },
+        {
+          "label": "Apple Music",
+          "url": "https://music.apple.com/us/album/im-up-single/6779807302"
+        },
+        {
+          "label": "YouTube",
+          "url": "https://www.youtube.com/watch?v=M__JbCaD2g8"
+        }
+      ],
+      "verified": true,
+      "producers": "JayRewind",
+      "format": "album",
+      "tracks": [
+        "WYLIN",
+        "RADIO",
+        "INNAT",
+        "PARADISE (feat. Ava La'Rae)"
+      ],
+      "notes": [
+        "Singles: N2 (Sep 2025), TEEGEE (Jul 2026), WYLIN (Sep 2026), I'M UP (2026), WORK (Oct 2026).",
+        "\"FRIEND\" visual (Oct 2026): co-directed by Tahj Keeton and Matt Martinez, produced by JayRewind."
+      ]
+    },
+    {
+      "id": "b6",
+      "type": "plaque",
+      "wall": "left",
+      "song": "ATTENTION",
+      "artist": "B6",
+      "album": "ATTENTION",
+      "label": null,
+      "released": null,
+      "role": "Producer — confirm",
+      "cert": "none",
+      "certBody": null,
+      "certNote": null,
+      "streams": null,
+      "billboard": null,
+      "cover": "assets/museum/cover-b6.jpg",
       "links": [],
-      "verified": false
+      "verified": false,
+      "format": "album"
+    },
+    {
+      "id": "swapa",
+      "type": "plaque",
+      "wall": "right",
+      "song": "CLRBLND",
+      "artist": "Swapa",
+      "album": "CLRBLND",
+      "label": "Hallwood & 9th St.",
+      "released": "2025-11-14",
+      "role": "Executive Producer, Mixing & Mastering, Additional Production",
+      "cert": "none",
+      "certBody": null,
+      "certNote": null,
+      "streams": null,
+      "billboard": null,
+      "cover": null,
+      "links": [
+        {
+          "label": "Genius",
+          "url": "https://genius.com/albums/Swapa/Clrblnd"
+        }
+      ],
+      "verified": true,
+      "format": "album",
+      "notes": [
+        "17 tracks. Genius lists JayRewind under Additional Production."
+      ]
+    },
+    {
+      "id": "parental-rmlur",
+      "type": "sign",
+      "wall": "front",
+      "src": "assets/museum/sign-parental-rmlur.jpg",
+      "w": 1.5,
+      "y": 2.35
+    },
+    {
+      "id": "you-have-work-tomorrow",
+      "type": "art",
+      "wall": "front",
+      "src": "assets/museum/art-you-have-work-tomorrow.jpg",
+      "title": "You Have Work Tomorrow",
+      "artist": "JayRewind",
+      "year": "2026",
+      "medium": "Archival pigment print on stretched canvas",
+      "size": "36 × 36 in",
+      "price": "$8,500",
+      "edition": "1 of 1"
+    },
+    {
+      "id": "credits",
+      "type": "credits",
+      "wall": "front",
+      "src": "data/credits.json"
     }
   ]
 }

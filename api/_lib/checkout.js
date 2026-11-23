@@ -134,7 +134,7 @@ export function buildLicensePdf({ title, tierLabel, buyerName, buyerEmail, order
     [11, 'unless the EXCLUSIVE license applies. Redistribution of the beat files', 'F1'],
     [11, 'themselves is not permitted.', 'F1'],
     null,
-    [10, 'Questions: jayrewindbeatz@gmail.com', 'F1'],
+    [10, 'Questions: rmlurdeuxsexes@gmail.com', 'F1'],
   ];
   let y = 780, content = '';
   for (const r of rows) {

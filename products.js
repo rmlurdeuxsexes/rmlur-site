@@ -13,7 +13,7 @@
    "stripeLink" is just whatever URL the BUY button opens — despite the
    name, it doesn't have to be a Stripe Payment Link. The real catalog's
    current products all use a mailto: link (opens a pre-filled email to
-   jayrewindbeatz@gmail.com; you send the file back by hand) instead of
+   rmlurdeuxsexes@gmail.com; you send the file back by hand) instead of
    real Stripe checkout — match that pattern for consistency unless/until
    real Stripe Payment Links are wired up for everything.
    ============================================================ */

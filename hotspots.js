@@ -99,7 +99,7 @@ window.PADS = [
 
   { id: "pad-3-0", type: "social", label: "Blog",    url: "blog.html" },
   { id: "pad-3-1", type: "social", label: "Design",  url: "design.html" },
-  { id: "pad-3-2", type: "social", label: "Contact", url: "mailto:jayrewindbeatz@gmail.com" },
+  { id: "pad-3-2", type: "social", label: "Contact", url: "mailto:rmlurdeuxsexes@gmail.com" },
   { id: "pad-3-3", type: "social", label: null,      url: null }
 ];
 
@@ -149,7 +149,7 @@ window.HOME_PADS = {
   3:  { label: "YouTube",   url: "https://www.youtube.com/" },
   4:  { label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
   5:  { label: "TikTok",    url: "https://www.tiktok.com/@jayrewindbeatz" },
-  6:  { label: "Contact",   url: "mailto:jayrewindbeatz@gmail.com" },
+  6:  { label: "Contact",   url: "mailto:rmlurdeuxsexes@gmail.com" },
   7:  { label: "Blog",      url: "blog.html" },
   8:  { label: "Gallery",   url: "gallery.html" },
   9:  { label: "Museum",    url: "museum.html" },

@@ -14,6 +14,20 @@ export function previewPath(row) {
   return `/api/products?preview=${encodeURIComponent(row.id)}&v=${v}`;
 }
 
+// covers stored in the private R2 bucket are served same-origin like previews;
+// plain https covers (older uploads) are passed through unchanged
+export function coverPath(row) {
+  if (!row.cover_url) return null;
+  if (!String(row.cover_url).startsWith('r2:')) return row.cover_url;
+  const v = createHash('sha1').update(row.cover_url).digest('hex').slice(0, 10);
+  return `/api/products?cover=${encodeURIComponent(row.id)}&v=${v}`;
+}
+
+// Older rows still carry the retired inbox in their "ask the producer" mailto links;
+// swap it on the way out so every fallback reaches the current one.
+const OLD_CONTACT = /jayrewindbeatz(@|%40)gmail\.com/gi;
+const withContact = t => (t && typeof t.stripeLink === 'string') ? { ...t, stripeLink: t.stripeLink.replace(OLD_CONTACT, 'rmlurdeuxsexes$1gmail.com') } : t;
+
 function toProduct(row) {
   return {
     id: row.id,
@@ -24,19 +38,21 @@ function toProduct(row) {
     key: row.key,
     bars: row.bars,
     genre: row.genre,
-    cover: row.cover_url,
+    cover: coverPath(row),
     preview: previewPath(row),
     tags: row.tags,
     info: row.info,
-    tiers: Array.isArray(row.tiers) ? row.tiers.map(t => publicTier(t, row)) : row.tiers,
-    exclusive: publicTier(row.exclusive, row),
+    tiers: Array.isArray(row.tiers) ? row.tiers.map(t => withContact(publicTier(t, row))) : row.tiers,
+    exclusive: withContact(publicTier(row.exclusive, row)),
   };
 }
 
 export default {
   async fetch(request) {
-    const preview = new URL(request.url).searchParams.get('preview');
-    if (preview !== null && (request.method === 'GET' || request.method === 'HEAD')) return servePreview(request, preview);
+    const q = new URL(request.url).searchParams;
+    const preview = q.get('preview'), cover = q.get('cover');
+    if (preview !== null && (request.method === 'GET' || request.method === 'HEAD')) return servePreview(request, preview, 'preview');
+    if (cover !== null && (request.method === 'GET' || request.method === 'HEAD')) return servePreview(request, cover, 'cover');
     if (request.method !== 'GET') {
       return new Response('Method Not Allowed', { status: 405 });
     }

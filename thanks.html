@@ -22,16 +22,17 @@
   function tryOnce(n) {
     fetch('/api/order?session_id=' + encodeURIComponent(id)).then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); })
     .then(function (res) {
-      if (!res[0]) { if (n < 5) return setTimeout(function () { tryOnce(n + 1); }, 2000); msg.textContent = 'We could not confirm this order yet. If you were charged, email jayrewindbeatz@gmail.com with your receipt.'; return; }
+      if (!res[0]) { if (n < 5) return setTimeout(function () { tryOnce(n + 1); }, 2000); msg.textContent = 'We could not confirm this order yet. If you were charged, email rmlurdeuxsexes@gmail.com with your receipt.'; return; }
       var o = res[1];
       msg.textContent = o.title + ' — ' + o.license + ' license' + (o.email ? ' (receipt sent to ' + o.email + ')' : '');
       o.files.forEach(function (f) { link(f.url, 'Download ' + f.label); });
       link(o.licenseUrl, 'License PDF');
       if (o.fulfilment === 'manual') { var p = document.createElement('p'); p.className = 'empty'; p.textContent = 'Your files are being prepared and will be emailed to you shortly.'; box.appendChild(p); }
-    }).catch(function () { msg.textContent = 'Something went wrong loading your order. Email jayrewindbeatz@gmail.com.'; });
+    }).catch(function () { msg.textContent = 'Something went wrong loading your order. Email rmlurdeuxsexes@gmail.com.'; });
   }
   if (!id) msg.textContent = 'No order found.'; else tryOnce(0);
 })();
 </script>
+<script src="/spin-badge.js" defer></script>
 </body>
 </html>

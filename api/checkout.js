@@ -1,5 +1,6 @@
 import { sql } from './_lib/db.js';
 import { siteUrl, isTestKey, findTier, deliverableFor, createCheckoutSession } from './_lib/checkout.js';
+import { deliverableReachable } from './_lib/dropbox.js';
 
 export default {
   async fetch(request) {
@@ -27,6 +28,11 @@ export default {
       if (!tier) return Response.json({ error: 'unknown license' }, { status: 404 });
       // Never take money for a file we can't hand over — the store falls back to contact.
       if (!deliverableFor(product, tier)) return Response.json({ error: 'not available yet' }, { status: 409 });
+      // ...and the file has to actually download right now, not just be on record.
+      if (!(await deliverableReachable(deliverableFor(product, tier)))) {
+        console.error('[api/checkout] deliverable not reachable for', product.id, tier.id);
+        return Response.json({ error: 'not available yet' }, { status: 409 });
+      }
       const session = await createCheckoutSession({ product, tier, origin: siteUrl(request), secretKey });
       return Response.json({ url: session.url });
     } catch (err) {

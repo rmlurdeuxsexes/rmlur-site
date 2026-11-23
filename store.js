@@ -42,7 +42,7 @@
   var checkoutLive = false;
   function buy(p, tier, btn) {
     function fallback() {
-      location.href = tier.stripeLink || 'mailto:jayrewindbeatz@gmail.com?subject=' + encodeURIComponent('Buy "' + p.title + '" — ' + tier.label);
+      location.href = tier.stripeLink || 'mailto:rmlurdeuxsexes@gmail.com?subject=' + encodeURIComponent('Buy "' + p.title + '" — ' + tier.label);
     }
     // buyable === false: no download file yet, so ask instead of taking payment
     if (!checkoutLive || tier.buyable === false) return fallback();
@@ -63,8 +63,7 @@
     var disk = el('div', 'disk');
     var img = el('img');
     img.alt = '3.5 inch floppy disk labelled ' + p.title;
-    img.src = 'assets/store/floppy-3.5-blue.png';
-    img.onerror = function () { img.onerror = null; img.src = 'assets/store/floppy-3.5-blue.svg'; };
+    img.src = 'assets/store/floppy-3.5-blue.svg';
     disk.appendChild(img);
 
     var bpmKey = [p.bpm ? p.bpm + ' bpm' : '', p.key || ''].filter(Boolean).join(' · ');

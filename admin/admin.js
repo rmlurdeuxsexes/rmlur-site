@@ -41,7 +41,7 @@ async function uploadFileIfPresent(inputId) {
   return blob.url;
 }
 
-const CONTACT = 'jayrewindbeatz@gmail.com';
+const CONTACT = 'rmlurdeuxsexes@gmail.com';
 const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const idInput = document.getElementById('id');
 const titleInput = document.getElementById('title');
@@ -91,7 +91,12 @@ uploadForm.addEventListener('submit', async (event) => {
     if (stemsFile) { uploadStatus.textContent = 'uploading stems…'; stems = await putPrivate(id, 'stems', stemsFile); }
 
     uploadStatus.textContent = 'uploading cover/preview…';
-    const [cover, preview] = await Promise.all([uploadFileIfPresent('cover'), uploadFileIfPresent('preview')]);
+    const coverFile = document.getElementById('cover').files[0];
+    const previewFile = document.getElementById('preview').files[0];
+    const [cover, preview] = await Promise.all([
+      coverFile ? putPrivate(id, 'cover', coverFile) : null,
+      previewFile ? putPrivate(id, 'preview', previewFile) : null,
+    ]);
 
     const tiers = [];
     const add = (tid, label, priceId, ref) => {

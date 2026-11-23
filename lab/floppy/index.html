@@ -50,6 +50,7 @@
 
   .pw{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:none;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;background:#fff;border:1px solid var(--ink);padding:10px;font-size:12px;z-index:5;max-width:calc(100vw - 2 * var(--gutter));box-sizing:border-box}
   .pw.show{display:flex}
+  .pw.animating{opacity:0;pointer-events:none;transition:opacity .25s}
   .pw input{padding:6px 8px;border:1px solid var(--ink);width:150px}
   .pw .err{color:#c8322b}
 
@@ -92,5 +93,6 @@
 <script src="/vendor/GLTFLoader.js"></script>
 <script src="/products.js"></script>
 <script type="module" src="/lab/floppy/cabinet.js"></script>
+<script src="/spin-badge.js" defer></script>
 </body>
 </html>

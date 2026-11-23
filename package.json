@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "publish-beats": "node scripts/publish-beats.mjs"
+    "publish-beats": "node scripts/publish-beats.mjs",
+    "migrate-r2": "node --env-file=.env.production.local scripts/migrate-to-r2.mjs"
   }
 }
