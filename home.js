@@ -40,9 +40,53 @@
           if (cfg.sound) playOneShot(cfg.sound);
         });
       }
+      var name = cfg.label ? cfg.label.toUpperCase() : 'PAD ' + n;
+      el.addEventListener('pointerenter', function () { lcdShow(name); });
+      el.addEventListener('focus', function () { lcdShow(name); });
+      el.addEventListener('pointerleave', lcdIdle);
+      el.addEventListener('blur', lcdIdle);
       place(el, map.pads[key]);
       mpc.appendChild(el);
     });
+  }
+
+  // ── LCD: the screen is the way into the beat store, and it names whatever
+  //    pad you're on. Box comes from data/hero-map.json, text/url from HOME_LCD. ──
+  var lcd = window.HOME_LCD || { idle: 'BEAT STORE', url: 'store.html' };
+  var lcdText = null, lcdBusy = false;
+  function lcdShow(t) { if (lcdText && !lcdBusy) { lcdText.textContent = t; lcdText.classList.remove('idle'); } }
+  function lcdIdle() { if (lcdText && !lcdBusy) { lcdText.textContent = lcd.idle + ' \u25BA'; lcdText.classList.add('idle'); } }
+
+  function buildLcd(box) {
+    if (!box) return;
+    var el = document.createElement('a');
+    el.className = 'mpc-lcd';
+    el.href = lcd.url;
+    el.setAttribute('aria-label', 'LCD screen — open the beat store');
+    var glass = document.createElement('span');
+    glass.className = 'mpc-lcd-glass';
+    var g = box.glass;
+    glass.style.left = g.left + '%'; glass.style.top = g.top + '%';
+    glass.style.width = g.width + '%'; glass.style.height = g.height + '%';
+    lcdText = document.createElement('span');
+    lcdText.className = 'mpc-lcd-text';
+    glass.appendChild(lcdText);
+    el.appendChild(glass);
+    el.addEventListener('pointerenter', function () { lcdShow('OPEN BEAT STORE \u25BA'); });
+    el.addEventListener('pointerleave', lcdIdle);
+    el.addEventListener('click', function (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return; // let new-tab clicks through
+      e.preventDefault();
+      if (lcdBusy) return;
+      lcdShow('LOADING...');
+      lcdBusy = true;
+      setTimeout(function () { window.location.href = lcd.url; }, 450);
+    });
+    // coming Back from the store (bfcache) must not leave the screen stuck on LOADING
+    window.addEventListener('pageshow', function () { lcdBusy = false; lcdIdle(); });
+    place(el, box);
+    mpc.appendChild(el);
+    lcdIdle();
   }
 
   // ── VOL fader: drag the cap along its slot ──
@@ -107,6 +151,7 @@
   fetch('data/hero-map.json')
     .then(function (r) { return r.json(); })
     .then(function (map) {
+      buildLcd(map.lcd);
       buildPads(map);
       setupFader(map.fader);
       setupWheel(map.wheel);

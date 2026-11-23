@@ -138,6 +138,11 @@ window.LCD = {
    index.html + home.js. Hardware numbering: PAD 1 is bottom-left, PAD 16
    top-right. `url` → navigate (http(s) opens a new tab); `sound` → play a
    one-shot. Exact pad boxes come from data/hero-map.json, never from here. */
+/* The LCD screen on the homepage photo: clicking it opens the beat store,
+   and hovering any pad shows that pad's name on the glass. Position lives in
+   data/hero-map.json ("lcd" — the bezel box, plus "glass" relative to it). */
+window.HOME_LCD = { idle: "BEAT STORE", url: "store.html" };
+
 window.HOME_PADS = {
   1:  { label: "Home",      url: "index.html" },
   2:  { label: "Beats",     url: "store.html" },

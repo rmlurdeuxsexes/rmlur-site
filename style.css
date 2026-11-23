@@ -549,6 +549,16 @@ body.home-static{background:#fff;color:var(--ink);font-family:var(--font-mono);m
 .mpc-wheel.dragging,.mpc-fader.dragging{cursor:grabbing}
 .mpc-pad{position:absolute;display:block;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none}
 .mpc-pad:focus-visible{outline:1px solid rgba(0,0,0,.35);outline-offset:2px}
+/* LCD = way into the beat store. Text sits inside the photo's own glass, lit like the real screen. */
+.mpc-lcd{position:absolute;display:block;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none;z-index:1}
+.mpc-lcd:focus-visible{outline:1px solid rgba(0,0,0,.35);outline-offset:2px}
+.mpc-lcd-glass{position:absolute;display:flex;align-items:center;justify-content:center;overflow:hidden;container-type:size;pointer-events:none}
+.mpc-lcd-text{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:500;font-size:34cqh;letter-spacing:.14em;white-space:nowrap;
+  color:#ffb547;text-shadow:0 0 .35em rgba(255,170,60,.75),0 0 .08em rgba(255,210,140,.9);transition:opacity .15s}
+.mpc-lcd-text.idle{animation:mpcLcdBlink 2.4s steps(1,end) infinite}
+.mpc-lcd:hover .mpc-lcd-text{color:#ffd28a}
+@keyframes mpcLcdBlink{0%,82%{opacity:1}83%,100%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.mpc-lcd-text.idle{animation:none}}
 
 /* ================= GALLERY — white wall, art hung in a masonry grid ================= */
 .gallery-wall{columns:3 240px;column-gap:28px}
