@@ -15,7 +15,7 @@
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.3;
+  renderer.toneMappingExposure = 1.1;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -47,14 +47,24 @@
 
   /* ---------- the room ---------- */
   var wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, envMapIntensity: 0.25 });
+  // polished concrete: warm grey, soft cloudy mottling, fine aggregate, almost no seams;
+  // low roughness so the ceiling strips glare off it
   var floorTex = canvasTex(1024, 1024, function (ctx, w, h) {
-    ctx.fillStyle = '#d9d6cf'; ctx.fillRect(0, 0, w, h); grain(ctx, w, h, 18);
-    ctx.strokeStyle = 'rgba(0,0,0,.06)'; ctx.lineWidth = 2;
-    for (var x = 0; x <= w; x += w / 4) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    ctx.fillStyle = '#b9b3a8'; ctx.fillRect(0, 0, w, h);
+    for (var i = 0; i < 70; i++) {
+      var x = Math.random() * w, y = Math.random() * h, r = 60 + Math.random() * 220;
+      var g = ctx.createRadialGradient(x, y, 0, x, y, r), light = Math.random() < 0.5;
+      g.addColorStop(0, light ? 'rgba(235,230,220,.16)' : 'rgba(120,112,100,.13)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
+    }
+    grain(ctx, w, h, 10);
+    for (var j = 0; j < 2600; j++) { ctx.fillStyle = 'rgba(70,64,56,' + (0.06 + Math.random() * 0.12) + ')'; ctx.fillRect(Math.random() * w, Math.random() * h, 1.4, 1.4); }
+    ctx.strokeStyle = 'rgba(60,55,48,.10)'; ctx.lineWidth = 1.5;            // one faint saw-cut joint
+    ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke();
   });
-  floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping; floorTex.repeat.set(3, 2.5);
+  floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping; floorTex.repeat.set(2, 1.7);
   var floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.w, ROOM.d),
-    new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.55, metalness: 0.0 }));
+    new THREE.MeshPhysicalMaterial({ map: floorTex, roughness: 0.24, metalness: 0.0, clearcoat: 0.55, clearcoatRoughness: 0.18, envMapIntensity: 1.1 }));
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
   var ceil = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.w, ROOM.d), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 }));
   ceil.rotation.x = Math.PI / 2; ceil.position.y = ROOM.h; scene.add(ceil);
@@ -76,6 +86,111 @@
     base.translateZ(0.008); scene.add(base);
   });
 
+  /* ---------- ceiling light strips + their glare on the concrete ----------
+     long recessed LED bars (like the reference gallery); each one gets a soft
+     elongated hot spot on the floor below it, since a real reflection pass
+     isn't available in this three.js build. */
+  var STRIPS = [[-3.2, -2.2, 0.35], [0.4, 0.2, -0.3], [3.6, 1.8, 0.4], [-1.2, 3.3, -0.2]];   // x, z, yaw
+  var stripMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+  var housingMat = new THREE.MeshStandardMaterial({ color: 0xd8d8d6, roughness: 0.6 });
+  var glareTex = canvasTex(256, 1024, function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    var g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, h / 2);
+    g.addColorStop(0, 'rgba(255,255,255,.34)'); g.addColorStop(0.4, 'rgba(255,255,255,.12)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    var c = ctx.createLinearGradient(0, 0, w, 0);                       // bright core along the strip's line
+    c.addColorStop(0, 'rgba(255,255,255,0)'); c.addColorStop(0.5, 'rgba(255,255,255,.22)'); c.addColorStop(1, 'rgba(255,255,255,0)');
+    var fade = ctx.createLinearGradient(0, 0, 0, h); fade.addColorStop(0, 'rgba(0,0,0,0)'); fade.addColorStop(0.2, '#000'); fade.addColorStop(0.8, '#000'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+    var tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h; var t = tmp.getContext('2d');
+    t.fillStyle = c; t.fillRect(w * 0.3, 0, w * 0.4, h); t.globalCompositeOperation = 'destination-in'; t.fillStyle = fade; t.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'lighter'; ctx.filter = 'blur(6px)'; ctx.drawImage(tmp, 0, 0); ctx.filter = 'none';
+  });
+  STRIPS.forEach(function (st) {
+    var L = 4.6;
+    var housing = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.03, L), housingMat);
+    housing.position.set(st[0], ROOM.h - 0.012, st[1]); housing.rotation.y = st[2]; scene.add(housing);
+    var bar = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, L - 0.06), stripMat);
+    bar.position.set(st[0], ROOM.h - 0.02, st[1]); bar.rotation.y = st[2]; scene.add(bar);
+    var glare = new THREE.Mesh(new THREE.PlaneGeometry(1.4, L * 1.3),
+      new THREE.MeshBasicMaterial({ map: glareTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.7 }));
+    glare.rotation.x = -Math.PI / 2; glare.rotation.z = -st[2]; glare.position.set(st[0], 0.004, st[1]); glare.renderOrder = 1; scene.add(glare);
+    var fill = new THREE.PointLight(0xffffff, 3.2, 7, 1.6); fill.position.set(st[0], ROOM.h - 0.3, st[1]); scene.add(fill);
+  });
+
+  /* ---------- raised viewing platform + guardrail along the left wall ----------
+     black studded rubber deck, white skirt, black steel rail on its open edge */
+  (function platform() {
+    var D = 1.05, Hh = 0.16, L = ROOM.d - 1.2, x0 = -ROOM.w / 2 + D / 2;
+    var studs = canvasTex(256, 256, function (ctx, w, h) {
+      ctx.fillStyle = '#2a2b2e'; ctx.fillRect(0, 0, w, h);
+      for (var y = 16; y < h; y += 32) for (var x = (y / 32) % 2 ? 32 : 16; x < w; x += 32) {
+        var g = ctx.createRadialGradient(x - 3, y - 3, 1, x, y, 10); g.addColorStop(0, '#5c5e63'); g.addColorStop(1, '#2a2b2e');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill();
+      }
+    });
+    var bump = canvasTex(256, 256, function (ctx, w, h) {
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+      for (var y = 16; y < h; y += 32) for (var x = (y / 32) % 2 ? 32 : 16; x < w; x += 32) {
+        var g = ctx.createRadialGradient(x, y, 0, x, y, 10); g.addColorStop(0, '#fff'); g.addColorStop(1, '#000');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fill();
+      }
+    }, false);
+    [studs, bump].forEach(function (t) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(D * 4, L * 4); });
+    var deckMat = new THREE.MeshStandardMaterial({ map: studs, bumpMap: bump, bumpScale: 1.2, roughness: 0.55, metalness: 0.1 });
+    var skirt = new THREE.MeshStandardMaterial({ color: 0xf2f1ee, roughness: 0.8 });
+    var deck = new THREE.Mesh(new THREE.BoxGeometry(D, Hh, L), [skirt, skirt, deckMat, skirt, skirt, skirt]);
+    deck.position.set(x0, Hh / 2, 0); deck.receiveShadow = deck.castShadow = true; scene.add(deck);
+    var steel = new THREE.MeshStandardMaterial({ color: 0x111113, roughness: 0.35, metalness: 0.7 });
+    var railX = x0 + D / 2 - 0.04, top = Hh + 0.92;
+    var bar = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, L - 0.1), steel); bar.position.set(railX, top, 0); bar.castShadow = true; scene.add(bar);
+    var mid = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, L - 0.1), steel); mid.position.set(railX, Hh + 0.46, 0); scene.add(mid);
+    for (var z = -L / 2 + 0.05; z <= L / 2 - 0.04; z += (L - 0.1) / 5) {
+      var post = new THREE.Mesh(new THREE.BoxGeometry(0.035, top - Hh, 0.035), steel);
+      post.position.set(railX, Hh + (top - Hh) / 2, z); post.castShadow = true; scene.add(post);
+    }
+  })();
+
+  /* ---------- the neon wall: pink RMLUR neon over a wheat-paste mural of the
+     brand's art (assets/museum/mural-rmlur.webp, transparent PNG pieces) ---------- */
+  function neonTex() {
+    return canvasTex(2048, 1100, function (ctx, w, h) {
+      ctx.clearRect(0, 0, w, h);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+      function tubes(text, font, x, y) {
+        ctx.save(); ctx.translate(x, y); ctx.transform(1, -0.06, -0.18, 1, 0, 0); ctx.font = font;
+        [[46, 'rgba(255,40,200,.22)', 90], [22, '#ff3fd4', 40], [8, '#ffd3f6', 12]].forEach(function (t) {   // bloom, tube, hot core
+          ctx.shadowColor = '#ff2fd0'; ctx.shadowBlur = t[2]; ctx.lineWidth = t[0]; ctx.strokeStyle = t[1]; ctx.strokeText(text, 0, 0);
+        });
+        ctx.restore();
+      }
+      tubes('RMLUR', 'italic 900 400px "Arial Black", Impact, "Helvetica Neue", sans-serif', w / 2, h * 0.36);
+      tubes('deux SEXES', 'italic 900 210px "Arial Black", Impact, "Helvetica Neue", sans-serif', w / 2 + 40, h * 0.79);
+      function star(cx, cy, r) {
+        ctx.beginPath();
+        for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+        ctx.closePath(); ctx.lineJoin = 'round';
+        ctx.shadowColor = '#ff2fd0'; ctx.shadowBlur = 30; ctx.lineWidth = 12; ctx.strokeStyle = '#ff3fd4'; ctx.stroke();
+        ctx.shadowBlur = 8; ctx.lineWidth = 4; ctx.strokeStyle = '#ffd3f6'; ctx.stroke();
+      }
+      star(w * 0.39, h * 0.1, 46); star(w * 0.47, h * 0.19, 34); star(w * 0.83, h * 0.62, 40);
+    });
+  }
+  (function neonWall() {
+    var W = WALLS.front;
+    var mural = new THREE.Mesh(new THREE.PlaneGeometry(4.7, 4.7 * 1500 / 3200),
+      new THREE.MeshStandardMaterial({ transparent: true, alphaTest: 0.04, roughness: 0.9, opacity: 0 }));
+    new THREE.TextureLoader().load('assets/museum/mural-rmlur.webp', function (t) {
+      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; mural.material.map = t; mural.material.opacity = 1; mural.material.needsUpdate = true;
+    });
+    mural.position.copy(W.pos); mural.position.y = 2.85; mural.rotation.y = W.rot; mural.translateZ(0.006); mural.receiveShadow = true; scene.add(mural);
+    var neon = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 3.9 * 1100 / 2048),
+      new THREE.MeshBasicMaterial({ map: neonTex(), transparent: true, depthWrite: false, toneMapped: false }));
+    neon.position.copy(W.pos); neon.position.y = 2.95; neon.rotation.y = W.rot; neon.translateZ(0.09); scene.add(neon);
+    // the neon throws pink onto the wall, the mural and the concrete
+    var glow = new THREE.PointLight(0xff2fd0, 14, 7.5, 1.4);
+    glow.position.copy(W.pos); glow.position.y = 3.0; glow.rotation.y = W.rot; glow.translateZ(0.6); scene.add(glow);
+  })();
+
   // vinyl wall lettering, like a gallery title wall
   function wallText(text, sub, wall, y, width) {
     var tex = canvasTex(2048, 360, function (ctx, w, h) {
@@ -90,8 +205,8 @@
   }
 
   /* ---------- light ---------- */
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xe4e0d8, 1.5));
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d3ca, 1.05));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.3));
   var key = new THREE.DirectionalLight(0xffffff, 0.5);
   key.position.set(2, 6, 4); scene.add(key);
 
@@ -103,7 +218,7 @@
     env.add(box);
     var panel = new THREE.MeshBasicMaterial({ color: 0xffffff });
     [[-4, 4.9, -3], [4, 4.9, -3], [0, 4.9, 4], [-9.9, 2, 0], [9.9, 2, 0]].forEach(function (p, i) {
-      var m = new THREE.Mesh(new THREE.PlaneGeometry(i < 3 ? 5 : 6, i < 3 ? 2 : 3), panel);
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(i < 3 ? 0.6 : 6, i < 3 ? 7 : 3), panel);   // ceiling entries = long thin strips
       m.position.set(p[0], p[1], p[2]);
       if (i < 3) m.rotation.x = Math.PI / 2; else m.rotation.y = p[0] < 0 ? Math.PI / 2 : -Math.PI / 2;
       env.add(m);
@@ -704,7 +819,6 @@
     .then(function (data) {
       var who = data.presentedTo || 'JayRewind';
       wallText('PLACEMENTS', who + ' — RMLUR :: deux SEXES', 'back', 3.35, 4.2);
-      wallText('RMLUR', 'museum of placements', 'front', 2.2, 3.2);
       hang(data.placements || [], who);
     })
     .catch(function (e) { hud.textContent = 'could not load placements'; console.error(e); });

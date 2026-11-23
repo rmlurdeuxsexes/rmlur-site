@@ -38,7 +38,7 @@ const run = promisify(execFile);
 const args = process.argv.slice(2);
 const APPLY = args.includes('--apply');
 const fromIdx = args.indexOf('--from');
-const FROM = fromIdx >= 0 ? args[fromIdx + 1] : null;
+const FROM = fromIdx >= 0 ? args[fromIdx + 1] : null;   // one folder, or several separated by commas
 
 if (!process.env.DATABASE_URL) { console.error('DATABASE_URL missing. Run: vercel env pull .env.production.local --environment=production'); process.exit(1); }
 if (!r2Config()) { console.error('R2_* env vars missing (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET).'); process.exit(1); }
@@ -52,7 +52,7 @@ const TYPE = { wav: 'audio/wav', mp3: 'audio/mpeg', stems: 'application/zip', co
 // ---------- local files ----------
 async function walk(dir, out = []) {
   for (const e of await fsp.readdir(dir, { withFileTypes: true }).catch(() => [])) {
-    if (e.name.startsWith('.')) continue;
+    if (e.name.startsWith('.') || e.name === 'node_modules' || e.name === 'Library') continue;
     const p = path.join(dir, e.name);
     if (e.isDirectory()) await walk(p, out);
     else if (KIND_OF_EXT[path.extname(e.name).toLowerCase()]) out.push(p);
@@ -91,8 +91,9 @@ async function makePreview(wavPath) {
 }
 
 // ---------- plan + apply ----------
-const files = FROM ? await walk(path.resolve(FROM)) : [];
-if (FROM) console.log(`Scanned ${files.length} audio/image/zip files under ${FROM}\n`);
+const ROOTS = FROM ? FROM.split(',').map(p => path.resolve(p.trim().replace(/^~(?=\/|$)/, os.homedir()))).filter(p => fs.existsSync(p)) : [];
+const files = (await Promise.all(ROOTS.map(r => walk(r)))).flat();
+if (FROM) console.log(`Scanned ${files.length} audio/image/zip files under ${ROOTS.join(', ')}\n`);
 const rows = await sql`SELECT * FROM products ORDER BY id`;
 const report = [];
 
@@ -115,7 +116,7 @@ for (const row of rows) {
     if (p.current && done.has(p.current)) { p.set(done.get(p.current)); line.moved.push(`${p.what} (reused)`); continue; }
     let buf = p.current ? await tryDownload(p.current) : null, src = buf ? 'old URL' : null, name = p.current ? decodeURIComponent(new URL(p.current, 'https://x').pathname.split('/').pop()) : null;
     let file = p.kind === 'preview' ? (local.mp3 || null) : local[p.kind];
-    if (!buf && file) { src = path.relative(FROM, file); name = path.basename(file); }
+    if (!buf && file) { src = path.relative(ROOTS.find(r => file.startsWith(r)) || '', file); name = path.basename(file); }
     let tmp = null;
     if (!buf && !file && p.kind === 'preview' && local.wav) { src = `made from ${path.basename(local.wav)}`; name = `${row.id}-preview.mp3`; if (APPLY) { tmp = await makePreview(local.wav); file = tmp; } else file = 'pending'; }
     if (!buf && !file) { line.missing.push(p.what); continue; }
@@ -147,13 +148,13 @@ for (const p of posts) {
   const local = files.find(f => path.basename(f).replace(/[^A-Za-z0-9._ +@()-]/g, '_') === name.replace(/-[A-Za-z0-9]{20,}(\.\w+)$/, '$1'));
   const buf = await tryDownload(p.image_url);
   if (!buf && !local) { line.missing.push('image'); report.push(line); continue; }
-  if (!APPLY) { line.moved.push(`image <- ${buf ? 'old URL' : path.relative(FROM, local)}`); report.push(line); continue; }
+  if (!APPLY) { line.moved.push(`image <- ${buf ? 'old URL' : path.relative(ROOTS.find(r => local.startsWith(r)) || '', local)}`); report.push(line); continue; }
   const ext = path.extname(name).toLowerCase();
   const ref = await r2Put(`media/posts/${Date.now().toString(36)}-${name}`, buf || await fsp.readFile(local),
     { contentType: { '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' }[ext] || 'image/jpeg' });
   if (!(await reachable(ref))) { line.missing.push('image (uploaded but not downloadable!)'); report.push(line); continue; }
   await sql`UPDATE posts SET image_url = ${ref} WHERE id = ${p.id}`;
-  line.moved.push(`image <- ${buf ? 'old URL' : path.relative(FROM, local)}`); report.push(line);
+  line.moved.push(`image <- ${buf ? 'old URL' : path.relative(ROOTS.find(r => local.startsWith(r)) || '', local)}`); report.push(line);
 }
 
 console.log(APPLY ? 'MOVED TO R2:' : 'PLAN (nothing changed yet, re-run with --apply):');
