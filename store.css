@@ -1,5 +1,5 @@
 /* /store — plain white product-photography store. */
-/* the producer's own handwriting (built from his notebook); missing glyphs (N, digits, symbols) fall back per-character */
+/* the producer's own handwriting (built from his notebook): A-Z, a-z, 0-9, / $ . - + & ? : -- anything else falls back per character */
 @font-face{font-family:"RMLUR Hand";src:url("/assets/fonts/rmlur-hand.woff2") format("woff2");font-display:swap}
 :root{--ink:#1b1b1b;--ink-soft:#55524a;--pen:#243044;--line:#e6e6e6}
 *{box-sizing:border-box}
