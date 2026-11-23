@@ -4,15 +4,14 @@ button's box, so home.js can make the whole machine touchable.
     python3 scripts/build-control-layers.py
 
 Reads  assets/hero/hero-base.png        (written by build-hero-layers.py)
-Writes assets/hero/knob-rec-gain.png    REC GAIN cap, circular alpha
-       assets/hero/knob-main-volume.png MAIN VOLUME cap, circular alpha
+Writes assets/hero/hero-base.png        same photo with the knobs' printed
+                                        indicator lines erased
        data/hero-map.json               adds "knobs" and "buttons" (in % of
                                         the photo); every other key is kept
 
-Knob centres/radii came from a Hough circle fit on the photo; button boxes
-were measured on 2-3x zoomed crops with a 10px grid. The caps are round, so
-rotating a circular cut-out in place over the same pixels needs no inpainting
-(same trick as the jog wheel). Re-run if hero-base.png ever changes.
+Knob centres came from a Hough circle fit on the photo; indicator endpoints
+and button boxes were measured on 2-4x zoomed crops with a pixel grid.
+Re-run if hero-base.png ever changes. Needs opencv-python + numpy.
 """
 import json
 from pathlib import Path
@@ -32,23 +31,34 @@ def pct_box(x0, y0, x1, y1):
             'width': round((x1 - x0) / W * 100, 4), 'height': round((y1 - y0) / H * 100, 4)}
 
 
-# ── knobs: (id, label, cx, cy, r, indicator angle now in degrees, 0 = 12 o'clock, clockwise) ──
+# ── knobs ──
+# Only the indicator line turns on a real pot; the cap, its lighting and the
+# skirt stay put. So the printed indicator is erased from hero-base.png
+# (inpainted along its measured endpoints) and home.js draws a new line on top
+# that rotates about the cap centre. Re-running is harmless: inpainting an
+# already-clean cap changes nothing visible.
+# (id, label, cap centre x/y, indicator length, angle now (0 = 12 o'clock, cw),
+#  indicator colour, printed-line endpoints to erase, hit-area radius)
 KNOBS = [
-    ('rec-gain', 'REC GAIN', 1109, 229, 31, 80),
-    ('main-volume', 'MAIN VOLUME', 1238, 225, 31, -30),
+    ('rec-gain', 'REC GAIN', 1106, 218, 17, 102, '#908680', ((1098, 215), (1125, 221)), 31),
+    ('main-volume', 'MAIN VOLUME', 1235, 215, 18, -38, '#898582', ((1220, 196), (1242, 217)), 31),
 ]
+import cv2
+import numpy as np
+bgr = cv2.cvtColor(np.asarray(im.convert('RGB')), cv2.COLOR_RGB2BGR)
+for *_, (p0, p1), _r in KNOBS:
+    m = np.zeros(bgr.shape[:2], np.uint8)
+    cv2.line(m, p0, p1, 255, 10, cv2.LINE_AA)
+    bgr = cv2.inpaint(bgr, ((m > 40) * 255).astype(np.uint8), 7, cv2.INPAINT_NS)
+clean = Image.fromarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)).convert('RGBA')
+clean.putalpha(im.getchannel('A'))
+clean.save(BASE)
+im = clean
 knobs = []
-for kid, label, cx, cy, r, ang in KNOBS:
-    s = 4  # supersampled alpha for a clean round edge
-    mask = Image.new('L', (2 * r * s, 2 * r * s), 0)
-    ImageDraw.Draw(mask).ellipse((s, s, (2 * r - 1) * s, (2 * r - 1) * s), fill=255)
-    mask = mask.resize((2 * r, 2 * r), Image.LANCZOS).filter(ImageFilter.GaussianBlur(0.6))
-    cap = im.crop((cx - r, cy - r, cx + r, cy + r))
-    cap.putalpha(mask)
-    out = ROOT / f'assets/hero/knob-{kid}.png'
-    cap.save(out)
-    knobs.append({'id': kid, 'label': label, 'src': f'assets/hero/knob-{kid}.png',
-                  'angle': ang, 'min': -135, 'max': 135, **pct_box(cx - r, cy - r, cx + r, cy + r)})
+for kid, label, cx, cy, ln, ang, col, _line, hit in KNOBS:
+    knobs.append({'id': kid, 'label': label, 'cx': round(cx / W * 100, 4), 'cy': round(cy / H * 100, 4),
+                  'len': round(ln / H * 100, 4), 'thick': round(6 / W * 100, 4), 'color': col,
+                  'angle': ang, 'min': -135, 'max': 135, **pct_box(cx - hit, cy - hit + 8, cx + hit, cy + hit + 8)})
 
 # ── buttons: (id, label, x0, y0, x1, y1) in photo pixels ──
 BUTTONS = [

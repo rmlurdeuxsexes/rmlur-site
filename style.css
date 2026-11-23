@@ -556,9 +556,13 @@ body.home-static{background:#fff;color:var(--ink);font-family:var(--font-mono);m
   box-shadow:0 0 14px 2px rgba(60,80,255,.35),inset 0 0 6px rgba(0,0,30,.55)}
 .mpc-lcd-canvas{display:block;width:100%;height:100%}
 /* knobs turn like the jog wheel; buttons press in like the pads */
-.mpc-knob{position:absolute;display:block;cursor:grab;transform-origin:50% 50%;will-change:transform;-webkit-user-drag:none;touch-action:none;border-radius:50%;outline:none;visibility:hidden}
+.mpc-knob{position:absolute;display:block;cursor:grab;border-radius:50%;touch-action:none;outline:none;visibility:hidden}
 .mpc-knob.dragging{cursor:grabbing}
 .mpc-knob:focus-visible{box-shadow:0 0 0 2px rgba(0,0,0,.35)}
+/* the indicator line printed on the cap: a slightly raised grey groove, rotates about its bottom end (the cap centre) */
+.mpc-knob-ind{position:absolute;display:block;pointer-events:none;transform-origin:50% 100%;border-radius:1px 1px 40% 40%;
+  background:linear-gradient(90deg,rgba(0,0,0,.18),var(--ind) 30%,var(--ind) 70%,rgba(255,255,255,.18));
+  box-shadow:0 0 .5px rgba(0,0,0,.45)}
 .mpc-btn{position:absolute;display:block;padding:0;margin:0;border:0;background:transparent;cursor:pointer;border-radius:3px;-webkit-tap-highlight-color:transparent;outline:none;transition:background-color .06s,box-shadow .06s}
 .mpc-btn:hover{background:rgba(255,255,255,.06)}
 .mpc-btn.pressed{background:rgba(0,0,0,.16);box-shadow:inset 0 2px 4px rgba(0,0,0,.5),inset 0 -1px 0 rgba(255,255,255,.15)}
@@ -572,6 +576,12 @@ body.home-static{background:#fff;color:var(--ink);font-family:var(--font-mono);m
 .mpc-led-red{background:radial-gradient(circle at 42% 38%,#ffe0d8 0 18%,#ff5a3c 42%,#e01a0a 72%,#7a0a04 100%);
   box-shadow:0 0 3px 1px rgba(255,70,40,.85),0 0 9px 3px rgba(255,40,20,.35)}
 .mpc-led-red::after{background:radial-gradient(circle,rgba(255,80,50,.3) 0,rgba(255,80,50,0) 62%)}
+/* LED modes, on the LCD's 120 BPM: blink = on for 2 beats / off 2 (one bar), blink-slow = every two bars */
+.mpc-led.led-off{opacity:0}
+.mpc-led.led-blink{animation:mpcLedBlink 2s steps(1,end) infinite}
+.mpc-led.led-blink-slow{animation:mpcLedBlink 4s steps(1,end) infinite}
+@keyframes mpcLedBlink{0%{opacity:1}50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.mpc-led.led-blink,.mpc-led.led-blink-slow{animation:none}}
 
 /* ================= GALLERY — white wall, art hung in a masonry grid ================= */
 .gallery-wall{columns:3 240px;column-gap:28px}

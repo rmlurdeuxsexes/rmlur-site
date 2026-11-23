@@ -136,103 +136,124 @@
       "id": "full-level",
       "x": 59.986,
       "y": 20.158,
-      "color": "green"
+      "color": "green",
+      "mode": "on"
     },
     {
       "id": "16-levels",
       "x": 66.147,
       "y": 20.07,
-      "color": "green"
+      "color": "green",
+      "mode": "off"
     },
     {
       "id": "next-seq",
       "x": 60.057,
       "y": 27.377,
-      "color": "green"
+      "color": "green",
+      "mode": "blink-slow"
     },
     {
       "id": "track-mute",
       "x": 66.218,
       "y": 27.289,
-      "color": "green"
+      "color": "green",
+      "mode": "off"
     },
     {
       "id": "pad-bank-a",
       "x": 72.309,
       "y": 27.113,
-      "color": "green"
+      "color": "green",
+      "mode": "on"
     },
     {
       "id": "pad-bank-b",
       "x": 78.47,
       "y": 27.025,
-      "color": "green"
+      "color": "green",
+      "mode": "off"
     },
     {
       "id": "pad-bank-c",
       "x": 84.561,
       "y": 26.937,
-      "color": "green"
+      "color": "green",
+      "mode": "off"
     },
     {
       "id": "pad-bank-d",
       "x": 90.722,
       "y": 26.849,
-      "color": "green"
+      "color": "green",
+      "mode": "off"
     },
     {
       "id": "after",
       "x": 9.773,
       "y": 54.049,
-      "color": "green"
+      "color": "green",
+      "mode": "on"
     },
     {
       "id": "undo-seq",
       "x": 18.697,
       "y": 61.444,
-      "color": "green"
+      "color": "green",
+      "mode": "off"
     },
     {
       "id": "rec",
       "x": 17.918,
       "y": 74.208,
-      "color": "red"
+      "color": "red",
+      "mode": "blink"
     },
     {
       "id": "overdub",
       "x": 23.654,
       "y": 74.12,
-      "color": "red"
+      "color": "red",
+      "mode": "on"
     },
     {
       "id": "play",
       "x": 35.127,
       "y": 73.944,
-      "color": "green"
+      "color": "green",
+      "mode": "on"
     }
   ],
   "knobs": [
     {
       "id": "rec-gain",
       "label": "REC GAIN",
-      "src": "assets/hero/knob-rec-gain.png",
-      "angle": 80,
+      "cx": 78.3286,
+      "cy": 19.1901,
+      "len": 1.4965,
+      "thick": 0.4249,
+      "color": "#908680",
+      "angle": 102,
       "min": -135,
       "max": 135,
-      "left": 76.3456,
-      "top": 17.4296,
+      "left": 76.1331,
+      "top": 17.1655,
       "width": 4.3909,
       "height": 5.4577
     },
     {
       "id": "main-volume",
       "label": "MAIN VOLUME",
-      "src": "assets/hero/knob-main-volume.png",
-      "angle": -30,
+      "cx": 87.4646,
+      "cy": 18.9261,
+      "len": 1.5845,
+      "thick": 0.4249,
+      "color": "#898582",
+      "angle": -38,
       "min": -135,
       "max": 135,
-      "left": 85.4816,
-      "top": 17.0775,
+      "left": 85.2691,
+      "top": 16.9014,
       "width": 4.3909,
       "height": 5.4577
     }

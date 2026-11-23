@@ -187,6 +187,30 @@ float afbm(vec3 p){ float v = 0.0, a = 0.5; for (int k = 0; k < 4; k++) { v += a
   float up = smoothstep(0.55, 0.95, vAgeN.y);                       // dust settles on top faces
   float film = up * (0.45 + 0.55 * afbm(vAgeW * 0.35 + 3.0));
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.75, 0.69), film * 0.45);
+  // scratches: short scuffs in surface-aligned coords, a few directions, only in patches.
+  // Fresh ones show whiter ABS; old ones are grime-filled and darker.
+  vec3 n = normalize(vAgeN);
+  vec3 t1 = normalize(cross(n, abs(n.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
+  vec3 t2 = cross(n, t1);
+  vec2 q = vec2(dot(vAgeW, t1), dot(vAgeW, t2));
+  float scr = 0.0;
+  for (int k = 0; k < 3; k++) {
+    float a = 0.35 + float(k) * 1.1;
+    vec2 dir = vec2(cos(a), sin(a));
+    float v = dot(q, dir) * 0.9 + an(vec3(q * 0.35, float(k))) * 1.6;
+    float line = 1.0 - smoothstep(0.01, 0.05, abs(fract(v) - 0.5));
+    float along = dot(q, vec2(-dir.y, dir.x));
+    float seg = step(0.6, an(vec3(floor(v), along * 0.6, float(k) * 7.0)));   // break lines into short scuffs
+    float zone = smoothstep(0.56, 0.7, afbm(vec3(q * 0.14, float(k) * 3.0)));
+    scr = max(scr, line * seg * zone);
+  }
+  float fresh = step(0.5, an(vAgeW * 0.07 + 21.0));
+  diffuseColor.rgb = mix(diffuseColor.rgb, fresh > 0.5 ? vec3(0.96, 0.94, 0.90) : diffuseColor.rgb * 0.7, scr * 0.5);
+  // incense: soft grey-brown soot smudges (heavier on top faces) and fine ash flecks settled on top
+  float soot = smoothstep(0.48, 0.8, afbm(vAgeW * 0.09 + 11.0)) * (0.55 + 0.45 * up);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.42, 0.39, 0.35), soot * 0.48);
+  float ash = step(0.986, ah(floor(vAgeW * 16.0 + 3.0))) * up;
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.74, 0.73, 0.71), ash * 0.8);
 }`);
   };
   mat.needsUpdate = true;
@@ -371,6 +395,41 @@ drawers.forEach((cfg, idx) => {
   cab.add(group);
   drawerObjs.push({ group, face, cfg, cx, cy, open: 0, target: 0, disks, cur: 0, hover: 0, row: r, locked: !!cfg.locked, unlocked: !cfg.locked });
 });
+
+/* ---------------- stickers ----------------
+   The producer's logos slapped on like someone customised the cabinet. Drawer
+   fronts are only flat across the band between the label and the pull
+   (y -2.5..+2.5, z 1.45-1.6, probed with raycasts), so front stickers sit there;
+   two more go on the lid where the open-drawer views look down on it.
+   Files: assets/stickers/*.png (die-cut, transparent). */
+const STICKERS = [
+  { src: 'rmlurwood-fix',     drawer: 0, x: 2.6,  y: 0.1,  w: 10.5, rot: -0.05 },
+  { src: 'ro-halftone',       drawer: 1, x: -6.8, y: -0.2, w: 4.6,  rot: 0.16 },
+  { src: 'rmlur-star-usa',    drawer: 2, x: -2.4, y: 0.3,  w: 9.5,  rot: 0.035 },
+  { src: 'rmlur-star-sweden', drawer: 3, x: 3.4,  y: -0.1, w: 9.0,  rot: -0.03 },
+  { src: 'ro-rmlur-box',      drawer: 4, x: 6.0,  y: 0.0,  w: 5.6,  rot: -0.11 },
+  { src: 'rmlur-swoosh',      drawer: 5, x: -4.2, y: -0.2, w: 8.4,  rot: 0.07 },
+  { src: 'rmlur-star-mexico', lid: true, x: -17,  z: 6,    w: 12,   rot: 0.32 },
+  { src: 'rmlur-swoosh',      lid: true, x: 19,   z: -3,   w: 9,    rot: -0.5 },
+];
+const stickerLoader = new THREE.TextureLoader();
+for (const st of STICKERS) {
+  stickerLoader.load(`/assets/stickers/${st.src}.png`, tex => {
+    tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+    const h = st.w * tex.image.height / tex.image.width;
+    const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.5, roughness: 0.38, metalness: 0,
+      color: 0xf1e8d6,                                         // a few years of yellowing on the vinyl
+      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(st.w, h), mat);
+    m.receiveShadow = true; m.userData.sticker = true;
+    if (st.lid) {
+      m.rotation.set(-Math.PI / 2, 0, st.rot); m.position.set(st.x, CAB_H + 1.42 + 0.03, st.z); cab.add(m);
+    } else {
+      const d = drawerObjs[st.drawer]; if (!d) return;
+      m.rotation.z = st.rot; m.position.set(st.x, st.y, FACE_D / 2 + 0.17); d.face.add(m);   // front bows 1.45-1.6: sit just clear of it; rides with the drawer, clicks open it
+    }
+  });
+}
 
 /* key */
 const keyGroup = new THREE.Group();

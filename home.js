@@ -93,12 +93,13 @@
     window.addEventListener('pageshow', function () { lcdBusy = false; lcdIdle(); });
   }
 
-  // ── LEDs: the real indicator dots on the photo, lit like the hardware when
-  //    it's powered on. Positions (center, % of photo) live in hero-map.json. ──
+  // ── LEDs: the real indicator dots on the photo, lit the way a 2000XL looks
+  //    while overdubbing a playing sequence: some steady, REC / NEXT SEQ flashing
+  //    on the 120 BPM the LCD shows. Positions + mode live in hero-map.json. ──
   function buildLeds(list) {
     (list || []).forEach(function (l) {
       var el = document.createElement('span');
-      el.className = 'mpc-led mpc-led-' + l.color;
+      el.className = 'mpc-led mpc-led-' + l.color + ' led-' + (l.mode || 'on');   // on | off | blink | blink-slow
       el.style.left = l.x + '%';
       el.style.top = l.y + '%';
       el.setAttribute('aria-hidden', 'true');
@@ -106,26 +107,33 @@
     });
   }
 
-  // ── Knobs (REC GAIN, MAIN VOLUME): circular cut-outs of the photo that turn
-  //    in place like the jog wheel, but stop at MIN/MAX like a real pot. No job
-  //    yet (roles get assigned later). Data from hero-map.json "knobs". ──
+  // ── Knobs (REC GAIN, MAIN VOLUME): like a real pot, only the indicator line
+  //    turns. The photo's printed line was erased (build-control-layers.py),
+  //    so the cap, its lighting and the skirt never move. Stops at MIN/MAX.
+  //    No job yet (roles get assigned later). Data: hero-map.json "knobs". ──
   function buildKnobs(list) {
     (list || []).forEach(function (k) {
-      var el = document.createElement('img');
+      var ind = document.createElement('span');                 // the indicator line
+      ind.className = 'mpc-knob-ind';
+      ind.style.left = k.cx + '%'; ind.style.top = k.cy + '%';
+      ind.style.width = k.thick + '%'; ind.style.height = k.len + '%';
+      ind.style.setProperty('--ind', k.color);
+      ind.setAttribute('aria-hidden', 'true');
+      var el = document.createElement('span');                  // round hit area over the whole knob
       el.className = 'mpc-knob';
-      el.src = k.src; el.alt = ''; el.draggable = false;
       el.setAttribute('role', 'slider');
       el.setAttribute('aria-label', k.label);
       el.setAttribute('aria-valuemin', k.min); el.setAttribute('aria-valuemax', k.max);
       el.tabIndex = 0;
       place(el, k);
+      mpc.appendChild(ind);
       mpc.appendChild(el);
       var abs = k.angle, last = null;
       function level() { return Math.round((abs - k.min) / (k.max - k.min) * 100); }
       function show() { lcdShow({ kind: 'ctl', label: k.label, info: 'LEVEL ' + level(), level: level() / 100 }); }
       function apply() {
-        el.style.transform = 'rotate(' + (abs - k.angle) + 'deg)';
-        el.setAttribute('aria-valuenow', Math.round(abs));
+        ind.style.transform = 'translate(-50%, -100%) rotate(' + abs + 'deg)';
+        el.setAttribute('aria-valuenow', level());
       }
       function turn(d) { abs = Math.max(k.min, Math.min(k.max, abs + d)); apply(); show(); }
       function pointerAngle(e) {
