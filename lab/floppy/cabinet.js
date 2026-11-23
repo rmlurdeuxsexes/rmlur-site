@@ -146,7 +146,10 @@ const FACE_W = CELL_W - 0.8, FACE_H = CELL_H - 0.8, FACE_D = 3;
 // a pile. Sized so a full row (max) still clears the bin's back wall.
 // flipped disks lean forward like a real flip-through (~55deg), not near-flat, so the bin's empty
 // front gap can be ~2.5 units shorter
-const STACK = { z0: -FACE_D / 2 - 7.2, gap: 0.7, floor: -6.2, lean: -0.5, flat: 0.98, max: 18 };
+// Disks are drawn 1.55x the kit size so they fill the bin like a real 3.5" file box (kit disk is 9 wide in
+// a ~20-wide bin). 1.55 keeps a standing, back-leaning disk (~13.7 tall) under the drawer opening (14.8).
+const DISK_SCALE = 1.55;
+const STACK = { z0: -FACE_D / 2 - 9.2, gap: 0.7, floor: -6.2, lean: -0.5, flat: 0.62, max: 18 };
 
 /* ---------------- Blender kit (assets/cabinet/cabinet.glb) ----------------
    Built by scripts/blender/build_cabinet.py. If it fails to load the procedural
@@ -357,7 +360,7 @@ drawers.forEach((cfg, idx) => {
     const d = buildDisk(p, i);
     const pivot = new THREE.Group();                       // hinge along the disk's bottom edge
     pivot.position.set(0, STACK.floor, STACK.z0 - i * STACK.gap);
-    d.position.set(0, 4.7, 0); pivot.add(d); group.add(pivot);
+    d.scale.setScalar(DISK_SCALE); d.position.set(0, 4.7 * DISK_SCALE, 0); pivot.add(d); group.add(pivot);
     Object.assign(d.userData, { pivot, index: i, angle: STACK.lean, va: 0, ta: STACK.lean, y: 0, ty: 0, holdUntil: 0 });
     pivot.rotation.x = STACK.lean;
     return d;
@@ -390,13 +393,14 @@ const VIEWS = {
 // disk so its label is readable, and follows it back as you flip through
 function binView(d) {
   const gz = DEPTH / 2 - FACE_D / 2 + TRAVEL;
-  const f = new THREE.Vector3(d.cx, d.cy + STACK.floor + 4.4, gz + STACK.z0 - d.cur * STACK.gap + 2.4);   // aim a bit forward so the drawer front stays in view
+  // aim between the drawer front and the front disk, a little low, so the whole open drawer sits centred
+  const f = new THREE.Vector3(d.cx, d.cy + STACK.floor + 3.2 * DISK_SCALE, gz + (STACK.z0 - d.cur * STACK.gap) * 0.55);   // aim a bit forward so the drawer front stays in view
   const ins = insets(), freeFrac = Math.max(0.25, (innerHeight - ins.top - ins.bottom - 24) / innerHeight);
   const t = Math.tan((camera.fov * Math.PI) / 360);
-  // the front disk (9.4 tall, leaning back, seen ~65deg from above) takes ~34% of the free height and at most 40% of the
+  // the front disk (9.4 tall, leaning back, seen ~65deg from above) (x DISK_SCALE) takes ~38% of the free height and at most 42% of the
   // width, so the whole open drawer (and a bit of cabinet) stays in frame instead of a close-up
   // visible height at distance d is 2*d*t, so solve 8.2 = 0.34 * freeFrac * 2*d*t (and the same for width)
-  const dist = Math.max(8.2 / (2 * t * 0.34 * freeFrac), 9.4 / (2 * t * camera.aspect * 0.40));
+  const dist = Math.max(8.2 * DISK_SCALE / (2 * t * 0.38 * freeFrac), 9.4 * DISK_SCALE / (2 * t * camera.aspect * 0.42));
   const dir = new THREE.Vector3(0, 32, 15).normalize();   // steep enough to look over the drawer front at the pile and the front disk
   return { pos: f.clone().addScaledVector(dir, dist), look: f };
 }
@@ -506,7 +510,7 @@ function tapDisk(d, disk) {
 }
 function diskTarget(d, k) {
   const u = k.userData, i = u.index;
-  if (i < d.cur) return { a: Math.max(0.62, STACK.flat - 0.03 * i), y: 0 };           // on the pile
+  if (i < d.cur) return { a: Math.max(0.5, STACK.flat - 0.02 * i), y: 0 };           // on the pile
   if (i === d.cur) return { a: STACK.lean, y: k === hoverDisk ? 0.9 : 0.35 };          // front disk sits a touch proud
   return { a: STACK.lean, y: 0 };
 }
