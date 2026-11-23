@@ -12,7 +12,7 @@ test('placements.json: every entry is hangable', () => {
     assert.ok(['back', 'left', 'right', 'front'].includes(p.wall), `${p.id} wall`);
     if (p.type === 'plaque') {
       assert.ok(p.artist, `${p.id} artist`);
-      assert.match(p.cert, /^(gold|platinum|diamond|none|multi-platinum:\d+)$/, `${p.id} cert`);
+      assert.match(p.cert, /^(gold|silver|platinum|diamond|none|multi-platinum:\d+)$/, `${p.id} cert`);
       if (p.format != null) assert.ok(['album', 'single'].includes(p.format), `${p.id} format`);
       for (const ch of p.charts || []) assert.ok(ch.chart && Number.isInteger(ch.peak), `${p.id} chart`);
     }
