@@ -17,7 +17,7 @@
       "certNote": "Double Gold, as reported by JayRewind.",
       "streams": null,
       "billboard": null,
-      "cover": null,
+      "cover": "assets/museum/cover-hearts-sold-separately.jpg",
       "links": [
         {
           "label": "Billboard",
@@ -89,6 +89,10 @@
       "cover": "assets/museum/cover-tahj-keeton.jpg",
       "links": [
         {
+          "label": "Spotify",
+          "url": "https://open.spotify.com/album/5Jj0R9Rkdi4vTmxAVA3uhr"
+        },
+        {
           "label": "Audiomack",
           "url": "https://audiomack.com/tahj-keeton/album/in-my-dreams-all-night-long"
         },
@@ -105,10 +109,18 @@
       "producers": "JayRewind",
       "format": "album",
       "tracks": [
-        "WYLIN",
         "RADIO",
+        "LA KNIGHT",
+        "N2",
+        "TEEGEE",
+        "WATER",
+        "BRUTALIST - REMIX",
+        "WORK",
+        "WYLIN",
         "INNAT",
-        "PARADISE (feat. Ava La'Rae)"
+        "PARADISE (feat. Ava La'Rae)",
+        "MESSENGER",
+        "FRIEND / NOWHERE FAST"
       ],
       "notes": [
         "Singles: N2 (Sep 2025), TEEGEE (Jul 2026), WYLIN (Sep 2026), I'M UP (2026), WORK (Oct 2026).",

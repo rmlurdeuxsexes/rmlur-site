@@ -1,7 +1,7 @@
 import { sql } from './_lib/db.js';
 import { publicTier } from './_lib/checkout.js';
 import { createHash } from 'node:crypto';
-import { servePreview } from './_lib/preview.js';
+import { servePreview, serveMedia } from './_lib/preview.js';
 
 // tiers/exclusive carry deliverableUrl (paid files) — never expose it publicly;
 // publicTier() swaps it for a buyable flag.
@@ -50,7 +50,8 @@ function toProduct(row) {
 export default {
   async fetch(request) {
     const q = new URL(request.url).searchParams;
-    const preview = q.get('preview'), cover = q.get('cover');
+    const preview = q.get('preview'), cover = q.get('cover'), media = q.get('media');
+    if (media !== null && (request.method === 'GET' || request.method === 'HEAD')) return serveMedia(request, media);
     if (preview !== null && (request.method === 'GET' || request.method === 'HEAD')) return servePreview(request, preview, 'preview');
     if (cover !== null && (request.method === 'GET' || request.method === 'HEAD')) return servePreview(request, cover, 'cover');
     if (request.method !== 'GET') {

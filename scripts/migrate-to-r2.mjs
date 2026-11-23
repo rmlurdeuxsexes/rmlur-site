@@ -10,7 +10,7 @@
 //   node --env-file=.env.production.local scripts/migrate-to-r2.mjs --from "<folder with your beat files>"
 //   ...check the plan it prints, then run it again with --apply
 //
-// For every product row it looks at the cover, the preview and each license's
+// Also moves blog/gallery post images. For every product row it looks at the cover, the preview and each license's
 // download file. Anything not already on R2 (r2:...) or Dropbox (dropbox:...) is
 // re-uploaded to R2 from:
 //   1. the current URL, if it still downloads (e.g. once Vercel unblocks the store), else
@@ -136,6 +136,24 @@ for (const row of rows) {
       tiers = ${JSON.stringify(tiers)}, exclusive = ${exclusive ? JSON.stringify(exclusive) : null} WHERE id = ${row.id}`;
   }
   report.push(line);
+}
+
+// blog / gallery post images (posts table, if it exists)
+let posts = [];
+try { posts = await sql`SELECT id, image_url FROM posts WHERE image_url IS NOT NULL AND image_url NOT LIKE 'r2:%'`; } catch {}
+for (const p of posts) {
+  const line = { id: `post #${p.id}`, moved: [], missing: [] };
+  const name = decodeURIComponent(new URL(p.image_url, 'https://x').pathname.split('/').pop()).replace(/[^A-Za-z0-9._ +@()-]/g, '_');
+  const local = files.find(f => path.basename(f).replace(/[^A-Za-z0-9._ +@()-]/g, '_') === name.replace(/-[A-Za-z0-9]{20,}(\.\w+)$/, '$1'));
+  const buf = await tryDownload(p.image_url);
+  if (!buf && !local) { line.missing.push('image'); report.push(line); continue; }
+  if (!APPLY) { line.moved.push(`image <- ${buf ? 'old URL' : path.relative(FROM, local)}`); report.push(line); continue; }
+  const ext = path.extname(name).toLowerCase();
+  const ref = await r2Put(`media/posts/${Date.now().toString(36)}-${name}`, buf || await fsp.readFile(local),
+    { contentType: { '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' }[ext] || 'image/jpeg' });
+  if (!(await reachable(ref))) { line.missing.push('image (uploaded but not downloadable!)'); report.push(line); continue; }
+  await sql`UPDATE posts SET image_url = ${ref} WHERE id = ${p.id}`;
+  line.moved.push(`image <- ${buf ? 'old URL' : path.relative(FROM, local)}`); report.push(line);
 }
 
 console.log(APPLY ? 'MOVED TO R2:' : 'PLAN (nothing changed yet, re-run with --apply):');

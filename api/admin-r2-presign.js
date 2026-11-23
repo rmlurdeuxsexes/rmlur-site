@@ -5,7 +5,7 @@ import { r2Config, presign } from './_lib/r2.js';
 // straight to the private R2 bucket (Vercel functions can't carry files that large).
 // Covers and previews go to R2 too (media/...): the old public Vercel Blob store hit the
 // Hobby 1 GB cap and got blocked, which took every preview and cover down with it.
-const KINDS = ['wav', 'mp3', 'stems', 'cover', 'preview'];   // cover/preview are served via /api/products, never public
+const KINDS = ['wav', 'mp3', 'stems', 'cover', 'preview', 'post'];   // cover/preview are served via /api/products, never public
 const safeName = n => String(n || 'file').replace(/[^A-Za-z0-9._ +@()-]/g, '_').replace(/\.{2,}/g, '.').replace(/^\.+/, '').slice(0, 120) || 'file';
 
 export default {
@@ -21,7 +21,9 @@ export default {
     if (!/^[a-z0-9][a-z0-9-]{0,79}$/.test(id || '')) return Response.json({ error: 'invalid id' }, { status: 400 });
     if (!KINDS.includes(kind)) return Response.json({ error: 'invalid kind' }, { status: 400 });
 
-    const key = `${kind === 'cover' || kind === 'preview' ? 'media' : 'deliverables'}/${id}/${kind}/${safeName(filename)}`;
+    const key = kind === 'post'
+      ? `media/posts/${Date.now().toString(36)}-${safeName(filename)}`             // blog/gallery image
+      : `${kind === 'cover' || kind === 'preview' ? 'media' : 'deliverables'}/${id}/${kind}/${safeName(filename)}`;
     const url = presign({ method: 'PUT', host: c.host, path: `/${c.bucket}/${key}`, accessKey: c.accessKey, secret: c.secret, expires: 3600 });
     return Response.json({ url, ref: `r2:${key}` });
   },

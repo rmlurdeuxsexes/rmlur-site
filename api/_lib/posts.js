@@ -14,7 +14,9 @@ export function validatePost(input) {
   const title = typeof b.title === 'string' ? b.title.trim().slice(0, MAX_TITLE) || null : null;
   const body = typeof b.body === 'string' ? b.body.replace(/\r\n/g, '\n').trim() : '';
   let image = null;
-  if (b.image != null && b.image !== '') {
+  if (typeof b.image === 'string' && /^r2:media\/posts\/[A-Za-z0-9._ +@()-]+$/.test(b.image)) {
+    image = b.image;                                     // uploaded to R2 by /admin
+  } else if (b.image != null && b.image !== '') {
     try {
       const u = new URL(b.image);
       if (u.protocol !== 'https:') throw new Error();
@@ -30,7 +32,13 @@ export function validatePost(input) {
 export function publicPost(row) {
   return {
     id: row.id, kind: row.kind, category: row.category, title: row.title,
-    body: row.body, image: row.image_url,
+    body: row.body, image: postImageUrl(row.image_url),
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
   };
+}
+
+// r2 post images are served through /api/products?media=<key> (same-origin, signed there)
+export function postImageUrl(v) {
+  if (typeof v === 'string' && v.startsWith('r2:media/posts/')) return '/api/products?media=' + encodeURIComponent(v.slice(3));
+  return v || null;
 }

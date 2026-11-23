@@ -42,3 +42,19 @@ test('posting and deleting are admin-only', async () => {
   assert.equal((await handler.fetch(new Request('https://x/api/posts?id=1', { method: 'DELETE' }))).status, 401);
   assert.equal((await handler.fetch(new Request('https://x/api/posts', { method: 'PUT' }))).status, 405);
 });
+
+test('admin R2 image refs are accepted and served same-origin', async () => {
+  const { validatePost, publicPost } = await import('../api/_lib/posts.js');
+  const v = validatePost({ kind: 'art', image: 'r2:media/posts/abc-shot.png' });
+  assert.equal(v.ok, true); assert.equal(v.post.image, 'r2:media/posts/abc-shot.png');
+  assert.equal(validatePost({ kind: 'art', image: 'r2:deliverables/x/wav/a.wav' }).ok, false);   // paid files never
+  assert.equal(publicPost({ id: 1, image_url: 'r2:media/posts/abc-shot.png' }).image, '/api/products?media=media%2Fposts%2Fabc-shot.png');
+  assert.equal(publicPost({ id: 1, image_url: 'https://x.example/a.png' }).image, 'https://x.example/a.png');
+});
+
+test('media route only serves blog/gallery images', async () => {
+  process.env.DATABASE_URL ||= 'postgres://u:p@localhost/db';
+  const { serveMedia } = await import('../api/_lib/preview.js');
+  for (const k of ['deliverables/x/wav/a.wav', 'media/posts/../deliverables/a', 'media/x/cover/a.jpg'])
+    assert.equal((await serveMedia(new Request('https://rmlur.com/'), k)).status, 404, k);
+});

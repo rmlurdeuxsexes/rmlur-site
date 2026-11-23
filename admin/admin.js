@@ -1,4 +1,3 @@
-import { upload } from 'https://esm.sh/@vercel/blob@0.27.0/client';
 
 const loginForm = document.getElementById('login-form');
 const uploadForm = document.getElementById('upload-form');
@@ -29,17 +28,6 @@ document.getElementById('login-btn').addEventListener('click', async () => {
     loginStatus.textContent = data.error || 'login failed';
   }
 });
-
-async function uploadFileIfPresent(inputId) {
-  const input = document.getElementById(inputId);
-  const file = input.files[0];
-  if (!file) return null;
-  const blob = await upload(file.name, file, {
-    access: 'public',
-    handleUploadUrl: '/api/blob-upload-token',
-  });
-  return blob.url;
-}
 
 const CONTACT = 'rmlurdeuxsexes@gmail.com';
 const slug = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -238,7 +226,8 @@ document.getElementById('post-btn').addEventListener('click', async (event) => {
   try {
     const kind = document.querySelector('input[name="post-kind"]:checked').value;
     postStatus.textContent = 'posting…';
-    const image = await uploadFileIfPresent('post-image');
+    const imgFile = document.getElementById('post-image').files[0];
+    const image = imgFile ? await putPrivate('posts', 'post', imgFile) : null;   // R2, served via /api/products?media=
     const res = await fetch('/api/posts', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

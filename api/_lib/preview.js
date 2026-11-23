@@ -60,3 +60,19 @@ export async function servePreview(request, id, kind = 'preview') {
   if (!out.has('accept-ranges')) out.set('accept-ranges', 'bytes');
   return new Response(request.method === 'HEAD' ? null : up.body, { status: up.status, headers: out });
 }
+
+// GET /api/products?media=media/posts/<file> -> a blog/gallery image stored in R2.
+// Only keys under media/posts/ are served; anything else is a 404.
+const MEDIA_RE = /^media\/posts\/[A-Za-z0-9._ +@()-]{1,160}$/;
+export async function serveMedia(request, key) {
+  if (!MEDIA_RE.test(key || '')) return new Response('not found', { status: 404 });
+  const src = upstreamUrl('r2:' + key);
+  if (!src) return new Response('storage not configured', { status: 503 });
+  let up;
+  try { up = await fetch(src, { method: request.method }); }
+  catch { return new Response('storage unreachable', { status: 502 }); }
+  if (!up.ok) return new Response('missing', { status: up.status === 404 ? 404 : 502 });
+  const out = new Headers({ 'Cache-Control': 'public, max-age=86400, s-maxage=604800' });
+  for (const h of PASS) { const v = up.headers.get(h); if (v) out.set(h, v); }
+  return new Response(request.method === 'HEAD' ? null : up.body, { status: 200, headers: out });
+}
