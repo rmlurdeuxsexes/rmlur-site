@@ -581,6 +581,7 @@ body.home-static{background:#fff;color:var(--ink);font-family:var(--font-mono);m
 .mpc-led.led-blink{animation:mpcLedBlink 2s steps(1,end) infinite}
 .mpc-led.led-blink-slow{animation:mpcLedBlink 4s steps(1,end) infinite}
 @keyframes mpcLedBlink{0%{opacity:1}50%{opacity:0}}
+.mpc-led.led-tempo{animation:mpcLedBlink var(--beat,.5s) steps(1,end) infinite}
 @media (prefers-reduced-motion:reduce){.mpc-led.led-blink,.mpc-led.led-blink-slow{animation:none}}
 
 /* ================= GALLERY — white wall, art hung in a masonry grid ================= */

@@ -9,7 +9,8 @@
   var F = '000000000000005f00000003000300147f147f14242a7f2a12231308646236495522500005030000001c2241000041221c0014083e081408083e080800503000000808080808006060000020100804023e5149453e00427f400042615149462141454b311814127f1027454545393c4a49493001710905033649494936064949291e003636000000563600000814224100141414141400412214080201510906324979413e7e1111117e7f494949363e414141227f4141221c7f494949417f090909013e4149497a7f0808087f00417f41002040413f017f081422417f404040407f020c027f7f0408107f3e4141413e7f090909063e4151215e7f09192946464949493101017f01013f4040403f1f2040201f3f4038403f631408146307087008076151494543007f41410002040810200041417f0004020102044040404040000102040020545454787f484444383844444420384444487f3854545418087e0901020c5252523e7f0804047800447d40002040443d007f1028440000417f40007c041804787c0804047838444444387c14141408081414187c7c080404084854545420043f4440203c4040207c1c2040201c3c4030403c44281028440c5050503c4464544c44000836410000007f000000413608001008081008';
   var COLS = 33, ROWS = 6, CW = 6, CH = 8;          // 33x6 chars of 6x8 dot cells
   var DW = COLS * CW + 2, DH = ROWS * CH;          // 200 x 48 dots, ~ the glass's 4.15:1
-  var TABS = ['PADS', 'SHOP', 'BEAT', 'PLAY', 'LINK', 'INFO'];
+  var TABS = (window.HOME_FKEYS || []).map(function (f) { return f.tab; });
+  while (TABS.length < 6) TABS.push('');
   var canvas, ctx, dots, state = { kind: 'idle' }, blink = true;
 
   function glyph(ch) {
@@ -43,20 +44,35 @@
       var x = i * w + 1, t = TABS[i];
       fill(x, 5 * CH, w - 2, CH, 1);
       text(t, x + Math.floor((w - 2 - t.length * CW) / 2) + 1, 5 * CH + 1, true);
-      if (i === active) fill(x, 5 * CH + CH - 1, w - 2, 1, 0);   // notch under the active tab
+      if (i === active && active >= 0) fill(x, 5 * CH + CH - 1, w - 2, 1, 0);   // notch under the active tab
     }
   }
 
+  function bpmStr(s) { var b = s.bpm || 120; return (b < 100 ? ' ' : '') + b.toFixed(1); }
   function compose() {
     clear();
     var s = state;
     row(pad('Sq:01-RMLUR::DEUX SEXES', COLS), 0, true);
-    if (s.kind === 'pad') {
-      row('Pad:' + two(s.n) + '  Velo:127   Bank:A  On:YES', 1);
+    if (s.kind === 'seq') {                                        // transport: PLAY / REC / OVERDUB / STOP / TEMPO
+      row(' J:' + bpmStr(s) + '(SEQ)      Now:' + (s.now || '001.01.00'), 1);
+      box(2 * CH + 1, 5 * CH - 2);
+      text(pad('Tr:01-(' + (s.title || 'RMLUR LOOP') + ')  Ev:' + (s.events || 0), 31), 3, 2 * CH + 4);
+      text(pad((blink ? '►' : ' ') + ' ' + (s.info || ''), 31), 3, 3 * CH + 6);
+      if (s.playing) fill(3 + Math.round((s.step || 0) / 16 * (DW - 8)), 4 * CH + 6, Math.round((DW - 8) / 16), 1, 1);   // playhead
+      tabs(-1);
+    } else if (s.kind === 'menu') {                                // CURSOR + ENTER page list
+      row(' PAGES   ' + (s.index + 1) + '/' + s.items.length + '   CURSOR+ENTER', 1);
+      for (var m = -1; m <= 1; m++) {
+        var k = s.index + m; if (k < 0 || k >= s.items.length) continue;
+        text(pad((m === 0 ? '►' : ' ') + ' ' + s.items[k].toUpperCase(), 31), 3, (3 + m) * CH + 1, m === 0);
+      }
+      tabs(-1);
+    } else if (s.kind === 'pad') {
+      row('Pad:' + two(s.n) + '  Velo:127   Bank:' + (s.bank || 'A') + '  On:YES', 1);
       box(2 * CH + 1, 5 * CH - 2);
       text(pad('Tr:' + two(s.n) + '-(' + s.label + ')', 31), 3, 2 * CH + 4);
       text(pad((blink ? '►' : ' ') + ' ' + s.action, 31), 3, 3 * CH + 6);
-      tabs(s.sound ? 3 : (s.store ? 1 : 4));
+      tabs(s.store ? 0 : -1);
     } else if (s.kind === 'ctl') {
       row('Key:' + s.label, 1);
       box(2 * CH + 1, 5 * CH - 2);
@@ -66,20 +82,20 @@
         var bw = DW - 4 * CW - 8; fill(3 + 4 * CW, 3 * CH + 7, bw, 1, 1); fill(3 + 4 * CW, 3 * CH + 11, bw, 1, 1);
         fill(3 + 4 * CW, 3 * CH + 8, Math.round(bw * s.level), 3, 1);
       } else text(pad(s.info || '', 31), 3, 3 * CH + 6);
-      tabs(4);
+      tabs(typeof s.tab === 'number' ? s.tab : -1);
     } else if (s.kind === 'store' || s.kind === 'loading') {
-      row(' J:120.0(SEQ)      Now:001.01.00', 1);
+      row(' J:' + bpmStr(s) + '(SEQ)      Now:001.01.00', 1);
       box(2 * CH + 1, 5 * CH - 2);
       text('Tr:00-(BEAT STORE)', 3, 2 * CH + 4);
       if (s.kind === 'store') text((blink ? '►' : ' ') + ' CLICK TO OPEN STORE', 3, 3 * CH + 6);
       else { text('LOADING', 3, 3 * CH + 6); fill(3 + 8 * CW, 3 * CH + 7, Math.round((DW - 9 * CW - 4) * (s.progress || 0)), 5, 1); }
-      tabs(1);
+      tabs(0);
     } else {
-      row(' J:120.0(SEQ)      Now:001.01.00', 1);
+      row(' J:' + bpmStr(s) + '(SEQ)      Now:001.01.00', 1);
       box(2 * CH + 1, 5 * CH - 2);
-      text('Tr:--(TAP A PAD)      Tsig: 4/4', 3, 2 * CH + 4);
+      text('Tr:--(TAP A PAD)  Bank:' + (s.bank || 'A') + '  4/4', 3, 2 * CH + 4);
       text((blink ? '►' : ' ') + ' BEAT STORE: CLICK HERE', 3, 3 * CH + 6);
-      tabs(1);
+      tabs(-1);
     }
     paint();
   }

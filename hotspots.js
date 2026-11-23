@@ -161,3 +161,76 @@ window.HOME_PADS = {
   15: { label: "Bass",      sound: "assets/beats/bass-1.mp3" },
   16: { label: "Kick 2",    sound: "assets/beats/kick-2.mp3" }
 };
+
+/* ---------- HOMEPAGE — pad banks, F-keys, sequencer, button messages ----------
+   Content only; mpc-engine.js plays it, home.js wires it to the photo.
+   Bank A is HOME_PADS above. Bank C is filled at runtime with beat previews
+   from the store catalog (first 16 beats that have a preview). */
+window.HOME_BANKS = {
+  B: {   // second kit: the same one-shots, plus pitched-down/up versions
+    1:  { label: "Kick 3",     sound: "assets/beats/kick-3.mp3" },
+    2:  { label: "Clap 2",     sound: "assets/beats/snare-clap-2.mp3" },
+    3:  { label: "Kick",       sound: "assets/beats/kick-1.mp3" },
+    4:  { label: "Snare",      sound: "assets/beats/snare-1.mp3" },
+    5:  { label: "Clap",       sound: "assets/beats/snare-clap-1.mp3" },
+    6:  { label: "808",        sound: "assets/beats/eight-oh-eight-1.mp3" },
+    7:  { label: "Bass",       sound: "assets/beats/bass-1.mp3" },
+    8:  { label: "Kick 2",     sound: "assets/beats/kick-2.mp3" },
+    9:  { label: "808 Low",    sound: "assets/beats/eight-oh-eight-1.mp3", rate: 0.75 },
+    10: { label: "808 High",   sound: "assets/beats/eight-oh-eight-1.mp3", rate: 1.26 },
+    11: { label: "Bass Low",   sound: "assets/beats/bass-1.mp3", rate: 0.75 },
+    12: { label: "Bass High",  sound: "assets/beats/bass-1.mp3", rate: 1.26 },
+    13: { label: "Snare Low",  sound: "assets/beats/snare-1.mp3", rate: 0.8 },
+    14: { label: "Clap High",  sound: "assets/beats/snare-clap-1.mp3", rate: 1.3 },
+    15: { label: "Kick Low",   sound: "assets/beats/kick-1.mp3", rate: 0.8 },
+    16: { label: "Kick 3 Hi",  sound: "assets/beats/kick-3.mp3", rate: 1.25 }
+  },
+  C: {},  // beat previews — filled from /api/products when you switch to bank C
+  D: {    // social links
+    1: { label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
+    2: { label: "TikTok",    url: "https://www.tiktok.com/@jayrewindbeatz" },
+    3: { label: "YouTube",   url: "https://www.youtube.com/" },
+    4: { label: "Email",     url: "mailto:rmlurdeuxsexes@gmail.com" }
+  }
+};
+
+/* F1–F6: shortcuts printed on the LCD's bottom row (tab = what the LCD shows) */
+window.HOME_FKEYS = [
+  { tab: "SHOP",  label: "Beat Store", url: "store.html" },
+  { tab: "MUSEM", label: "Museum",     url: "museum.html" },
+  { tab: "BLOG",  label: "Blog",       url: "blog.html" },
+  { tab: "GALRY", label: "Gallery",    url: "gallery.html" },
+  { tab: "ABOUT", label: "About",      url: "about.html" },
+  { tab: "MAIL",  label: "Contact",    url: "mailto:rmlurdeuxsexes@gmail.com" }
+];
+
+/* PLAY loops this 1-bar, 16-step pattern (steps 0–15) at 120 BPM until you
+   record over it. Sounds are bank A pads. */
+window.HOME_SEQ = {
+  bpm: 120,
+  pattern: {
+    11: [0, 6, 8, 10],        // Kick
+    13: [4, 12],              // Clap
+    12: [4, 12],              // Snare
+    14: [0, 10]               // 808
+  }
+};
+
+/* Short LCD line for buttons that don't do anything else (≤ 31 chars) */
+window.HOME_BUTTON_INFO = {
+  "full-level":  "VELOCITY LOCKED AT 127",
+  "16-levels":   "16 LEVELS: OFF",
+  "next-seq":    "NEXT SEQ: SQ02 (EMPTY)",
+  "track-mute":  "ALL TRACKS ON",
+  "screen":      "SCREEN: MAIN",
+  "open-window": "NO WINDOW ON THIS SCREEN",
+  "shift":       "SHIFT: RMLUR :: DEUX SEXES",
+  "after":       "AFTER: ON",
+  "undo-seq":    "NOTHING TO UNDO",
+  "erase":       "ERASE: NOTHING SELECTED",
+  "step-back":   "STEP BACK",
+  "step-fwd":    "STEP FORWARD",
+  "go-to":       "GO TO: 001.01.00",
+  "bar-back":    "BAR BACK",
+  "bar-fwd":     "BAR FORWARD"
+};
