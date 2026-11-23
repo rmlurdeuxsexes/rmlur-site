@@ -552,8 +552,8 @@ body.home-static{background:#fff;color:var(--ink);font-family:var(--font-mono);m
 /* LCD = way into the beat store. Text sits inside the photo's own glass, lit like the real screen. */
 .mpc-lcd{position:absolute;display:block;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none;z-index:1}
 .mpc-lcd:focus-visible{outline:1px solid rgba(0,0,0,.35);outline-offset:2px}
-.mpc-lcd-glass{position:absolute;display:block;overflow:hidden;pointer-events:none;border-radius:2px;
-  box-shadow:0 0 14px 2px rgba(60,80,255,.35),inset 0 0 6px rgba(0,0,30,.55)}
+.mpc-lcd-glass{position:absolute;display:block;overflow:hidden;pointer-events:none;border-radius:3px;
+  box-shadow:0 0 8px rgba(60,80,255,.22)}   /* flush with the photo's glass: no inset rim, just a faint backlight bleed */
 .mpc-lcd-canvas{display:block;width:100%;height:100%}
 /* knobs turn like the jog wheel; buttons press in like the pads */
 .mpc-knob{position:absolute;display:block;cursor:grab;border-radius:50%;touch-action:none;outline:none;visibility:hidden}

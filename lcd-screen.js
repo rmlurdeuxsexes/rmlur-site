@@ -89,23 +89,26 @@
     var r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
     var W = Math.max(1, Math.round(r.width * dpr)), H = Math.max(1, Math.round(r.height * dpr));
     if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
-    var px = W / DW, py = H / DH, gap = Math.max(0.15, px * 0.16);
+    // backlight fills the whole glass (flush with the photo's screen); the dot grid keeps square
+    // pixels and is centred inside it, like the real panel's margin around the dot matrix
+    var pitch = Math.min(W / (DW + 2), H / (DH + 2)), px = pitch, py = pitch, gap = Math.max(0.15, pitch * 0.16);
+    var ox = (W - DW * pitch) / 2, oy = (H - DH * pitch) / 2;
     // backlight: brighter in the middle, falling off toward the bezel like a real EL panel
     var bg = ctx.createRadialGradient(W * 0.5, H * 0.45, H * 0.2, W * 0.5, H * 0.5, W * 0.62);
     bg.addColorStop(0, '#3846ff'); bg.addColorStop(0.65, '#2433e6'); bg.addColorStop(1, '#1622b4');
     ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = 'rgba(255,255,255,0.045)';                    // unlit pixels, just visible
     for (var y = 0; y < DH; y++) for (var x = 0; x < DW; x++)
-      if (!dots[y * DW + x]) ctx.fillRect(x * px, y * py, px - gap, py - gap);
+      if (!dots[y * DW + x]) ctx.fillRect(ox + x * px, oy + y * py, px - gap, py - gap);
     ctx.fillStyle = '#eef1ff';
     ctx.shadowColor = 'rgba(210,220,255,0.55)'; ctx.shadowBlur = px * 0.9;
     for (y = 0; y < DH; y++) for (x = 0; x < DW; x++)
-      if (dots[y * DW + x] === 1) ctx.fillRect(x * px, y * py, px - gap, py - gap);
+      if (dots[y * DW + x] === 1) ctx.fillRect(ox + x * px, oy + y * py, px - gap, py - gap);
     ctx.shadowBlur = 0;
     // letters inside inverted blocks: solid backlight blue, no glow, so they read crisply
     ctx.fillStyle = '#1c29c9';
     for (y = 0; y < DH; y++) for (x = 0; x < DW; x++)
-      if (dots[y * DW + x] === 2) ctx.fillRect(x * px - gap * 0.5, y * py - gap * 0.5, px + gap * 0.2, py + gap * 0.2);
+      if (dots[y * DW + x] === 2) ctx.fillRect(ox + x * px - gap * 0.5, oy + y * py - gap * 0.5, px + gap * 0.2, py + gap * 0.2);
   }
 
   var loadTimer = null;
