@@ -42,6 +42,12 @@ const FROM = fromIdx >= 0 ? args[fromIdx + 1] : null;   // one folder, or severa
 
 if (!process.env.DATABASE_URL) { console.error('DATABASE_URL missing. Run: vercel env pull .env.production.local --environment=production'); process.exit(1); }
 if (!r2Config()) { console.error('R2_* env vars missing (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET).'); process.exit(1); }
+const placeholders = Object.keys(process.env).filter(k => /^(R2_|DATABASE_URL)/.test(k) && process.env[k] === '[SENSITIVE]');
+if (placeholders.length && args.includes('--apply')) {
+  console.error(`These are still "[SENSITIVE]" placeholders in .env.production.local: ${placeholders.join(', ')}\n` +
+    'Vercel won\'t download secret values. Paste the real values into that file (Cloudflare → R2 → Manage API tokens), then run again.');
+  process.exit(1);
+}
 const sql = neon(process.env.DATABASE_URL);
 
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -83,10 +89,13 @@ async function reachable(ref) {
   const url = r2DownloadUrl(ref.slice(3), { expires: 300 });
   try { const r = await fetch(url, { headers: { Range: 'bytes=0-0' } }); return r.status === 200 || r.status === 206; } catch { return false; }
 }
-async function makePreview(wavPath) {
-  try { await run('ffmpeg', ['-version']); } catch { return null; }
-  const out = path.join(os.tmpdir(), `preview-${Date.now()}.mp3`);
-  await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', wavPath, '-vn', '-codec:a', 'libmp3lame', '-b:a', '192k', out]);
+let HAS_FFMPEG = null;
+async function hasFfmpeg() { if (HAS_FFMPEG === null) { try { await run('ffmpeg', ['-version']); HAS_FFMPEG = true; } catch { HAS_FFMPEG = false; } } return HAS_FFMPEG; }
+// MP3 from the WAV master: 192 kbps for the store preview, 320 kbps for the MP3 license file
+async function makeMp3(wavPath, kbps) {
+  if (!(await hasFfmpeg())) return null;
+  const out = path.join(os.tmpdir(), `mp3-${kbps}-${Date.now()}.mp3`);
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', wavPath, '-vn', '-codec:a', 'libmp3lame', '-b:a', kbps + 'k', out]);
   return out;
 }
 
@@ -118,7 +127,13 @@ for (const row of rows) {
     let file = p.kind === 'preview' ? (local.mp3 || null) : local[p.kind];
     if (!buf && file) { src = path.relative(ROOTS.find(r => file.startsWith(r)) || '', file); name = path.basename(file); }
     let tmp = null;
-    if (!buf && !file && p.kind === 'preview' && local.wav) { src = `made from ${path.basename(local.wav)}`; name = `${row.id}-preview.mp3`; if (APPLY) { tmp = await makePreview(local.wav); file = tmp; } else file = 'pending'; }
+    // no MP3 on disk: make the 192k preview / 320k MP3 license from the WAV master (needs ffmpeg)
+    if (!buf && !file && (p.kind === 'preview' || p.kind === 'mp3') && local.wav) {
+      const kbps = p.kind === 'preview' ? 192 : 320;
+      if (!(await hasFfmpeg())) { line.missing.push(`${p.what} (install ffmpeg: brew install ffmpeg)`); continue; }
+      src = `made from ${path.basename(local.wav)} (${kbps} kbps)`; name = `${row.id}${p.kind === 'preview' ? '-preview' : ''}.mp3`;
+      if (APPLY) { tmp = await makeMp3(local.wav, kbps); file = tmp; } else file = 'pending';
+    }
     if (!buf && !file) { line.missing.push(p.what); continue; }
     const folder = p.kind === 'cover' || p.kind === 'preview' ? 'media' : 'deliverables';
     const key = `${folder}/${row.id}/${p.kind}/${(name || p.kind).replace(/[^A-Za-z0-9._ +@()-]/g, '_')}`;
