@@ -12,7 +12,7 @@
   var WIN = { w: 7.0, y0: 0.75, y1: 3.6 };   // left-wall picture window (metres, along the wall / heights)
   var EYE = 1.6, HOME = new THREE.Vector3(0, EYE, -0.3);
 
-  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });   // alpha: the window lets the live-cam layer show through
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -139,6 +139,70 @@
     var dusk = new THREE.PointLight(0x7f96e0, 2.0, 8, 1.5); dusk.position.set(x + 0.8, cy, 0); scene.add(dusk);
   })();
 
+  /* ---------- live Boston through the window ----------
+     A 24/7 YouTube live cam plays in a real <iframe> placed in 3D (CSS 3D
+     transforms, same camera) 14 m behind the glass; the WebGL scene punches a
+     transparent hole exactly over it so the city shows through. The photo
+     panorama stays around it and is all you see if no stream is playing.
+     Streams are third-party and can go offline, so several are tried in order. */
+  var LIVE_CAMS = ['BBlaNNmUJy8', 'UZ20XjGsCCs', '3I_cIS24AfY'];   // Boston live cams: Back Bay/Charles, Charles River, Harbor
+  var live = (function () {
+    var layer = document.createElement('div'), camEl = document.createElement('div'), box = document.createElement('div');
+    layer.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;background:#1a2b52';
+    camEl.style.cssText = 'position:absolute;left:0;top:0;transform-style:preserve-3d';
+    var PX_W = 1920, PX_H = 1080, W = 48, H = W * 9 / 16;
+    box.style.cssText = 'position:absolute;width:' + PX_W + 'px;height:' + PX_H + 'px;background:#000;backface-visibility:hidden';
+    var mount = document.createElement('div'); box.appendChild(mount);
+    camEl.appendChild(box); layer.appendChild(camEl);
+    canvas.parentNode.insertBefore(layer, canvas); canvas.style.zIndex = 1;
+    // where the video sits in the world (behind the left-wall window, facing into the room)
+    var anchor = new THREE.Object3D();
+    anchor.position.set(-ROOM.w / 2 - 14, 3.2, 0); anchor.rotation.y = Math.PI / 2; anchor.scale.set(W / PX_W, H / PX_H, 1);
+    scene.add(anchor);
+    var hole = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0, blending: THREE.NoBlending }));
+    hole.position.copy(anchor.position); hole.rotation.copy(anchor.rotation); hole.visible = false; scene.add(hole);
+
+    function ep(v) { return Math.abs(v) < 1e-10 ? 0 : v; }
+    function camCss(m) { var e = m.elements; return 'matrix3d(' + [e[0], -e[1], e[2], e[3], e[4], -e[5], e[6], e[7], e[8], -e[9], e[10], e[11], e[12], -e[13], e[14], e[15]].map(ep).join(',') + ')'; }
+    function objCss(m) { var e = m.elements; return 'translate(-50%,-50%)matrix3d(' + [e[0], e[1], e[2], e[3], -e[4], -e[5], -e[6], -e[7], e[8], e[9], e[10], e[11], e[12], e[13], e[14], e[15]].map(ep).join(',') + ')'; }
+    function render() {
+      if (!hole.visible) return;
+      var w = canvas.clientWidth, h = canvas.clientHeight, fov = camera.projectionMatrix.elements[5] * h / 2;
+      layer.style.perspective = fov + 'px';
+      camera.updateMatrixWorld(); anchor.updateMatrixWorld();
+      camEl.style.width = w + 'px'; camEl.style.height = h + 'px';
+      camEl.style.transform = 'translateZ(' + fov + 'px)' + camCss(camera.matrixWorldInverse) + 'translate(' + w / 2 + 'px,' + h / 2 + 'px)';
+      box.style.transform = objCss(anchor.matrixWorld);
+    }
+    // YouTube IFrame API: muted autoplay; show the hole only while a stream is actually playing
+    var idx = 0, player = null, watchdog = null;
+    function tryNext() {
+      hole.visible = false; layer.style.visibility = 'hidden';
+      if (idx >= LIVE_CAMS.length) return;                   // nothing playing: the photo stays
+      var id = LIVE_CAMS[idx++];
+      clearTimeout(watchdog); watchdog = setTimeout(function () { if (!hole.visible) { if (player) player.destroy(); player = null; mount = document.createElement('div'); box.textContent = ''; box.appendChild(mount); tryNext(); } }, 20000);
+      player = new YT.Player(mount, {
+        width: PX_W, height: PX_H, videoId: id,
+        playerVars: { autoplay: 1, mute: 1, controls: 0, disablekb: 1, fs: 0, rel: 0, iv_load_policy: 3, playsinline: 1, modestbranding: 1 },
+        events: {
+          onReady: function (e) { e.target.mute(); e.target.playVideo(); },
+          onStateChange: function (e) {
+            var on = e.data === 1;                             // 1 = playing
+            hole.visible = on; layer.style.visibility = on ? 'visible' : 'hidden';
+            if (e.data === 0) { clearTimeout(watchdog); idx = idx; }   // live ended: photo shows until it resumes
+          },
+          onError: function () { clearTimeout(watchdog); if (player) player.destroy(); player = null; mount = document.createElement('div'); box.textContent = ''; box.appendChild(mount); tryNext(); }
+        }
+      });
+    }
+    if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      var prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function () { if (prev) prev(); tryNext(); };
+      var tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; tag.async = true; document.head.appendChild(tag);
+    }
+    return { render: render };
+  })();
+
   /* ---------- straight gallery track lighting ----------
      black ceiling tracks running parallel to each wall, 1 m in from it;
      every artwork gets its own spot can on the track aimed at it (see addCan). */
@@ -169,7 +233,7 @@
 
   /* ---------- Persian rug + a simple gallery bench on it ---------- */
   (function rugAndBench() {
-    var RW = 3.6, RL = 4.95, RZ = -1.95;
+    var RW = 4.4, RL = 6.05, RZ = -1.6;
     var rugMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
     var rug = new THREE.Mesh(new THREE.BoxGeometry(RW, 0.01, RL), [baseRug(), baseRug(), rugMat, baseRug(), baseRug(), baseRug()]);
     function baseRug() { return new THREE.MeshStandardMaterial({ color: 0x3a0d12, roughness: 1 }); }
@@ -1073,6 +1137,7 @@
   (function loop(now) {
     if (anim) anim(now);
     renderer.render(scene, camera);
+    live.render();
     requestAnimationFrame(loop);
   })(performance.now());
   window.__museum = { scene: scene, camera: camera, plaques: plaques, focusOn: focusOn };
