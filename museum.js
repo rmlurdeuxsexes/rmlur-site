@@ -150,14 +150,14 @@
     var layer = document.createElement('div'), camEl = document.createElement('div'), box = document.createElement('div');
     layer.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;background:#fff';
     camEl.style.cssText = 'position:absolute;left:0;top:0;transform-style:preserve-3d';
-    var PX_W = 1920, PX_H = 1080, W = 48, H = W * 9 / 16;
+    var W = WIN.w, H = WIN.y1 - WIN.y0, PX_W = 1920, PX_H = Math.round(PX_W * H / W);   // exactly the window opening
     box.style.cssText = 'position:absolute;width:' + PX_W + 'px;height:' + PX_H + 'px;background:#000;backface-visibility:hidden;overflow:hidden';
     var mount = document.createElement('div'); box.appendChild(mount);
     camEl.appendChild(box); layer.appendChild(camEl);
     canvas.parentNode.insertBefore(layer, canvas); canvas.style.zIndex = 1;
     // where the video sits in the world (behind the left-wall window, facing into the room)
     var anchor = new THREE.Object3D();
-    anchor.position.set(-ROOM.w / 2 - 14, 3.2, 0); anchor.rotation.y = Math.PI / 2; anchor.scale.set(W / PX_W, H / PX_H, 1);
+    anchor.position.set(-ROOM.w / 2 - 0.1, (WIN.y0 + WIN.y1) / 2, 0);   // just behind the glass + mullions, so it fills the window from every angle anchor.rotation.y = Math.PI / 2; anchor.scale.set(W / PX_W, H / PX_H, 1);
     scene.add(anchor);
     var hole = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0, blending: THREE.NoBlending }));
     hole.position.copy(anchor.position); hole.rotation.copy(anchor.rotation); hole.visible = false; scene.add(hole);
@@ -205,7 +205,10 @@
         events: {
           onReady: function () {
             var f = player.getIframe && player.getIframe();
-            if (f) f.style.cssText = 'position:absolute;left:-9%;top:-9%;width:118%;height:118%;border:0;pointer-events:none';
+            if (f) {   // 16:9 video covering the wide window ("object-fit: cover"), +12% so YouTube's corner branding is cropped off
+              var vw = PX_W * 1.12, vh = vw * 9 / 16;
+              f.style.cssText = 'position:absolute;border:0;pointer-events:none;width:' + vw + 'px;height:' + vh + 'px;left:' + (PX_W - vw) / 2 + 'px;top:' + (PX_H - vh) / 2 + 'px';
+            }
             kick();
           },
           onStateChange: function (e) {
