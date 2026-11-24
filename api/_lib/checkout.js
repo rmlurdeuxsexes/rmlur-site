@@ -62,10 +62,10 @@ export function manualFulfilmentEmail({ session, product, tier }) {
   };
 }
 
-async function stripe(path, { method = 'GET', params, secretKey, fetchImpl = fetch }) {
+async function stripe(path, { method = 'GET', params, secretKey, fetchImpl = fetch, version }) {
   const res = await fetchImpl(`https://api.stripe.com/v1/${path}`, {
     method,
-    headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/x-www-form-urlencoded', ...(version ? { 'Stripe-Version': version } : {}) },
     body: params ? new URLSearchParams(params).toString() : undefined,
   });
   const json = await res.json();
@@ -74,13 +74,15 @@ async function stripe(path, { method = 'GET', params, secretKey, fetchImpl = fet
 }
 
 // Price always comes from the server-side catalog, never from the browser.
-export async function createCheckoutSession({ product, tier, origin, secretKey, fetchImpl }) {
+// card: optional RMLUR Tokens card id, so this purchase earns tokens on it
+export async function createCheckoutSession({ product, tier, origin, secretKey, fetchImpl, card }) {
   const cents = Math.round(Number(tier.price) * 100);
   if (!Number.isFinite(cents) || cents < 50) throw new Error('invalid price');
   return stripe('checkout/sessions', {
     method: 'POST', secretKey, fetchImpl,
     params: {
       mode: 'payment',
+      ...(card ? { client_reference_id: card } : {}),
       'line_items[0][quantity]': '1',
       'line_items[0][price_data][currency]': 'usd',
       'line_items[0][price_data][unit_amount]': String(cents),
@@ -93,6 +95,36 @@ export async function createCheckoutSession({ product, tier, origin, secretKey, 
       cancel_url: `${origin}/store.html`,
     },
   });
+}
+
+// A license paid with RMLUR Tokens: a $0 Checkout Session (Stripe "no-cost
+// order", needs API version 2023-08-16+), so the buyer gets the exact same
+// receipt, download page and license PDF as a paid order. Expires in 30 min,
+// same as the token hold.
+export async function createRewardSession({ product, tier, origin, secretKey, fetchImpl, card, tokens, now = Date.now() }) {
+  return stripe('checkout/sessions', {
+    method: 'POST', secretKey, fetchImpl, version: '2024-06-20',
+    params: {
+      mode: 'payment',
+      client_reference_id: card,
+      expires_at: String(Math.floor(now / 1000) + 30 * 60 + 60),
+      'line_items[0][quantity]': '1',
+      'line_items[0][price_data][currency]': 'usd',
+      'line_items[0][price_data][unit_amount]': '0',
+      'line_items[0][price_data][product_data][name]': `${product.title} — ${tier.label} license (${tokens} RMLUR tokens)`,
+      'metadata[product_id]': product.id,
+      'metadata[tier_id]': tier.id,
+      'metadata[reward_card]': card,
+      'metadata[reward_tokens]': String(tokens),
+      success_url: `${origin}/thanks.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/store.html`,
+    },
+  });
+}
+
+// paid with money, or a token redemption Stripe completed at $0
+export function isFulfillable(session) {
+  return session?.payment_status === 'paid' || (session?.payment_status === 'no_payment_required' && !!session?.metadata?.reward_card);
 }
 
 export function retrieveSession(id, { secretKey, fetchImpl }) {

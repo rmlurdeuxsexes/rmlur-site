@@ -6,6 +6,7 @@
 <title>Thanks — RMLUR :: deux SEXES</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="store.css">
+<style>.tok{display:block;margin-top:22px;padding:14px 18px;border:1px solid #1b1b1b;border-radius:12px;text-decoration:none;color:inherit;font-size:12px;letter-spacing:.06em;background:repeating-linear-gradient(135deg,#f6f3ea 0 10px,#f1ede2 10px 20px)}.tok b{font-size:22px}.tok span{color:#6b675e;font-size:11px}</style>
 </head>
 <body>
 <a class="back-link" href="store.html">← Back to beats</a>
@@ -14,6 +15,7 @@
   <p id="msg" class="empty">Confirming your payment…</p>
   <div id="files" style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:18px"></div>
 </main>
+<script src="/rmlur-tokens.js"></script>
 <script>
 (function () {
   var id = new URLSearchParams(location.search).get('session_id');
@@ -27,6 +29,13 @@
       msg.textContent = o.title + ' — ' + o.license + ' license' + (o.email ? ' (receipt sent to ' + o.email + ')' : '');
       o.files.forEach(function (f) { link(f.url, 'Download ' + f.label); });
       link(o.licenseUrl, 'License PDF');
+      if (o.tokens) {                                             // RMLUR Tokens card
+        RmlurTokens.save(o.tokens.card);
+        var t = o.tokens, c = document.createElement('a'); c.href = '/tokens.html#' + t.card; c.className = 'tok';
+        var need = t.costs.mp3 - t.balance;
+        c.innerHTML = '<b>' + t.balance + '</b> RMLUR TOKENS<br><span>' + (o.paidWithTokens ? 'Paid with tokens — enjoy the beat.' : need > 0 ? need + ' more for a free MP3 lease' : 'Enough for a free lease — use them in the store') + ' · open your token card →</span>';
+        box.appendChild(c);
+      }
       if (o.fulfilment === 'manual') { var p = document.createElement('p'); p.className = 'empty'; p.textContent = 'Your files are being prepared and will be emailed to you shortly.'; box.appendChild(p); }
     }).catch(function () { msg.textContent = 'Something went wrong loading your order. Email rmlurdeuxsexes@gmail.com.'; });
   }

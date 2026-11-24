@@ -576,18 +576,29 @@ function diskTarget(d, k) {
 
 /* ---------------- dock: the current beat, with play / license / buy ---------------- */
 let dockItem = null, dockSource = null;   // dockSource: 'bin' | 'case'
+// RMLUR Tokens (rmlur-tokens.js): balance in the top bar; a "pay with tokens" license option when you can afford it
+let tokens = null;
+if (window.RmlurTokens) window.RmlurTokens.load().then(t => {
+  tokens = t; if (!t) return;
+  const a = document.getElementById('tokBal'); if (a) { a.hidden = false; document.getElementById('tokN').textContent = t.balance; }
+  if (dockItem) fillDock(dockItem, dock._index || 0, dock._total || 1, dockSource);
+});
 function tiersFor(p) {
   const opts = (p.tiers || []).slice().sort((a, b) => a.price - b.price);
   if (p.exclusive) opts.push({ id: 'exclusive', label: 'EXCLUSIVE', price: p.exclusive.price, stripeLink: p.exclusive.stripeLink, buyable: p.exclusive.buyable });
+  if (tokens) (p.tiers || []).forEach(t => {
+    const cost = tokens.costs[t.id];
+    if (cost && tokens.balance >= cost && t.buyable !== false) opts.push({ ...t, useTokens: true, cost });
+  });
   return opts;
 }
 const money = n => '$' + Number(n).toFixed(2).replace(/\.00$/, '');
 function fillDock(p, index, total, source) {
-  dockItem = p; dockSource = source;
+  dockItem = p; dockSource = source; dock._index = index; dock._total = total;
   $('pTitle').textContent = p.title;
   $('pMeta').textContent = [p.genre, p.bpm ? p.bpm + ' bpm' : '', p.key].filter(Boolean).join(' · ');
   const opts = tiersFor(p), sel = $('pTier'); sel.innerHTML = '';
-  opts.forEach((t, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${t.label} ${money(t.price)}`; sel.appendChild(o); });
+  opts.forEach((t, i) => { const o = document.createElement('option'); o.value = i; o.textContent = t.useTokens ? `${t.label} — ${t.cost} TOKENS` : `${t.label} ${money(t.price)}`; sel.appendChild(o); });
   sel.disabled = !opts.length; dock._opts = opts;
   setBuyLabel();
   $('pCase').hidden = source !== 'bin';
@@ -598,7 +609,7 @@ function fillDock(p, index, total, source) {
 function setBuyLabel() {
   const t = dock._opts && dock._opts[$('pTier').value];
   // buyable === false: no download file yet, so ask instead of taking payment (same rule as /store)
-  $('pBuy').textContent = t && t.buyable === false ? 'Ask' : 'Buy';
+  $('pBuy').textContent = t && t.buyable === false ? 'Ask' : t && t.useTokens ? 'Redeem' : 'Buy';
   $('pBuy').disabled = !t;
 }
 $('pTier').addEventListener('change', setBuyLabel);
@@ -677,8 +688,12 @@ $('pBuy').addEventListener('click', async () => {
   if (tier.buyable === false) return fallback();
   try {
     const cfg = await (await fetch('/api/checkout')).json(); if (!cfg.enabled) return fallback();
-    const j = await (await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: p.id, tierId: tier.id }) })).json();
-    if (j.url) location.href = j.url; else fallback();
+    const card = window.RmlurTokens && window.RmlurTokens.card();
+    const j = await (await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId: p.id, tierId: tier.id, card, useTokens: !!tier.useTokens }) })).json();
+    if (j.url) location.href = j.url;
+    else if (tier.useTokens) { $('pBuy').textContent = j.error || 'Try again'; }   // never fall back to paying when they chose tokens
+    else fallback();
   } catch { fallback(); }
 });
 

@@ -1,5 +1,6 @@
 import { sql } from './_lib/db.js';
-import { findTier, deliverableFor, retrieveSession } from './_lib/checkout.js';
+import { findTier, deliverableFor, retrieveSession, isFulfillable } from './_lib/checkout.js';
+import { getCard, cardForEmail, balance, publicCard } from './_lib/rewards.js';
 import { resolveDeliverable } from './_lib/dropbox.js';
 
 // Returns the files for a PAID Checkout session. The session id (cs_...) is the credential.
@@ -7,7 +8,7 @@ export async function loadPaidOrder(sessionId) {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey || !/^cs_[A-Za-z0-9_]+$/.test(sessionId || '')) return null;
   const session = await retrieveSession(sessionId, { secretKey });
-  if (session.payment_status !== 'paid') return null;
+  if (!isFulfillable(session)) return null;
   const rows = await sql`SELECT * FROM products WHERE id = ${session.metadata?.product_id}`;
   if (!rows.length) return null;
   const product = rows[0];
@@ -18,14 +19,31 @@ export async function loadPaidOrder(sessionId) {
 
 export default {
   async fetch(request) {
-    const id = new URL(request.url).searchParams.get('session_id');
+    const q = new URL(request.url).searchParams;
+    // RMLUR Tokens card: /api/order?card=rt_... -> balance + history (the card id is the credential)
+    if (q.has('card')) {
+      try {
+        const card = await getCard(sql, q.get('card'));
+        if (!card) return Response.json({ error: 'card not found' }, { status: 404 });
+        return Response.json(publicCard(card, await balance(sql, card)), { headers: { 'Cache-Control': 'no-store' } });
+      } catch (err) { console.error('[api/order card]', err); return Response.json({ error: 'lookup failed' }, { status: 502 }); }
+    }
+    const id = q.get('session_id');
     try {
       const o = await loadPaidOrder(id);
       if (!o) return Response.json({ error: 'order not found or unpaid' }, { status: 404 });
       // Dropbox paths become fresh 4h links on every load; failures degrade to manual fulfilment.
       let link = null;
       try { link = await resolveDeliverable(o.file); } catch (e) { console.error('[order] deliverable', e); }
+      // the buyer's token card: the one this order used, else the card for their (Stripe-verified) email
+      let tokens = null;
+      try {
+        const card = (await getCard(sql, o.session.client_reference_id)) || (await cardForEmail(sql, o.session.customer_details?.email));
+        if (card) tokens = publicCard(card, await balance(sql, card));
+      } catch (e) { console.error('[order] tokens', e); }
       return Response.json({
+        tokens,
+        paidWithTokens: !!o.session.metadata?.reward_card,
         title: o.product.title,
         license: o.tier.label,
         email: o.session.customer_details?.email ?? null,

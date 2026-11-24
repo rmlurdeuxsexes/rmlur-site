@@ -1,18 +1,20 @@
 import { sql } from './_lib/db.js';
-import { siteUrl, verifyStripeSignature, findTier, deliverableFor, manualFulfilmentEmail } from './_lib/checkout.js';
+import { siteUrl, verifyStripeSignature, findTier, deliverableFor, manualFulfilmentEmail, isFulfillable } from './_lib/checkout.js';
+import { ensureTables, finishSpend, releaseHold, isCardId } from './_lib/rewards.js';
 
 const PRODUCER_EMAIL = () => process.env.ORDERS_NOTIFY_EMAIL || 'rmlurdeuxsexes@gmail.com';
 
 async function recordOrder(session) {
-  await sql`CREATE TABLE IF NOT EXISTS orders (
-    session_id TEXT PRIMARY KEY, product_id TEXT, tier_id TEXT, email TEXT, name TEXT,
-    amount_cents INTEGER, status TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-  )`;
-  await sql`INSERT INTO orders (session_id, product_id, tier_id, email, name, amount_cents, status)
+  await ensureTables(sql);
+  const card = isCardId(session.client_reference_id) ? session.client_reference_id : null;
+  // token redemptions are recorded as 'redeemed' (they earn nothing); money orders as 'paid'
+  const status = session.metadata?.reward_card ? 'redeemed' : 'paid';
+  await sql`INSERT INTO orders (session_id, product_id, tier_id, email, name, amount_cents, status, card_id)
     VALUES (${session.id}, ${session.metadata?.product_id}, ${session.metadata?.tier_id},
             ${session.customer_details?.email ?? null}, ${session.customer_details?.name ?? null},
-            ${session.amount_total ?? null}, 'paid')
-    ON CONFLICT (session_id) DO UPDATE SET status = 'paid'`;
+            ${session.amount_total ?? null}, ${status}, ${card})
+    ON CONFLICT (session_id) DO UPDATE SET status = ${status}, card_id = COALESCE(orders.card_id, ${card})`;
+  if (session.metadata?.reward_card) await finishSpend(sql, session.id);
 }
 
 async function sendMail({ to, subject, text }) {
@@ -53,7 +55,11 @@ export default {
       return new Response('bad signature', { status: 400 });
     }
     const event = JSON.parse(raw);
-    if (event.type === 'checkout.session.completed' && event.data.object.payment_status === 'paid') {
+    // a token checkout that was abandoned gives its tokens back straight away (holds also lapse on their own)
+    if (event.type === 'checkout.session.expired' && event.data.object.metadata?.reward_card) {
+      try { await releaseHold(sql, event.data.object.id); } catch (e) { console.error('[stripe-webhook] release', e); }
+    }
+    if (event.type === 'checkout.session.completed' && isFulfillable(event.data.object)) {
       try {
         await recordOrder(event.data.object);
         await emailDownloadLink(event.data.object, siteUrl(request)).catch(e => console.error('[mail]', e));

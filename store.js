@@ -47,7 +47,8 @@
     // buyable === false: no download file yet, so ask instead of taking payment
     if (!checkoutLive || tier.buyable === false) return fallback();
     btn.textContent = '…';
-    fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: p.id, tierId: tier.id }) })
+    var card = window.RmlurTokens && window.RmlurTokens.card();   // so this purchase earns RMLUR tokens on the buyer's card
+    fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: p.id, tierId: tier.id, card: card }) })
       .then(function (r) { return r.json(); })
       .then(function (j) { if (j.url) location.href = j.url; else throw new Error(j.error); })
       .catch(function () { btn.textContent = tier.buyable === false ? 'Ask' : 'Buy'; fallback(); });

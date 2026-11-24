@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>RMLUR Tokens — your card</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  @font-face{font-family:"RMLUR Hand";src:url("/assets/fonts/rmlur-hand.woff2") format("woff2");font-display:swap}
+  body{margin:0;background:#fff;color:#1b1b1b;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13px}
+  a{color:inherit}
+  .top{position:fixed;top:14px;left:16px;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+  .top a{text-decoration:none;border-bottom:1px solid #aaa;margin-right:14px}
+  main{max-width:520px;margin:0 auto;padding:80px 18px 60px}
+  .card{position:relative;border:1px solid #1b1b1b;border-radius:14px;padding:22px 22px 18px;background:
+    repeating-linear-gradient(135deg,#f6f3ea 0 10px,#f1ede2 10px 20px)}
+  .card .brand{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#6b675e}
+  .card .bal{font-family:"RMLUR Hand","Permanent Marker",cursive;font-size:64px;line-height:1;margin:14px 0 4px}
+  .card .unit{font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+  .coin{position:absolute;right:20px;top:18px;width:64px;height:64px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff3c2 0,#e8c25a 40%,#a87a22 100%);border:2px solid #7a5a18;
+    display:grid;place-items:center;font-weight:500;font-size:12px;letter-spacing:.08em;color:#4a360c;box-shadow:inset 0 0 0 5px rgba(122,90,24,.35)}
+  .meter{height:8px;border:1px solid #1b1b1b;border-radius:4px;margin:16px 0 6px;overflow:hidden}
+  .meter i{display:block;height:100%;background:#1b1b1b}
+  .muted{color:#6b675e}
+  h2{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;margin:34px 0 10px}
+  ul{list-style:none;padding:0;margin:0} li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #e6e3db}
+  .btn{display:inline-block;font:inherit;font-size:12px;padding:8px 13px;border:1px solid #1b1b1b;background:#fff;border-radius:2px;cursor:pointer;text-decoration:none;margin-top:12px}
+  .btn.buy{background:#1b1b1b;color:#fff}
+  .link{word-break:break-all;font-size:11px}
+</style>
+</head>
+<body>
+<div class="top"><a href="/index.html">← RMLUR</a><a href="/store.html">beat store</a></div>
+<main>
+  <div class="card" id="card" hidden>
+    <div class="coin">RMLUR</div>
+    <div class="brand">RMLUR :: deux SEXES · token card</div>
+    <div class="bal" id="bal">0</div><div class="unit">tokens</div>
+    <div class="meter"><i id="meter" style="width:0"></i></div>
+    <div class="muted" id="next"></div>
+    <a class="btn buy" href="/store.html">Spend them in the store</a>
+  </div>
+  <p id="none" hidden>No token card on this device yet. You get one with your first beat purchase. Already have one? Open your private card link (it's on your order page).</p>
+
+  <h2>How it works</h2>
+  <ul>
+    <li><span>Every beat you buy</span><span id="rate">1 token per $1</span></li>
+    <li><span>Free MP3 lease</span><span id="cMp3">100 tokens</span></li>
+    <li><span>Free WAV lease</span><span id="cWav">200 tokens</span></li>
+  </ul>
+  <p class="muted">Pick the license in the store; when you have enough tokens it shows a “tokens” option. Exclusives can't be bought with tokens.</p>
+
+  <div id="hist" hidden><h2>History</h2><ul id="histList"></ul></div>
+
+  <div id="share" hidden>
+    <h2>Use this card on another device</h2>
+    <p class="muted">Keep this link private — anyone with it can spend your tokens.</p>
+    <div class="link" id="link"></div>
+    <button class="btn" id="copy" type="button">Copy link</button>
+  </div>
+</main>
+<script src="/rmlur-tokens.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  RmlurTokens.load().then(function (t) {
+    if (!t) { $('none').hidden = false; return; }
+    $('card').hidden = false; $('share').hidden = false;
+    $('bal').textContent = t.balance;
+    $('rate').textContent = t.perDollar + ' token' + (t.perDollar === 1 ? '' : 's') + ' per $1';
+    $('cMp3').textContent = t.costs.mp3 + ' tokens'; $('cWav').textContent = t.costs.wav + ' tokens';
+    var goal = t.balance < t.costs.mp3 ? t.costs.mp3 : t.costs.wav;
+    $('meter').style.width = Math.min(100, t.balance / goal * 100) + '%';
+    $('next').textContent = t.balance >= t.costs.wav ? 'Enough for a free WAV lease.' : t.balance >= t.costs.mp3
+      ? 'Enough for a free MP3 lease · ' + (t.costs.wav - t.balance) + ' more for a WAV.' : (t.costs.mp3 - t.balance) + ' more for a free MP3 lease.';
+    var url = location.origin + '/tokens.html#' + t.card; $('link').textContent = url;
+    $('copy').onclick = function () { navigator.clipboard && navigator.clipboard.writeText(url).then(function () { $('copy').textContent = 'Copied'; }); };
+    if (location.hash) history.replaceState(null, '', location.pathname);   // don't leave the secret sitting in the address bar
+    if (t.history.length) {
+      $('hist').hidden = false;
+      t.history.forEach(function (h) {
+        var li = document.createElement('li'), a = document.createElement('span'), b = document.createElement('span');
+        a.textContent = new Date(h.at).toLocaleDateString() + ' · ' + (h.type === 'earn' ? 'Bought ' : h.type === 'pending' ? 'Redeeming ' : 'Redeemed ') + (h.product || '') + ' (' + (h.tier || '').toUpperCase() + ')';
+        b.textContent = (h.tokens > 0 ? '+' : '') + h.tokens; li.appendChild(a); li.appendChild(b); $('histList').appendChild(li);
+      });
+    }
+  });
+})();
+</script>
+<script src="/spin-badge.js" defer></script>
+</body>
+</html>

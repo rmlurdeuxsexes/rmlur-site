@@ -1,5 +1,6 @@
 import { sql } from './_lib/db.js';
-import { siteUrl, isTestKey, findTier, deliverableFor, createCheckoutSession } from './_lib/checkout.js';
+import { siteUrl, isTestKey, findTier, deliverableFor, createCheckoutSession, createRewardSession } from './_lib/checkout.js';
+import { getCard, balance, costFor, holdTokens, isCardId } from './_lib/rewards.js';
 import { deliverableReachable } from './_lib/dropbox.js';
 
 export default {
@@ -15,7 +16,7 @@ export default {
 
     let body;
     try { body = await request.json(); } catch { return Response.json({ error: 'bad json' }, { status: 400 }); }
-    const { productId, tierId } = body || {};
+    const { productId, tierId, card, useTokens } = body || {};
     if (typeof productId !== 'string' || typeof tierId !== 'string') {
       return Response.json({ error: 'productId and tierId required' }, { status: 400 });
     }
@@ -33,7 +34,20 @@ export default {
         console.error('[api/checkout] deliverable not reachable for', product.id, tier.id);
         return Response.json({ error: 'not available yet' }, { status: 409 });
       }
-      const session = await createCheckoutSession({ product, tier, origin: siteUrl(request), secretKey });
+      // RMLUR Tokens: pay with tokens instead of money
+      if (useTokens) {
+        const cost = costFor(tier.id);
+        if (!cost) return Response.json({ error: 'this license can\'t be bought with tokens' }, { status: 400 });
+        const c = await getCard(sql, card);
+        if (!c) return Response.json({ error: 'token card not found' }, { status: 404 });
+        const b = await balance(sql, c);
+        if (b.balance < cost) return Response.json({ error: `not enough tokens (${b.balance}/${cost})` }, { status: 402 });
+        const session = await createRewardSession({ product, tier, origin: siteUrl(request), secretKey, card: c.id, tokens: cost });
+        await holdTokens(sql, { card: c, sessionId: session.id, productId: product.id, tierId: tier.id, tokens: cost,
+          expiresAt: new Date((session.expires_at || Math.floor(Date.now() / 1000) + 1860) * 1000).toISOString() });
+        return Response.json({ url: session.url });
+      }
+      const session = await createCheckoutSession({ product, tier, origin: siteUrl(request), secretKey, card: isCardId(card) ? card : undefined });
       return Response.json({ url: session.url });
     } catch (err) {
       console.error('[api/checkout]', err);
