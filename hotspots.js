@@ -92,7 +92,7 @@ window.PADS = [
   { id: "pad-1-2", type: "beat", title: "Recent beat 7", audio: null },
   { id: "pad-1-3", type: "beat", title: "Recent beat 8", audio: null },
 
-  { id: "pad-2-0", type: "social", label: "YouTube",   url: "https://www.youtube.com/" },
+  { id: "pad-2-0", type: "social", label: "YouTube",   url: "https://www.youtube.com/@jayrewind" },
   { id: "pad-2-1", type: "social", label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
   { id: "pad-2-2", type: "social", label: "TikTok",     url: "https://www.tiktok.com/@jayrewindbeatz" },
   { id: "pad-2-3", type: "social", label: "About",      url: "about.html" },
@@ -109,15 +109,13 @@ window.PADS = [
    these to the 8 "beat" pads on every page load — add more entries the
    same way to grow the pool. */
 window.BEAT_POOL = [
-  "assets/beats/kick-1.mp3",
-  "assets/beats/kick-2.mp3",
-  "assets/beats/kick-3.mp3",
-  "assets/beats/snare-1.mp3",
-  "assets/beats/snare-clap-1.mp3",
-  "assets/beats/snare-clap-2.mp3",
-  "assets/beats/bass-1.mp3",
-  "assets/beats/eight-oh-eight-1.mp3"
-];
+  "assets/beats/kick-new.mp3",
+  "assets/beats/snare-new.mp3",
+  "assets/beats/hihat-new.mp3",
+  "assets/beats/tom-new.mp3",
+  "assets/beats/rmlur-tag.mp3",
+  "assets/beats/voice-tag.mp3"
+]
 
 /* ---------- WHAT each hard-drive does ----------
    Each drive is its own portfolio pathway. Only Jason's for now — the
@@ -146,7 +144,7 @@ window.HOME_LCD = { idle: "BEAT STORE", url: "store.html" };
 window.HOME_PADS = {
   1:  { label: "Home",      url: "index.html" },
   2:  { label: "Beats",     url: "store.html" },
-  3:  { label: "YouTube",   url: "https://www.youtube.com/" },
+  3:  { label: "YouTube",   url: "https://www.youtube.com/@jayrewind" },
   4:  { label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
   5:  { label: "TikTok",    url: "https://www.tiktok.com/@jayrewindbeatz" },
   6:  { label: "Contact",   url: "mailto:rmlurdeuxsexes@gmail.com" },
@@ -154,12 +152,12 @@ window.HOME_PADS = {
   8:  { label: "Gallery",   url: "gallery.html" },
   9:  { label: "Museum",    url: "museum.html" },
   10: { label: "About",     url: "about.html" },
-  11: { label: "Kick",      sound: "assets/beats/kick-1.mp3" },
-  12: { label: "Snare",     sound: "assets/beats/snare-1.mp3" },
-  13: { label: "Clap",      sound: "assets/beats/snare-clap-1.mp3" },
-  14: { label: "808",       sound: "assets/beats/eight-oh-eight-1.mp3" },
-  15: { label: "Bass",      sound: "assets/beats/bass-1.mp3" },
-  16: { label: "Kick 2",    sound: "assets/beats/kick-2.mp3" }
+  11: { label: "Kick",      sound: "assets/beats/kick-new.mp3" },
+  12: { label: "Snare",     sound: "assets/beats/snare-new.mp3" },
+  13: { label: "Hi-Hat",    sound: "assets/beats/hihat-new.mp3" },
+  14: { label: "Tom",       sound: "assets/beats/tom-new.mp3" },
+  15: { label: "RMLUR",     sound: "assets/beats/rmlur-tag.mp3" },
+  16: { label: "Voice Tag", sound: "assets/beats/voice-tag.mp3" }
 };
 
 /* ---------- HOMEPAGE — pad banks, F-keys, sequencer, button messages ----------
@@ -167,29 +165,29 @@ window.HOME_PADS = {
    Bank A is HOME_PADS above. Bank C is filled at runtime with beat previews
    from the store catalog (first 16 beats that have a preview). */
 window.HOME_BANKS = {
-  B: {   // second kit: the same one-shots, plus pitched-down/up versions
-    1:  { label: "Kick 3",     sound: "assets/beats/kick-3.mp3" },
-    2:  { label: "Clap 2",     sound: "assets/beats/snare-clap-2.mp3" },
-    3:  { label: "Kick",       sound: "assets/beats/kick-1.mp3" },
-    4:  { label: "Snare",      sound: "assets/beats/snare-1.mp3" },
-    5:  { label: "Clap",       sound: "assets/beats/snare-clap-1.mp3" },
-    6:  { label: "808",        sound: "assets/beats/eight-oh-eight-1.mp3" },
-    7:  { label: "Bass",       sound: "assets/beats/bass-1.mp3" },
-    8:  { label: "Kick 2",     sound: "assets/beats/kick-2.mp3" },
-    9:  { label: "808 Low",    sound: "assets/beats/eight-oh-eight-1.mp3", rate: 0.75 },
-    10: { label: "808 High",   sound: "assets/beats/eight-oh-eight-1.mp3", rate: 1.26 },
-    11: { label: "Bass Low",   sound: "assets/beats/bass-1.mp3", rate: 0.75 },
-    12: { label: "Bass High",  sound: "assets/beats/bass-1.mp3", rate: 1.26 },
-    13: { label: "Snare Low",  sound: "assets/beats/snare-1.mp3", rate: 0.8 },
-    14: { label: "Clap High",  sound: "assets/beats/snare-clap-1.mp3", rate: 1.3 },
-    15: { label: "Kick Low",   sound: "assets/beats/kick-1.mp3", rate: 0.8 },
-    16: { label: "Kick 3 Hi",  sound: "assets/beats/kick-3.mp3", rate: 1.25 }
+  B: {   // second kit: the same six sounds, plus pitched-down/up versions
+    1:  { label: "Kick",       sound: "assets/beats/kick-new.mp3" },
+    2:  { label: "Snare",      sound: "assets/beats/snare-new.mp3" },
+    3:  { label: "Hi-Hat",     sound: "assets/beats/hihat-new.mp3" },
+    4:  { label: "Tom",        sound: "assets/beats/tom-new.mp3" },
+    5:  { label: "RMLUR",      sound: "assets/beats/rmlur-tag.mp3" },
+    6:  { label: "Voice Tag",  sound: "assets/beats/voice-tag.mp3" },
+    7:  { label: "Kick Low",   sound: "assets/beats/kick-new.mp3", rate: 0.8 },
+    8:  { label: "Kick High",  sound: "assets/beats/kick-new.mp3", rate: 1.2 },
+    9:  { label: "Snare Low",  sound: "assets/beats/snare-new.mp3", rate: 0.8 },
+    10: { label: "Snare High", sound: "assets/beats/snare-new.mp3", rate: 1.25 },
+    11: { label: "Hat Low",    sound: "assets/beats/hihat-new.mp3", rate: 0.8 },
+    12: { label: "Hat High",   sound: "assets/beats/hihat-new.mp3", rate: 1.25 },
+    13: { label: "Tom Low",    sound: "assets/beats/tom-new.mp3", rate: 0.75 },
+    14: { label: "Tom High",   sound: "assets/beats/tom-new.mp3", rate: 1.3 },
+    15: { label: "RMLUR Low",  sound: "assets/beats/rmlur-tag.mp3", rate: 0.85 },
+    16: { label: "Voice High", sound: "assets/beats/voice-tag.mp3", rate: 1.15 }
   },
   C: {},  // beat previews — filled from /api/products when you switch to bank C
   D: {    // social links
     1: { label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
     2: { label: "TikTok",    url: "https://www.tiktok.com/@jayrewindbeatz" },
-    3: { label: "YouTube",   url: "https://www.youtube.com/" },
+    3: { label: "YouTube",   url: "https://www.youtube.com/@jayrewind" },
     4: { label: "Email",     url: "mailto:rmlurdeuxsexes@gmail.com" }
   }
 };
@@ -209,10 +207,9 @@ window.HOME_FKEYS = [
 window.HOME_SEQ = {
   bpm: 120,
   pattern: {
-    11: [0, 6, 8, 10],        // Kick
-    13: [4, 12],              // Clap
-    12: [4, 12],              // Snare
-    14: [0, 10]               // 808
+    11: [0, 6, 8, 10],                        // Kick
+    12: [4, 12],                              // Snare
+    13: [0, 2, 4, 6, 8, 10, 12, 14]           // Hi-Hat
   }
 };
 
