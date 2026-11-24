@@ -157,7 +157,9 @@
     canvas.parentNode.insertBefore(layer, canvas); canvas.style.zIndex = 1;
     // where the video sits in the world (behind the left-wall window, facing into the room)
     var anchor = new THREE.Object3D();
-    anchor.position.set(-ROOM.w / 2 - 0.1, (WIN.y0 + WIN.y1) / 2, 0);   // just behind the glass + mullions, so it fills the window from every angle anchor.rotation.y = Math.PI / 2; anchor.scale.set(W / PX_W, H / PX_H, 1);
+    // just behind the glass + mullions, exactly the size of the opening, so it fills the window from every angle
+    anchor.position.set(-ROOM.w / 2 - 0.1, (WIN.y0 + WIN.y1) / 2, 0);
+    anchor.rotation.y = Math.PI / 2; anchor.scale.set(W / PX_W, H / PX_H, 1);
     scene.add(anchor);
     var hole = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0, blending: THREE.NoBlending }));
     hole.position.copy(anchor.position); hole.rotation.copy(anchor.rotation); hole.visible = false; scene.add(hole);
