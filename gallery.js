@@ -2,14 +2,14 @@
    then the pieces already in the repo so the wall is never empty. Click a
    piece for the full-bleed view (same overlay as the portfolio page). */
 (function () {
+  // faces in these photos are blurred for the gallery (assets/jason/gallery/); the portfolio page keeps the originals
+  var BLURRED = { 'IMG_1666': 1, 'IMG_1936': 1, 'IMG_1937': 1, 'IMG_1943': 1 };
   var SEED = [
-    { image: 'assets/sticker-girl.png', title: 'Pink boa' },
-    { image: 'assets/sticker-buy-beats-here.png', title: 'Buyyy beats @ HERE!' },
-    { image: 'assets/sticker-rmlur-logo.png', title: 'rmlur deux :: sexes' },
-    { image: 'assets/sticker-rmlur-demo.png', title: 'RMLUR demo' },
-    { image: 'assets/sticker-beats-text.png', title: 'beats' },
     { image: 'assets/mpc-hero.jpg', title: 'MPC 2000XL' }
-  ].concat((window.JASON_PHOTOS || []).map(function (p) { return { image: p.src, title: p.alt }; }));
+  ].concat((window.JASON_PHOTOS || []).map(function (p) {
+    var name = (p.src.split('/').pop() || '').replace(/\.jpg$/i, '');
+    return { image: BLURRED[name] ? 'assets/jason/gallery/' + name + '.jpg' : p.src, title: p.alt };
+  }));
 
   var wall = document.getElementById('gallery');
   var overlay = document.getElementById('lightbox-overlay');
