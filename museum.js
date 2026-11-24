@@ -369,15 +369,13 @@
     scene.add(m);
   }
 
-  // the chrome RMLUR belt (cut-out PNG) as the gallery title over the back wall
+  // the RMLUR :: deux SEXES wordmark (transparent PNG) as the gallery title, like vinyl lettering on the back wall
   function beltSign() {
-    var W = WALLS.back, w = 2.5;
-    var mat = new THREE.MeshStandardMaterial({ transparent: true, alphaTest: 0.08, roughness: 0.45, metalness: 0, opacity: 0 });
-    var m = new THREE.Mesh(new THREE.PlaneGeometry(w, w * 245 / 620), mat);
-    loadTex('assets/museum/rmlur-belt.png', function (t) { mat.map = t; mat.opacity = 1; mat.needsUpdate = true; });
-    m.position.copy(W.pos); m.position.y = 3.5; m.rotation.y = W.rot; m.translateZ(0.03); m.castShadow = true; scene.add(m);
-    var spot = new THREE.SpotLight(0xffffff, 5, 6, 0.42, 0.8, 1.6);
-    spot.position.set(0, ROOM.h - 0.05, W.pos.z + 1.0); spot.target.position.set(0, 3.5, W.pos.z); addCan(spot, spot.target.position); scene.add(spot); scene.add(spot.target);
+    var W = WALLS.back, w = 3.4;
+    var mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, color: 0x111111 });
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(w, w * 248 / 2052), mat);
+    loadTex('assets/museum/rmlur-wordmark.png', function (t) { mat.map = t; mat.opacity = 1; mat.needsUpdate = true; });
+    m.position.copy(W.pos); m.position.y = 3.45; m.rotation.y = W.rot; m.translateZ(0.006); scene.add(m);
   }
 
   /* ---------- light ---------- */
@@ -1155,7 +1153,7 @@
     .then(function (r) { return r.json(); })
     .then(function (data) {
       var who = data.presentedTo || 'JayRewind';
-      beltSign(); wallText('', who + ' — RMLUR :: deux SEXES', 'back', 3.0, 3.0);
+      beltSign();
       hang(data.placements || [], who);
     })
     .catch(function (e) { hud.textContent = 'could not load placements'; console.error(e); });
