@@ -151,7 +151,7 @@
     layer.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;background:#fff';
     camEl.style.cssText = 'position:absolute;left:0;top:0;transform-style:preserve-3d';
     var PX_W = 1920, PX_H = 1080, W = 48, H = W * 9 / 16;
-    box.style.cssText = 'position:absolute;width:' + PX_W + 'px;height:' + PX_H + 'px;background:#000;backface-visibility:hidden';
+    box.style.cssText = 'position:absolute;width:' + PX_W + 'px;height:' + PX_H + 'px;background:#000;backface-visibility:hidden;overflow:hidden';
     var mount = document.createElement('div'); box.appendChild(mount);
     camEl.appendChild(box); layer.appendChild(camEl);
     canvas.parentNode.insertBefore(layer, canvas); canvas.style.zIndex = 1;
@@ -179,10 +179,21 @@
     var idx = 0, player = null, watchdog = null, playing = false;
     function show(on) { playing = on; hole.visible = on; box.style.opacity = on ? '1' : '0.01'; }
     function fresh() { if (player) { try { player.destroy(); } catch (e) {} } player = null; box.textContent = ''; var m = document.createElement('div'); box.appendChild(m); return m; }
-    function kick() {                                          // (re)start playback and jump to the live edge
+    function kick() {                                          // (re)start playback; jump to the live edge only if it fell behind
       if (!player || !player.playVideo) return;
-      try { player.mute(); player.playVideo(); var d = player.getDuration && player.getDuration(); if (d > 0) player.seekTo(d, true); } catch (e) {}
+      try {
+        player.mute();
+        if (player.getPlayerState() !== 1) player.playVideo();
+        var d = player.getDuration(), c = player.getCurrentTime();
+        if (d > 0 && d - c > 30) player.seekTo(d, true);
+      } catch (e) {}
     }
+    // YouTube flashes its own play/pause icon, spinner and title for a moment on
+    // every start/buffer — the window only opens once that has faded, and the
+    // player is drawn 18% larger than the window frame so its corner branding is cropped off
+    var showTimer = null;
+    function showSoon() { clearTimeout(showTimer); showTimer = setTimeout(function () { show(true); }, 1800); }
+    function hideNow() { clearTimeout(showTimer); show(false); }
     function tryNext() {
       show(false);
       if (idx >= LIVE_CAMS.length) { idx = 0; return setTimeout(tryNext, 5 * 60e3); }   // all down: photo now, try again in 5 min
@@ -192,11 +203,16 @@
         width: PX_W, height: PX_H, videoId: id,
         playerVars: { autoplay: 1, mute: 1, controls: 0, disablekb: 1, fs: 0, rel: 0, iv_load_policy: 3, playsinline: 1, modestbranding: 1 },
         events: {
-          onReady: function () { kick(); },
+          onReady: function () {
+            var f = player.getIframe && player.getIframe();
+            if (f) f.style.cssText = 'position:absolute;left:-9%;top:-9%;width:118%;height:118%;border:0;pointer-events:none';
+            kick();
+          },
           onStateChange: function (e) {
-            if (e.data === 1) { clearTimeout(watchdog); show(true); }              // playing
-            else if (e.data === 0) { show(false); setTimeout(kick, 3000); }        // stream ended/stalled: back to live
-            else if (e.data === 2 || e.data === -1 || e.data === 5) { show(false); setTimeout(kick, 1500); }   // paused / not started
+            if (e.data === 1) { clearTimeout(watchdog); showSoon(); }             // playing (open once YouTube's overlay is gone)
+            else if (e.data === 3) hideNow();                                      // buffering: spinner — show the photo meanwhile
+            else if (e.data === 0) { hideNow(); setTimeout(kick, 3000); }          // stream ended/stalled: back to live
+            else if (e.data === 2 || e.data === -1 || e.data === 5) { hideNow(); setTimeout(kick, 1500); }   // paused / not started
           },
           onError: function () { clearTimeout(watchdog); fresh(); tryNext(); }
         }
