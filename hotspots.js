@@ -94,7 +94,7 @@ window.PADS = [
 
   { id: "pad-2-0", type: "social", label: "YouTube",   url: "https://www.youtube.com/@jayrewind" },
   { id: "pad-2-1", type: "social", label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
-  { id: "pad-2-2", type: "social", label: "TikTok",     url: "https://www.tiktok.com/@jayrewindbeatz" },
+  { id: "pad-2-2", type: "social", label: "TikTok",     url: "https://www.tiktok.com/@rmlurr" },
   { id: "pad-2-3", type: "social", label: "About",      url: "about.html" },
 
   { id: "pad-3-0", type: "social", label: "Blog",    url: "blog.html" },
@@ -146,7 +146,7 @@ window.HOME_PADS = {
   2:  { label: "Beats",     url: "store.html" },
   3:  { label: "YouTube",   url: "https://www.youtube.com/@jayrewind" },
   4:  { label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
-  5:  { label: "TikTok",    url: "https://www.tiktok.com/@jayrewindbeatz" },
+  5:  { label: "TikTok",    url: "https://www.tiktok.com/@rmlurr" },
   6:  { label: "Contact",   url: "mailto:rmlurdeuxsexes@gmail.com" },
   7:  { label: "Blog",      url: "blog.html" },
   8:  { label: "Gallery",   url: "gallery.html" },
@@ -186,7 +186,7 @@ window.HOME_BANKS = {
   C: {},  // beat previews — filled from /api/products when you switch to bank C
   D: {    // social links
     1: { label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
-    2: { label: "TikTok",    url: "https://www.tiktok.com/@jayrewindbeatz" },
+    2: { label: "TikTok",    url: "https://www.tiktok.com/@rmlurr" },
     3: { label: "YouTube",   url: "https://www.youtube.com/@jayrewind" },
     4: { label: "Email",     url: "mailto:rmlurdeuxsexes@gmail.com" }
   }
