@@ -5,6 +5,9 @@
   // faces in these photos are blurred for the gallery (assets/jason/gallery/); the portfolio page keeps the originals
   var BLURRED = { 'IMG_1666': 1, 'IMG_1936': 1, 'IMG_1937': 1, 'IMG_1943': 1 };
   var SEED = [
+    { image: 'assets/gallery/jayrewind-logo.jpg', title: 'JayRewind — No1 Music Producer' },
+    { image: 'assets/gallery/midknight-rmlur-labels.jpg', title: 'MidKnight × RMLUR :: deux SEXES — woven labels' },
+    { image: 'assets/gallery/midknight-animal-prints.jpg', title: 'MidKnight — animal prints' },
     { image: 'assets/mpc-hero.jpg', title: 'MPC 2000XL' }
   ].concat((window.JASON_PHOTOS || []).map(function (p) {
     var name = (p.src.split('/').pop() || '').replace(/\.jpg$/i, '');
