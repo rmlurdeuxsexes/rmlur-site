@@ -37,10 +37,24 @@
       .then(function (b) { buffers[src] = b; return b; }).catch(function () { return null; });
     return loading[src];
   }
+  // Choke (MPC "mono"): a new hit of the same pad cuts the previous one off with
+  // a 6 ms fade instead of stacking on top of it. Keyed by sound + pitch, so
+  // live hits and the sequencer cut each other the same way.
+  var ringing = {};
   function voice(sound, rate, when) {
     var b = buffers[sound];
     if (!b) { load(sound).then(function (bb) { if (bb && when <= ctx.currentTime + 0.05) voice(sound, rate, ctx.currentTime); }); return; }
-    var s = ctx.createBufferSource(); s.buffer = b; s.playbackRate.value = rate || 1; s.connect(master); s.start(Math.max(when, ctx.currentTime));
+    var t = Math.max(when, ctx.currentTime), key = sound + '@' + (rate || 1), prev = ringing[key];
+    if (prev) {
+      try {
+        prev.g.gain.cancelScheduledValues(t); prev.g.gain.setValueAtTime(prev.g.gain.value || 1, t);
+        prev.g.gain.linearRampToValueAtTime(0, t + 0.006); prev.s.stop(t + 0.01);
+      } catch (e) {}
+    }
+    var s = ctx.createBufferSource(), g = ctx.createGain();
+    s.buffer = b; s.playbackRate.value = rate || 1; s.connect(g); g.connect(master); s.start(t);
+    var me = ringing[key] = { s: s, g: g };
+    s.onended = function () { if (ringing[key] === me) delete ringing[key]; };
   }
   function preloadPattern() { pattern.forEach(function (st) { st.forEach(function (e) { load(e.sound); }); }); }
 
