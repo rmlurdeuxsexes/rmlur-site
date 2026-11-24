@@ -12,7 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
   photos.forEach(p => {
     const cell = document.createElement('div');
     cell.className = 'design-item';
-    cell.innerHTML = `<img src="${p.src}" alt="${p.alt || ''}" loading="lazy">`;
+    // small tile in the grid (…/sm/), the full photo only when opened
+    const tile = p.src.replace(/\/([^/]+)$/, '/sm/$1');
+    const im = document.createElement('img'); im.src = tile; im.alt = p.alt || ''; im.loading = 'lazy'; im.decoding = 'async';
+    im.onerror = () => { im.onerror = null; im.src = p.src; };
+    cell.appendChild(im);
     cell.addEventListener('click', () => openLightbox(p));
     grid.appendChild(cell);
   });

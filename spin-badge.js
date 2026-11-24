@@ -6,7 +6,6 @@
   if (document.getElementById('rmlurSpin')) return;
   var img = document.createElement('img');
   img.id = 'rmlurSpin';
-  img.src = '/assets/spin/rmlur-pa-spin.webp';
   img.alt = '';
   img.setAttribute('aria-hidden', 'true');
   img.decoding = 'async';
@@ -20,6 +19,10 @@
       try { var c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d').drawImage(img, 0, 0); img.src = c.toDataURL('image/png'); } catch (e) {}
     });
   }
-  (document.body ? Promise.resolve() : new Promise(function (r) { document.addEventListener('DOMContentLoaded', r); }))
-    .then(function () { document.body.appendChild(img); });
+  // decoration only: wait until the page itself has finished loading, then add it when the browser is idle
+  function add() { (window.requestIdleCallback || function (f) { setTimeout(f, 200); })(function () {
+    img.src = '/assets/spin/rmlur-pa-spin-sm.webp';   // badge-sized copy (~180 KB vs 900 KB full-size), fetched only now
+    document.body.appendChild(img);
+  }); }
+  if (document.readyState === 'complete') add(); else window.addEventListener('load', add);
 })();

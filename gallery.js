@@ -35,7 +35,10 @@
       var fig = document.createElement('figure');
       fig.className = 'gallery-piece';
       var im = document.createElement('img');
-      im.src = p.image; im.alt = p.title || ''; im.loading = 'lazy';
+      // local pictures show a small tile (…/sm/) in the grid; the full image loads only in the lightbox
+      im.src = /^assets\//.test(p.image) ? p.image.replace(/\/([^/]+)$/, '/sm/$1') : p.image;
+      im.alt = p.title || ''; im.loading = 'lazy'; im.decoding = 'async';
+      im.onerror = function () { im.onerror = null; im.src = p.image; };
       fig.appendChild(im);
       if (p.title) { var c = document.createElement('figcaption'); c.className = 'gallery-cap'; c.textContent = p.title; fig.appendChild(c); }
       fig.addEventListener('click', function () { open(p); });

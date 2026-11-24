@@ -55,7 +55,8 @@
           });
         }
       });
-      el.addEventListener('pointerenter', function () { lcdShow(padState(n, cfgFor(n))); });
+      el.addEventListener('pointerenter', function () { lcdShow(padState(n, cfgFor(n))); warm(cfgFor(n).url); });
+      el.addEventListener('touchstart', function () { warm(cfgFor(n).url); }, { passive: true });
       el.addEventListener('focus', function () { lcdShow(padState(n, cfgFor(n))); });
       el.addEventListener('pointerleave', lcdIdle);
       el.addEventListener('blur', lcdIdle);
@@ -82,6 +83,27 @@
           lcdShow({ kind: 'ctl', label: 'PAD BANK C', info: (i - 1) ? (i - 1) + ' BEATS LOADED' : 'NO PREVIEWS YET' }); }
       }).catch(function () { lcdShow({ kind: 'ctl', label: 'PAD BANK C', info: 'NO PREVIEWS YET' }); });
   }
+
+  // ── Head start: pages load faster if their big files are already in the browser cache.
+  //    On idle, fetch the 3D engine the store + museum share; on hover/touch of a
+  //    pad (or the LCD) fetch that page and its heavy files. Skipped on Data Saver. ──
+  var HEAVY = {
+    'store.html': ['/vendor/three.min.js', '/vendor/GLTFLoader.js', '/assets/cabinet/cabinet.glb', '/lab/floppy/cabinet.js'],
+    'museum.html': ['/vendor/three.min.js', '/museum.js', '/data/placements.json', '/assets/museum/mural-rmlur.webp', '/assets/museum/boston-skyline-dusk.jpg']
+  };
+  var warmed = {}, saveData = navigator.connection && navigator.connection.saveData;
+  function warm(url) {
+    if (saveData || !url) return;
+    var page = String(url).replace(/^\//, '').split(/[?#]/)[0];
+    if (/^(https?:|mailto:)/i.test(url)) return;
+    [('/' + page)].concat(HEAVY[page] || []).forEach(function (u) {
+      if (warmed[u]) return; warmed[u] = 1;
+      var l = document.createElement('link'); l.rel = 'prefetch'; l.href = u; document.head.appendChild(l);
+    });
+  }
+  window.addEventListener('load', function () {
+    (window.requestIdleCallback || function (f) { setTimeout(f, 1500); })(function () { warm('/vendor/three.min.js'.slice(1)); warmed['/vendor/three.min.js'] = 1; });
+  });
 
   // ── LCD: the screen is the way into the beat store, and it names whatever
   //    pad you're on, drawn like the real MPC2000XL screen (lcd-screen.js).
@@ -119,7 +141,7 @@
     place(el, box);
     mpc.appendChild(el);
     if (window.MpcLcd) MpcLcd.mount(glass);
-    el.addEventListener('pointerenter', function () { lcdShow({ kind: 'store', bpm: engine ? engine.status().bpm : 120 }); });
+    el.addEventListener('pointerenter', function () { lcdShow({ kind: 'store', bpm: engine ? engine.status().bpm : 120 }); warm('store.html'); });
     el.addEventListener('pointerleave', lcdIdle);
     el.addEventListener('click', function (e) {
       if (e.metaKey || e.ctrlKey || e.shiftKey) return; // let new-tab clicks through

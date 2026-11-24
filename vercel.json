@@ -1,6 +1,52 @@
 {
   "redirects": [
-    { "source": "/shop.html", "destination": "/store.html", "permanent": false },
-    { "source": "/shop", "destination": "/store.html", "permanent": false }
+    {
+      "source": "/shop.html",
+      "destination": "/store.html",
+      "permanent": false
+    },
+    {
+      "source": "/shop",
+      "destination": "/store.html",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/vendor/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=2592000"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=600, stale-while-revalidate=2592000"
+        }
+      ]
+    },
+    {
+      "source": "/data/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(js|css)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60, stale-while-revalidate=86400"
+        }
+      ]
+    }
   ]
 }
