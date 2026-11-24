@@ -148,7 +148,7 @@
   var LIVE_CAMS = ['BBlaNNmUJy8', 'UZ20XjGsCCs', '3I_cIS24AfY'];   // Boston live cams: Back Bay/Charles, Charles River, Harbor
   var live = (function () {
     var layer = document.createElement('div'), camEl = document.createElement('div'), box = document.createElement('div');
-    layer.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;background:#1a2b52';
+    layer.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;background:#fff';
     camEl.style.cssText = 'position:absolute;left:0;top:0;transform-style:preserve-3d';
     var PX_W = 1920, PX_H = 1080, W = 48, H = W * 9 / 16;
     box.style.cssText = 'position:absolute;width:' + PX_W + 'px;height:' + PX_H + 'px;background:#000;backface-visibility:hidden';
@@ -166,7 +166,8 @@
     function camCss(m) { var e = m.elements; return 'matrix3d(' + [e[0], -e[1], e[2], e[3], e[4], -e[5], e[6], e[7], e[8], -e[9], e[10], e[11], e[12], -e[13], e[14], e[15]].map(ep).join(',') + ')'; }
     function objCss(m) { var e = m.elements; return 'translate(-50%,-50%)matrix3d(' + [e[0], e[1], e[2], e[3], -e[4], -e[5], -e[6], -e[7], e[8], e[9], e[10], e[11], e[12], e[13], e[14], e[15]].map(ep).join(',') + ')'; }
     function render() {
-      if (!hole.visible) return;
+      // always kept positioned (and technically on screen) so the player is never
+      // "hidden" — YouTube won't autoplay a hidden player
       var w = canvas.clientWidth, h = canvas.clientHeight, fov = camera.projectionMatrix.elements[5] * h / 2;
       layer.style.perspective = fov + 'px';
       camera.updateMatrixWorld(); anchor.updateMatrixWorld();
@@ -174,32 +175,41 @@
       camEl.style.transform = 'translateZ(' + fov + 'px)' + camCss(camera.matrixWorldInverse) + 'translate(' + w / 2 + 'px,' + h / 2 + 'px)';
       box.style.transform = objCss(anchor.matrixWorld);
     }
-    // YouTube IFrame API: muted autoplay; show the hole only while a stream is actually playing
-    var idx = 0, player = null, watchdog = null;
+    // YouTube IFrame API: muted autoplay; the hole only opens while a stream is actually playing
+    var idx = 0, player = null, watchdog = null, playing = false;
+    function show(on) { playing = on; hole.visible = on; box.style.opacity = on ? '1' : '0.01'; }
+    function fresh() { if (player) { try { player.destroy(); } catch (e) {} } player = null; box.textContent = ''; var m = document.createElement('div'); box.appendChild(m); return m; }
+    function kick() {                                          // (re)start playback and jump to the live edge
+      if (!player || !player.playVideo) return;
+      try { player.mute(); player.playVideo(); var d = player.getDuration && player.getDuration(); if (d > 0) player.seekTo(d, true); } catch (e) {}
+    }
     function tryNext() {
-      hole.visible = false; layer.style.visibility = 'hidden';
-      if (idx >= LIVE_CAMS.length) return;                   // nothing playing: the photo stays
+      show(false);
+      if (idx >= LIVE_CAMS.length) { idx = 0; return setTimeout(tryNext, 5 * 60e3); }   // all down: photo now, try again in 5 min
       var id = LIVE_CAMS[idx++];
-      clearTimeout(watchdog); watchdog = setTimeout(function () { if (!hole.visible) { if (player) player.destroy(); player = null; mount = document.createElement('div'); box.textContent = ''; box.appendChild(mount); tryNext(); } }, 20000);
-      player = new YT.Player(mount, {
+      clearTimeout(watchdog); watchdog = setTimeout(function () { if (!playing) { fresh(); tryNext(); } }, 20000);
+      player = new YT.Player(fresh(), {
         width: PX_W, height: PX_H, videoId: id,
         playerVars: { autoplay: 1, mute: 1, controls: 0, disablekb: 1, fs: 0, rel: 0, iv_load_policy: 3, playsinline: 1, modestbranding: 1 },
         events: {
-          onReady: function (e) { e.target.mute(); e.target.playVideo(); },
+          onReady: function () { kick(); },
           onStateChange: function (e) {
-            var on = e.data === 1;                             // 1 = playing
-            hole.visible = on; layer.style.visibility = on ? 'visible' : 'hidden';
-            if (e.data === 0) { clearTimeout(watchdog); idx = idx; }   // live ended: photo shows until it resumes
+            if (e.data === 1) { clearTimeout(watchdog); show(true); }              // playing
+            else if (e.data === 0) { show(false); setTimeout(kick, 3000); }        // stream ended/stalled: back to live
+            else if (e.data === 2 || e.data === -1 || e.data === 5) { show(false); setTimeout(kick, 1500); }   // paused / not started
           },
-          onError: function () { clearTimeout(watchdog); if (player) player.destroy(); player = null; mount = document.createElement('div'); box.textContent = ''; box.appendChild(mount); tryNext(); }
+          onError: function () { clearTimeout(watchdog); fresh(); tryNext(); }
         }
       });
     }
-    if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-      var prev = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = function () { if (prev) prev(); tryNext(); };
-      var tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; tag.async = true; document.head.appendChild(tag);
-    }
+    // keep it live: every 10 min (and whenever you come back to the tab) snap to the live edge
+    setInterval(function () { if (playing) kick(); }, 10 * 60e3);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) kick(); });
+    // browsers that still block autoplay (e.g. Safari Low Power Mode) get it on the first touch, drag or key
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { window.addEventListener(ev, function () { if (!playing) kick(); }, { passive: true }); });
+    var prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = function () { if (prev) prev(); tryNext(); };
+    var tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; tag.async = true; document.head.appendChild(tag);
     return { render: render };
   })();
 
