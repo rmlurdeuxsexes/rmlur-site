@@ -92,7 +92,7 @@ window.PADS = [
   { id: "pad-1-2", type: "beat", title: "Recent beat 7", audio: null },
   { id: "pad-1-3", type: "beat", title: "Recent beat 8", audio: null },
 
-  { id: "pad-2-0", type: "social", label: "YouTube",   url: "https://www.youtube.com/@jayrewind" },
+  { id: "pad-2-0", type: "social", label: "YouTube",   url: "https://www.youtube.com/channel/UCaJBL18GuMrZGzmUqF9-Lvw" },
   { id: "pad-2-1", type: "social", label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
   { id: "pad-2-2", type: "social", label: "TikTok",     url: "https://www.tiktok.com/@rmlurr" },
   { id: "pad-2-3", type: "social", label: "About",      url: "about.html" },
@@ -144,7 +144,7 @@ window.HOME_LCD = { idle: "BEAT STORE", url: "store.html" };
 window.HOME_PADS = {
   1:  { label: "Home",      url: "index.html" },
   2:  { label: "Beats",     url: "store.html" },
-  3:  { label: "YouTube",   url: "https://www.youtube.com/@jayrewind" },
+  3:  { label: "YouTube",   url: "https://www.youtube.com/channel/UCaJBL18GuMrZGzmUqF9-Lvw" },
   4:  { label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
   5:  { label: "TikTok",    url: "https://www.tiktok.com/@rmlurr" },
   6:  { label: "Contact",   url: "mailto:rmlurdeuxsexes@gmail.com" },
@@ -187,7 +187,7 @@ window.HOME_BANKS = {
   D: {    // social links
     1: { label: "Instagram", url: "https://www.instagram.com/kennethglamour/" },
     2: { label: "TikTok",    url: "https://www.tiktok.com/@rmlurr" },
-    3: { label: "YouTube",   url: "https://www.youtube.com/@jayrewind" },
+    3: { label: "YouTube",   url: "https://www.youtube.com/channel/UCaJBL18GuMrZGzmUqF9-Lvw" },
     4: { label: "Email",     url: "mailto:rmlurdeuxsexes@gmail.com" }
   }
 };
