@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setLcdState('MESSAGE', { label: 'LOADING BEAT STORE...' });
     setTimeout(() => {
       pageFade.classList.add('show');
-      setTimeout(() => { window.location.href = 'shop.html?from=floppy'; }, 380);
+      setTimeout(() => { window.location.href = 'store.html'; }, 380);
     }, 900);
   }
 
