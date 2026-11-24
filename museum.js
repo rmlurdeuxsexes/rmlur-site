@@ -95,55 +95,32 @@
     h.moveTo(-wx, a); h.lineTo(-wx, b); h.lineTo(wx, b); h.lineTo(wx, a); h.closePath(); s.holes.push(h);
     return new THREE.ShapeGeometry(s);
   }
-  function skylineTex() {
-    return canvasTex(4096, 1700, function (ctx, w, h) {
-      var hz = h * 0.7;                                              // horizon / waterline
-      var sky = ctx.createLinearGradient(0, 0, 0, hz);
-      sky.addColorStop(0, '#0d1a3a'); sky.addColorStop(0.45, '#2c3f78'); sky.addColorStop(0.75, '#a2607e'); sky.addColorStop(0.93, '#f0a065'); sky.addColorStop(1, '#ffd09a');
-      ctx.fillStyle = sky; ctx.fillRect(0, 0, w, hz);
-      for (var i = 0; i < 160; i++) { ctx.fillStyle = 'rgba(255,255,255,' + Math.random() * 0.6 + ')'; ctx.fillRect(Math.random() * w, Math.random() * hz * 0.35, 2, 2); }
-      function bldg(x, bw, bh, col, opts) {
-        opts = opts || {}; var top = hz - bh;
-        ctx.fillStyle = col; ctx.fillRect(x, top, bw, bh);
-        if (opts.spire) { ctx.fillRect(x + bw / 2 - 3, top - opts.spire, 6, opts.spire); }
-        if (opts.pyramid) { ctx.beginPath(); ctx.moveTo(x - 4, top); ctx.lineTo(x + bw / 2, top - opts.pyramid); ctx.lineTo(x + bw + 4, top); ctx.fill(); }
-        if (opts.glass) { var g = ctx.createLinearGradient(x, 0, x + bw, 0); g.addColorStop(0, 'rgba(120,150,210,.55)'); g.addColorStop(1, 'rgba(255,170,120,.35)'); ctx.fillStyle = g; ctx.fillRect(x, top, bw, bh); }
-        for (var yy = top + 14; yy < hz - 10; yy += 18) for (var xx = x + 8; xx < x + bw - 8; xx += 16)
-          if (Math.random() < (opts.lit || 0.35)) { ctx.fillStyle = Math.random() < 0.8 ? 'rgba(255,214,150,.9)' : 'rgba(200,225,255,.85)'; ctx.fillRect(xx, yy, 7, 9); }
-      }
-      // far layer, then the downtown cluster
-      for (var x = 0; x < w; x += 40 + Math.random() * 70) bldg(x, 60 + Math.random() * 90, 60 + Math.random() * 180, '#1f2547', { lit: 0.25 });
-      var near = '#121630';
-      bldg(500, 150, 360, near); bldg(690, 120, 430, near, { spire: 80 });
-      bldg(900, 170, 300, near); bldg(1120, 110, 520, near, { pyramid: 70, spire: 40 });      // clock-tower style
-      bldg(1300, 210, 380, near); bldg(1560, 140, 610, near, { spire: 130, lit: 0.45 });      // tall tower with antenna
-      bldg(1740, 120, 700, near, { glass: true, lit: 0.15 });                               // slim glass slab
-      bldg(1900, 200, 440, near); bldg(2140, 160, 520, near, { spire: 60 });
-      bldg(2360, 230, 360, near); bldg(2640, 140, 470, near); bldg(2830, 190, 330, near);
-      // cable-stayed bridge on the right
-      ctx.strokeStyle = '#cfd6e6'; ctx.lineWidth = 6;
-      [3150, 3650].forEach(function (tx) {
-        ctx.beginPath(); ctx.moveTo(tx - 30, hz); ctx.lineTo(tx, hz - 360); ctx.lineTo(tx + 30, hz); ctx.stroke();
-        ctx.lineWidth = 2; for (var k = 1; k <= 9; k++) { ctx.beginPath(); ctx.moveTo(tx, hz - 340 + k * 10); ctx.lineTo(tx - k * 36, hz - 40); ctx.moveTo(tx, hz - 340 + k * 10); ctx.lineTo(tx + k * 36, hz - 40); ctx.stroke(); }
-        ctx.lineWidth = 6;
-      });
-      ctx.fillStyle = '#0c0f22'; ctx.fillRect(2950, hz - 44, 900, 14);
-      // harbour water with streaked reflections
-      var wa = ctx.createLinearGradient(0, hz, 0, h); wa.addColorStop(0, '#2a2f55'); wa.addColorStop(1, '#070a18');
-      ctx.fillStyle = wa; ctx.fillRect(0, hz, w, h - hz);
-      for (var r = 0; r < 900; r++) {
-        var rx = Math.random() * w, ry = hz + Math.random() * (h - hz);
-        ctx.fillStyle = 'rgba(255,' + (170 + Math.random() * 60 | 0) + ',120,' + (0.08 + Math.random() * 0.25) * (1 - (ry - hz) / (h - hz)) + ')';
-        ctx.fillRect(rx, ry, 20 + Math.random() * 60, 2);
-      }
-    });
-  }
   (function windowView() {
     var x = -ROOM.w / 2, cy = (WIN.y0 + WIN.y1) / 2, wh = WIN.y1 - WIN.y0;
-    var view = new THREE.Mesh(new THREE.PlaneGeometry(100, 100 * 1700 / 4096), new THREE.MeshBasicMaterial({ map: skylineTex(), toneMapped: false }));
-    view.rotation.y = Math.PI / 2; view.position.set(x - 62, 0.6 + 0.2 * 100 * 1700 / 4096, 0); scene.add(view);
-    var out = new THREE.Mesh(new THREE.PlaneGeometry(60, 40), new THREE.MeshBasicMaterial({ color: 0x0d1a3a }));   // anything outside the picture
-    out.rotation.y = Math.PI / 2; out.position.set(x - 62.5, 3, 0); out.scale.set(3, 3, 1); scene.add(out);
+    // real photo: "Boston Skyline Panorama Dusk" by Fcb981, Wikimedia Commons, CC BY-SA 3.0 (credited on the wall label below)
+    // wrapped on the inside of a big half-cylinder around the room, so the view
+    // stays continuous from any angle you look out of the window
+    var R = 40, ARC = Math.PI * 1.05, VH = R * ARC * 1004 / 3840, WATERLINE = 0.74;   // fraction down the photo where river meets city
+    var viewMat = new THREE.MeshBasicMaterial({ color: 0x1b2a4a, side: THREE.BackSide, toneMapped: false });
+    var view = new THREE.Mesh(new THREE.CylinderGeometry(R, R, VH, 96, 1, true, Math.PI * 1.5 - ARC / 2, ARC), viewMat);
+    view.position.set(0, 1.0 + (WATERLINE - 0.5) * VH, 0); scene.add(view);
+    loadTex('assets/museum/boston-skyline-dusk.jpg', function (t) {
+      t.wrapS = THREE.RepeatWrapping; t.repeat.x = -1; t.offset.x = 1;                 // seen from inside: un-mirror
+      viewMat.map = t; viewMat.color.set(0xffffff); viewMat.needsUpdate = true;
+    });
+    var topY = view.position.y + VH / 2, botY = view.position.y - VH / 2;
+    var sky = new THREE.Mesh(new THREE.CylinderGeometry(R + 1, R + 1, 200, 64, 1, true), new THREE.MeshBasicMaterial({ color: 0x274e85, side: THREE.BackSide, toneMapped: false }));
+    sky.position.y = topY + 100 - 0.5; scene.add(sky);
+    var river = new THREE.Mesh(new THREE.CylinderGeometry(R + 1, R + 1, 200, 64, 1, true), new THREE.MeshBasicMaterial({ color: 0x253352, side: THREE.BackSide, toneMapped: false }));
+    river.position.y = botY - 100 + 0.5; scene.add(river);
+    var credit = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.21), new THREE.MeshStandardMaterial({ roughness: 0.8, map: canvasTex(840, 420, function (ctx, w, h) {
+      ctx.fillStyle = '#fbfaf6'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#1b1b1b'; ctx.textBaseline = 'top';
+      ctx.font = '600 40px "IBM Plex Mono", monospace'; ctx.fillText('THE VIEW', 40, 40);
+      ctx.font = 'italic 36px Georgia, serif'; ctx.fillText('Boston, Back Bay at dusk', 40, 104);
+      ctx.fillStyle = '#55524a'; ctx.font = '400 26px "IBM Plex Mono", monospace';
+      ctx.fillText('Photo: Fcb981 / Wikimedia Commons', 40, 200); ctx.fillText('CC BY-SA 3.0', 40, 244);
+    }) }));
+    credit.rotation.y = Math.PI / 2; credit.position.set(x + 0.006, 1.45, WIN.w / 2 + 0.45); scene.add(credit);
     var glass = new THREE.Mesh(new THREE.PlaneGeometry(WIN.w, wh), new THREE.MeshPhysicalMaterial({
       color: 0xdfe8f0, transparent: true, opacity: 0.1, roughness: 0.04, metalness: 0, envMapIntensity: 1.4, depthWrite: false }));
     glass.rotation.y = Math.PI / 2; glass.position.set(x - 0.05, cy, 0); scene.add(glass);
@@ -159,7 +136,7 @@
       var mu = new THREE.Mesh(new THREE.BoxGeometry(0.06, wh, 0.05), black); mu.position.set(x - 0.06, cy, z); scene.add(mu);
     }
     [WIN.y0 + 0.02, WIN.y1 - 0.02].forEach(function (y) { var t = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, WIN.w), black); t.position.set(x - 0.06, y, 0); scene.add(t); });
-    var dusk = new THREE.PointLight(0x8fa6ff, 2.5, 8, 1.5); dusk.position.set(x + 0.8, cy, 0); scene.add(dusk);
+    var dusk = new THREE.PointLight(0x7f96e0, 2.0, 8, 1.5); dusk.position.set(x + 0.8, cy, 0); scene.add(dusk);
   })();
 
   /* ---------- straight gallery track lighting ----------
@@ -192,7 +169,7 @@
 
   /* ---------- Persian rug + a simple gallery bench on it ---------- */
   (function rugAndBench() {
-    var RW = 2.5, RL = 3.44, RZ = -2.15;
+    var RW = 3.6, RL = 4.95, RZ = -1.95;
     var rugMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
     var rug = new THREE.Mesh(new THREE.BoxGeometry(RW, 0.01, RL), [baseRug(), baseRug(), rugMat, baseRug(), baseRug(), baseRug()]);
     function baseRug() { return new THREE.MeshStandardMaterial({ color: 0x3a0d12, roughness: 1 }); }
